@@ -1852,8 +1852,45 @@ body::-webkit-scrollbar-corner {
   padding: 1rem 1.05rem 0.95rem;
 }
 
+.speaker-focus-bubble-card.has-debug-action {
+  padding-right: 3.65rem;
+}
+
 .speaker-focus-bubble-card::before {
   display: none;
+}
+
+.bubble-debug-button {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(95, 75, 61, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  color: rgba(95, 75, 61, 0.78);
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.bubble-debug-button:hover,
+.bubble-debug-button:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(216, 122, 59, 0.26);
+  background: rgba(255, 251, 245, 0.94);
+  color: #7b4d2f;
+}
+
+.bubble-debug-button svg {
+  width: 0.95rem;
+  height: 0.95rem;
 }
 
 .stage-bubble-speaker {
@@ -2332,6 +2369,40 @@ body::-webkit-scrollbar-corner {
 .transcript-markdown-blockquote {
   border-left: 2px solid rgba(240, 171, 105, 0.28);
   padding-left: 0.9rem;
+}
+
+.raw-prompt-modal-panel {
+  max-height: min(100%, 52rem);
+}
+
+.raw-prompt-modal-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.raw-prompt-modal-meta {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.raw-prompt-modal-pre {
+  margin: 1.5rem 0 0;
+  max-height: min(68vh, 38rem);
+  overflow: auto;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 231, 198, 0.12);
+  background: rgba(8, 12, 17, 0.84);
+  padding: 1rem 1.05rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  color: rgba(249, 238, 223, 0.94);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(216, 122, 59, 0.72) rgba(255, 248, 237, 0.08);
 }
 
 .settings-modal-backdrop {

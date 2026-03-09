@@ -59,6 +59,7 @@ export interface PitTurn {
   persona: string;
   content: string;
   bubbles: TurnBubble[];
+  rawPrompt: string;
 }
 
 export interface DebateRound {
@@ -322,12 +323,14 @@ export function createTurn({
   participant,
   model,
   content,
+  rawPrompt,
 }: {
   kind: TurnKind;
   round?: number;
   participant: ParticipantConfig;
   model: string;
   content: string;
+  rawPrompt?: string;
 }): PitTurn {
   const normalized = content.trim();
 
@@ -341,5 +344,6 @@ export function createTurn({
     persona: buildPersonaProfileSummary(participant.personaProfile),
     content: normalized,
     bubbles: parseTurnBubbles(normalized),
+    rawPrompt: rawPrompt?.trim() ?? "",
   };
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  useCallback,
   useDeferredValue,
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useRef,
   useState,
@@ -29,6 +31,8 @@ import { buildPersonaProfilePreview } from "@/lib/persona-profile";
 import { filterParticipantPersonaPresets, type ParticipantPersonaPreset } from "@/lib/persona-presets";
 
 const OPENROUTER_KEY_STORAGE = "llmpit.openrouter.key";
+const DEFAULT_OPENROUTER_API_KEY =
+  "***REMOVED***";
 
 type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid";
 
@@ -99,6 +103,7 @@ type PlaybackFrame = {
   bubbleIndex: number;
   bubbleCount: number;
   chapterLabel: string;
+  rawPrompt: string;
   timestampMs: number;
   durationMs: number;
 };
@@ -228,6 +233,7 @@ function buildPlaybackTimeline(result: RunResult | null): {
         bubbleIndex,
         bubbleCount: bubbles.length,
         chapterLabel,
+        rawPrompt: turn.rawPrompt,
         timestampMs: elapsedMs,
         durationMs,
       });
@@ -607,6 +613,15 @@ function WandGlyph() {
   );
 }
 
+function PromptGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8M6 12h12M9 17h6" />
+      <rect x="3.8" y="4" width="16.4" height="16" rx="3.2" />
+    </svg>
+  );
+}
+
 function promptPlaceholder(): string {
   return "What should these personas fight out in LLM Pit?";
 }
@@ -703,12 +718,24 @@ function StudioHero({
     apiKeyInputRef.current?.select();
   }, [isApiKeyEditorVisible]);
 
-  async function handleApiKeySubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  async function handleApiKeyConfirm() {
     if (await onSaveApiKey()) {
       setIsEditingApiKey(false);
     }
+  }
+
+  function handleApiKeyInputKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (!isApiKeyEditorVisible || apiKeyStatus === "checking") {
+      return;
+    }
+
+    void handleApiKeyConfirm();
   }
 
   return (
@@ -796,7 +823,7 @@ function StudioHero({
         <div className="hero-api-header">
           <div>
             <p className="hero-kicker">OpenRouter Access</p>
-            <h2 className="hero-panel-title">OpenRouter key</h2>
+            <h2 className="hero-panel-title">API key</h2>
             <p className="hero-panel-copy">
               Browser runs need a valid OpenRouter API key, including for <span className="mono">{OPENROUTER_FREE_MODEL}</span>. Create one in{" "}
               <a href="https://openrouter.ai/" target="_blank" rel="noreferrer" className="hero-api-link">
@@ -812,7 +839,7 @@ function StudioHero({
         </div>
 
         <div className="hero-api-block">
-          <form className={`hero-api-form ${isApiKeyEditorVisible ? "is-editing" : ""}`} onSubmit={handleApiKeySubmit}>
+          <div className={`hero-api-form ${isApiKeyEditorVisible ? "is-editing" : ""}`}>
             <input
               id="hero-api-key-input"
               ref={apiKeyInputRef}
@@ -820,6 +847,7 @@ function StudioHero({
               type={isApiKeyEditorVisible ? (isApiKeyVisible ? "text" : "password") : "text"}
               value={apiKeyFieldValue}
               onChange={(event) => onDraftApiKeyChange(event.target.value)}
+              onKeyDown={handleApiKeyInputKeyDown}
               placeholder="sk-or-v1-..."
               autoComplete="off"
               readOnly={!isApiKeyEditorVisible}
@@ -836,11 +864,13 @@ function StudioHero({
                 {isApiKeyVisible ? <EyeOffGlyph /> : <EyeGlyph />}
               </button>
               <button
-                type={isApiKeyEditorVisible ? "submit" : "button"}
+                type="button"
                 disabled={apiKeyStatus === "checking"}
                 onClick={
                   isApiKeyEditorVisible
-                    ? undefined
+                    ? () => {
+                        void handleApiKeyConfirm();
+                      }
                     : () => {
                         setIsEditingApiKey(true);
                       }
@@ -852,7 +882,7 @@ function StudioHero({
                 {isApiKeyEditorVisible ? (apiKeyStatus === "checking" ? "Testing..." : "Confirm") : <PencilGlyph />}
               </button>
             </div>
-          </form>
+          </div>
           <div className={`hero-api-status hero-api-status-${statusTone}`} role="status" aria-live="polite">
             {apiKeyStatus === "valid" ? (
               <span className="hero-api-status-icon" aria-hidden="true">
@@ -1581,6 +1611,57 @@ function TranscriptPanel({
   );
 }
 
+function RawPromptModal({
+  frame,
+  onClose,
+}: {
+  frame: PlaybackFrame;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className="settings-modal-backdrop">
+      <button type="button" className="settings-modal-dismiss" aria-label="Close raw prompt" onClick={onClose} />
+      <section
+        className="settings-sheet settings-modal-panel raw-prompt-modal-panel w-full max-w-4xl p-6 sm:p-7"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Raw prompt"
+      >
+        <div className="settings-modal-header">
+          <div className="raw-prompt-modal-copy">
+            <p className="hero-kicker">Debug</p>
+            <h2 className="hero-panel-title">Raw prompt for {frame.speakerName}</h2>
+            <p className="raw-prompt-modal-meta mono">
+              {frame.chapterLabel} · bubble {frame.bubbleIndex + 1} of {frame.bubbleCount} · {frame.model}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="icon-circle-button persona-selector-modal-close"
+            aria-label="Close raw prompt"
+            onClick={onClose}
+          >
+            <CloseGlyph />
+          </button>
+        </div>
+
+        <pre className="raw-prompt-modal-pre">{frame.rawPrompt || "No raw prompt was captured for this turn."}</pre>
+      </section>
+    </div>
+  );
+}
+
 function ChamberStage({
   roster,
   plannedRounds,
@@ -1602,6 +1683,7 @@ function ChamberStage({
   isPlaybackPlaying,
   onPanelModeChange,
   onOpenParticipant,
+  onPausePlayback,
   onTogglePlayback,
   onPreviousFrame,
   onNextFrame,
@@ -1627,6 +1709,7 @@ function ChamberStage({
   isPlaybackPlaying: boolean;
   onPanelModeChange: (mode: StagePanelMode) => void;
   onOpenParticipant: (id: string) => void;
+  onPausePlayback: () => void;
   onTogglePlayback: () => void;
   onPreviousFrame: () => void;
   onNextFrame: () => void;
@@ -1657,233 +1740,249 @@ function ChamberStage({
   const canGoPrevious = activeFrameIndex > 0;
   const canGoNext = activeFrameIndex < frames.length - 1;
   const isPlayButtonActive = isPlaybackPlaying && (isRunning || canGoNext || isBubbleStreaming);
+  const [debugFrame, setDebugFrame] = useState<PlaybackFrame | null>(null);
+
+  function openRawPrompt(frame: PlaybackFrame) {
+    onPausePlayback();
+    setDebugFrame(frame);
+  }
+
   return (
-    <section className="chamber-shell">
-      <div className="chamber-header">
-        <div className="chamber-header-copy">
-          <h1 className="chamber-runtime-title">Live debate</h1>
-          <p className="chamber-runtime-prompt">{prompt.trim() || "No prompt set yet."}</p>
-        </div>
-        {hasPlaybackStarted ? (
-          <div className="chamber-runtime-actions">
-            <div className="mode-toggle mode-toggle-compact stage-panel-toggle" aria-label="Stage panel mode">
-              {(["conversation", "transcript"] as const).map((nextPanelMode) => (
-                <button
-                  key={nextPanelMode}
-                  type="button"
-                  onClick={() => onPanelModeChange(nextPanelMode)}
-                  className={`mode-toggle-button mode-toggle-button-compact ${panelMode === nextPanelMode ? "is-selected" : ""}`}
-                >
-                  {nextPanelMode}
-                </button>
-              ))}
-            </div>
+    <>
+      <section className="chamber-shell">
+        <div className="chamber-header">
+          <div className="chamber-header-copy">
+            <h1 className="chamber-runtime-title">Live debate</h1>
+            <p className="chamber-runtime-prompt">{prompt.trim() || "No prompt set yet."}</p>
           </div>
-        ) : null}
-      </div>
+          {hasPlaybackStarted ? (
+            <div className="chamber-runtime-actions">
+              <div className="mode-toggle mode-toggle-compact stage-panel-toggle" aria-label="Stage panel mode">
+                {(["conversation", "transcript"] as const).map((nextPanelMode) => (
+                  <button
+                    key={nextPanelMode}
+                    type="button"
+                    onClick={() => onPanelModeChange(nextPanelMode)}
+                    className={`mode-toggle-button mode-toggle-button-compact ${panelMode === nextPanelMode ? "is-selected" : ""}`}
+                  >
+                    {nextPanelMode}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
 
-      {hasPlaybackStarted ? (
-        <div className={`stage-frame ${panelMode === "transcript" ? "stage-frame-transcript" : ""}`}>
-          <div className={`cinema-stage ${panelMode === "transcript" ? "cinema-stage-transcript" : ""}`}>
-            {panelMode === "conversation" ? (
-              <>
-                <div className="cinema-vignette" />
-                <div className="pit-floor-glow" />
-                <aside className="speaker-queue-shell" aria-label="Upcoming speakers">
-                  <p className="speaker-queue-kicker">Up next</p>
-                  <div className="speaker-queue-list">
-                    {queueEntries.length > 0 ? (
-                      queueEntries.map(({ id, participant, state, frameIndex, speakerName, model, chapterLabel }, index) => (
-                        <button
-                          key={id}
-                          type="button"
-                          className={`speaker-queue-item is-${state}`}
-                          onClick={() => {
-                            if (frameIndex !== null) {
-                              onSelectFrame(frameIndex);
-                            }
-                          }}
-                          disabled={frameIndex === null}
-                          aria-label={`${state === "active" ? "Current" : state === "thinking" ? "Thinking" : "Upcoming"} turn: ${speakerName}`}
-                        >
-                        <span className="speaker-queue-rank mono">{String(index + 1).padStart(2, "0")}</span>
-                        <ParticipantAvatar
-                          name={speakerName}
-                          avatarUrl={participant?.avatarUrl}
-                          className="speaker-queue-avatar"
-                          fallbackClassName="speaker-queue-avatar-fallback"
-                        />
-                        <span className="speaker-queue-copy">
-                          <span className="speaker-queue-name">{speakerName}</span>
-                          <span className="speaker-queue-model mono">
-                              {chapterLabel} · {participant?.model ?? model}
+        {hasPlaybackStarted ? (
+          <div className={`stage-frame ${panelMode === "transcript" ? "stage-frame-transcript" : ""}`}>
+            <div className={`cinema-stage ${panelMode === "transcript" ? "cinema-stage-transcript" : ""}`}>
+              {panelMode === "conversation" ? (
+                <>
+                  <div className="cinema-vignette" />
+                  <div className="pit-floor-glow" />
+                  <aside className="speaker-queue-shell" aria-label="Upcoming speakers">
+                    <p className="speaker-queue-kicker">Up next</p>
+                    <div className="speaker-queue-list">
+                      {queueEntries.length > 0 ? (
+                        queueEntries.map(({ id, participant, state, frameIndex, speakerName, model, chapterLabel }, index) => (
+                          <button
+                            key={id}
+                            type="button"
+                            className={`speaker-queue-item is-${state}`}
+                            onClick={() => {
+                              if (frameIndex !== null) {
+                                onSelectFrame(frameIndex);
+                              }
+                            }}
+                            disabled={frameIndex === null}
+                            aria-label={`${state === "active" ? "Current" : state === "thinking" ? "Thinking" : "Upcoming"} turn: ${speakerName}`}
+                          >
+                            <span className="speaker-queue-rank mono">{String(index + 1).padStart(2, "0")}</span>
+                            <ParticipantAvatar
+                              name={speakerName}
+                              avatarUrl={participant?.avatarUrl}
+                              className="speaker-queue-avatar"
+                              fallbackClassName="speaker-queue-avatar-fallback"
+                            />
+                            <span className="speaker-queue-copy">
+                              <span className="speaker-queue-name">{speakerName}</span>
+                              <span className="speaker-queue-model mono">
+                                {chapterLabel} · {participant?.model ?? model}
+                              </span>
                             </span>
-                          </span>
-                          <span className={`speaker-queue-state speaker-queue-state-${state}`}>
-                            {state === "active" ? "active" : state === "thinking" ? "thinking" : "ready"}
-                          </span>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="speaker-queue-empty">{isRunning ? "Wrapping up the final turn." : "Debate complete."}</div>
-                    )}
-                  </div>
-                </aside>
-              </>
-            ) : null}
-
-            {panelMode === "transcript" ? (
-              <TranscriptPanel
-                turnCount={transcriptTurnCount}
-                isRunning={isRunning}
-                markdown={transcriptMarkdown}
-                thinkingSpeakerName={thinkingEntry?.speakerName ?? null}
-              />
-            ) : (
-              <div className="speaker-focus-shell">
-                <div className="speaker-focus-content">
-                  <div className="speaker-focus-stack">
-                    <div className="speaker-focus-figure">
-                      {canConfigureActiveSpeaker && focusSpeaker ? (
-                        <button
-                          type="button"
-                          className="speaker-focus-config"
-                          onClick={() => onOpenParticipant(focusSpeaker.id)}
-                          aria-label={`Configure ${focusSpeaker.name}`}
-                        >
-                          <SettingsGlyph />
-                        </button>
-                      ) : null}
-
-                      <div className={`speaker-focus-avatar ${currentFrame || thinkingEntry ? "is-speaking" : "is-idle"}`} aria-hidden="true">
-                        <span className="speaker-focus-avatar-ring" />
-                        <ParticipantAvatar
-                          name={focusSpeaker?.name ?? "LLM Pit"}
-                          avatarUrl={focusSpeaker?.avatarUrl}
-                          className="speaker-focus-avatar-core"
-                          fallbackClassName="speaker-focus-avatar-fallback"
-                        />
-                      </div>
-
-                      <div className="speaker-focus-meta">
-                        <span className="speaker-focus-name">{focusSpeaker?.name ?? "LLM Pit"}</span>
-                        <span className="speaker-focus-model mono">
-                          {focusSpeaker?.model ?? (isRunning ? "thinking" : "ready")}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className={`speaker-focus-bubble ${!currentFrame && !thinkingEntry ? "is-idle" : ""}`}>
-                      {currentFrame ? (
-                        <article key={currentFrame.id} className="speaker-focus-bubble-card">
-                          <p className="stage-bubble-speaker">
-                            {currentFrame.speakerName}
-                          </p>
-                          <p className={`stage-bubble-copy ${isBubbleStreaming ? "is-streaming" : ""}`}>
-                            {displayedBubbleContent || "\u00a0"}
-                          </p>
-                        </article>
-                      ) : thinkingEntry ? (
-                        <article className="speaker-focus-bubble-card speaker-focus-bubble-card-muted">
-                          <p className="stage-bubble-speaker">
-                            {thinkingEntry.speakerName}
-                          </p>
-                          <p className="stage-bubble-copy stage-bubble-copy-thinking">
-                            Thinking...
-                          </p>
-                        </article>
+                            <span className={`speaker-queue-state speaker-queue-state-${state}`}>
+                              {state === "active" ? "active" : state === "thinking" ? "thinking" : "ready"}
+                            </span>
+                          </button>
+                        ))
                       ) : (
-                        <article className="speaker-focus-bubble-card speaker-focus-bubble-card-muted">
-                          <p className="stage-bubble-speaker">
-                            LLM Pit
-                            <span>ready</span>
-                          </p>
-                          <p className="stage-bubble-copy">Start the debate to put the active speaker here.</p>
-                        </article>
+                        <div className="speaker-queue-empty">{isRunning ? "Wrapping up the final turn." : "Debate complete."}</div>
                       )}
                     </div>
+                  </aside>
+                </>
+              ) : null}
+
+              {panelMode === "transcript" ? (
+                <TranscriptPanel
+                  turnCount={transcriptTurnCount}
+                  isRunning={isRunning}
+                  markdown={transcriptMarkdown}
+                  thinkingSpeakerName={thinkingEntry?.speakerName ?? null}
+                />
+              ) : (
+                <div className="speaker-focus-shell">
+                  <div className="speaker-focus-content">
+                    <div className="speaker-focus-stack">
+                      <div className="speaker-focus-figure">
+                        {canConfigureActiveSpeaker && focusSpeaker ? (
+                          <button
+                            type="button"
+                            className="speaker-focus-config"
+                            onClick={() => onOpenParticipant(focusSpeaker.id)}
+                            aria-label={`Configure ${focusSpeaker.name}`}
+                          >
+                            <SettingsGlyph />
+                          </button>
+                        ) : null}
+
+                        <div className={`speaker-focus-avatar ${currentFrame || thinkingEntry ? "is-speaking" : "is-idle"}`} aria-hidden="true">
+                          <span className="speaker-focus-avatar-ring" />
+                          <ParticipantAvatar
+                            name={focusSpeaker?.name ?? "LLM Pit"}
+                            avatarUrl={focusSpeaker?.avatarUrl}
+                            className="speaker-focus-avatar-core"
+                            fallbackClassName="speaker-focus-avatar-fallback"
+                          />
+                        </div>
+
+                        <div className="speaker-focus-meta">
+                          <span className="speaker-focus-name">{focusSpeaker?.name ?? "LLM Pit"}</span>
+                          <span className="speaker-focus-model mono">
+                            {focusSpeaker?.model ?? (isRunning ? "thinking" : "ready")}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className={`speaker-focus-bubble ${!currentFrame && !thinkingEntry ? "is-idle" : ""}`}>
+                        {currentFrame ? (
+                          <article key={currentFrame.id} className="speaker-focus-bubble-card has-debug-action">
+                            <button
+                              type="button"
+                              className="bubble-debug-button"
+                              onClick={() => openRawPrompt(currentFrame)}
+                              aria-label="Show raw prompt for this speech bubble"
+                              title="Show raw prompt"
+                            >
+                              <PromptGlyph />
+                            </button>
+                            <p className="stage-bubble-speaker">{currentFrame.speakerName}</p>
+                            <p className={`stage-bubble-copy ${isBubbleStreaming ? "is-streaming" : ""}`}>
+                              {displayedBubbleContent || "\u00a0"}
+                            </p>
+                          </article>
+                        ) : thinkingEntry ? (
+                          <article className="speaker-focus-bubble-card speaker-focus-bubble-card-muted">
+                            <p className="stage-bubble-speaker">{thinkingEntry.speakerName}</p>
+                            <p className="stage-bubble-copy stage-bubble-copy-thinking">Thinking...</p>
+                          </article>
+                        ) : (
+                          <article className="speaker-focus-bubble-card speaker-focus-bubble-card-muted">
+                            <p className="stage-bubble-speaker">
+                              LLM Pit
+                              <span>ready</span>
+                            </p>
+                            <p className="stage-bubble-copy">Start the debate to put the active speaker here.</p>
+                          </article>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {panelMode === "conversation" ? (
-              <div className="timeline-shell speaker-playbar-shell">
-                <button
-                  type="button"
-                  className="timeline-button timeline-icon-button"
-                  onClick={onPreviousFrame}
-                  disabled={!canGoPrevious}
-                  aria-label="Previous speech bubble"
-                  title="Previous speech bubble"
-                >
-                  <PreviousGlyph />
-                </button>
-
-                <div className="timeline-track-shell">
-                  <div className="timeline-marker-row" aria-hidden="true">
-                    {chapters.map((chapter) => (
-                      <button
-                        key={chapter.id}
-                        type="button"
-                        className="timeline-marker"
-                        style={{
-                          left:
-                            totalDurationMs > 0
-                              ? `${Math.min((chapter.timestampMs / totalDurationMs) * 100, 100)}%`
-                              : "0%",
-                        }}
-                        onClick={() => onSelectFrame(chapter.frameIndex)}
-                        disabled={frames.length === 0}
-                        title={chapter.label}
-                      />
-                    ))}
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={Math.max(frames.length - 1, 0)}
-                    value={Math.min(activeFrameIndex, Math.max(frames.length - 1, 0))}
-                    onChange={(event) => onSelectFrame(Number(event.target.value))}
-                    disabled={frames.length < 2}
-                    className="timeline-slider"
-                    aria-label="Playback timeline"
-                  />
-                </div>
-
-                <div className="timeline-button-group">
-                  <button
-                    type="button"
-                    className={`timeline-button timeline-icon-button ${isPlayButtonActive ? "timeline-button-primary" : ""}`}
-                    onClick={onTogglePlayback}
-                    aria-label={isPlayButtonActive ? "Pause playback" : "Play playback"}
-                    title={isPlayButtonActive ? "Pause playback" : "Play playback"}
-                  >
-                    {isPlayButtonActive ? <PauseGlyph /> : <PlayGlyph />}
-                  </button>
-
+              {panelMode === "conversation" ? (
+                <div className="timeline-shell speaker-playbar-shell">
                   <button
                     type="button"
                     className="timeline-button timeline-icon-button"
-                    onClick={onNextFrame}
-                    disabled={!canGoNext}
-                    aria-label="Next speech bubble"
-                    title="Next speech bubble"
+                    onClick={onPreviousFrame}
+                    disabled={!canGoPrevious}
+                    aria-label="Previous speech bubble"
+                    title="Previous speech bubble"
                   >
-                    <NextGlyph />
+                    <PreviousGlyph />
                   </button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
 
-      {error ? <div className="notice-row notice-row-error">{error}</div> : null}
-      {warnings.length ? (
-        <div className="notice-row notice-row-warning">{warnings[warnings.length - 1]}</div>
-      ) : null}
-    </section>
+                  <div className="timeline-track-shell">
+                    <div className="timeline-marker-row" aria-hidden="true">
+                      {chapters.map((chapter) => (
+                        <button
+                          key={chapter.id}
+                          type="button"
+                          className="timeline-marker"
+                          style={{
+                            left:
+                              totalDurationMs > 0
+                                ? `${Math.min((chapter.timestampMs / totalDurationMs) * 100, 100)}%`
+                                : "0%",
+                          }}
+                          onClick={() => onSelectFrame(chapter.frameIndex)}
+                          disabled={frames.length === 0}
+                          title={chapter.label}
+                        />
+                      ))}
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={Math.max(frames.length - 1, 0)}
+                      value={Math.min(activeFrameIndex, Math.max(frames.length - 1, 0))}
+                      onPointerDown={onPausePlayback}
+                      onChange={(event) => {
+                        onPausePlayback();
+                        onSelectFrame(Number(event.target.value));
+                      }}
+                      disabled={frames.length < 2}
+                      className="timeline-slider"
+                      aria-label="Playback timeline"
+                    />
+                  </div>
+
+                  <div className="timeline-button-group">
+                    <button
+                      type="button"
+                      className={`timeline-button timeline-icon-button ${isPlayButtonActive ? "timeline-button-primary" : ""}`}
+                      onClick={onTogglePlayback}
+                      aria-label={isPlayButtonActive ? "Pause playback" : "Play playback"}
+                      title={isPlayButtonActive ? "Pause playback" : "Play playback"}
+                    >
+                      {isPlayButtonActive ? <PauseGlyph /> : <PlayGlyph />}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="timeline-button timeline-icon-button"
+                      onClick={onNextFrame}
+                      disabled={!canGoNext}
+                      aria-label="Next speech bubble"
+                      title="Next speech bubble"
+                    >
+                      <NextGlyph />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {error ? <div className="notice-row notice-row-error">{error}</div> : null}
+        {warnings.length ? <div className="notice-row notice-row-warning">{warnings[warnings.length - 1]}</div> : null}
+      </section>
+
+      {debugFrame ? <RawPromptModal frame={debugFrame} onClose={() => setDebugFrame(null)} /> : null}
+    </>
   );
 }
 
@@ -1892,10 +1991,10 @@ export function PitStudio() {
   const [result, setResult] = useState<RunResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
-  const [apiKey, setApiKey] = useState("");
+  const [apiKey, setApiKey] = useState(DEFAULT_OPENROUTER_API_KEY);
   const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>("empty");
   const [apiKeyStatusMessage, setApiKeyStatusMessage] = useState(emptyApiKeyStatusMessage);
-  const [draftApiKey, setDraftApiKey] = useState("");
+  const [draftApiKey, setDraftApiKey] = useState(DEFAULT_OPENROUTER_API_KEY);
   const [hasLoadedKey, setHasLoadedKey] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showPersonaSelectorModal, setShowPersonaSelectorModal] = useState(false);
@@ -1939,12 +2038,13 @@ export function PitStudio() {
 
   useEffect(() => {
     const storedKey = window.localStorage.getItem(OPENROUTER_KEY_STORAGE)?.trim() ?? "";
-    if (storedKey) {
-      setApiKey(storedKey);
-      setDraftApiKey(storedKey);
+    const nextApiKey = storedKey || DEFAULT_OPENROUTER_API_KEY;
+    if (nextApiKey) {
+      setApiKey(nextApiKey);
+      setDraftApiKey(nextApiKey);
       setShowSettingsModal(false);
       void validateStoredApiKey({
-        nextApiKey: storedKey,
+        nextApiKey,
         requestIdRef: keyValidationRequestIdRef,
         siteUrl: window.location.origin,
         setApiKeyStatus,
@@ -2137,7 +2237,7 @@ export function PitStudio() {
     setFrameCompletedAt(null);
   }
 
-  function showCurrentBubbleFully() {
+  const showCurrentBubbleFully = useCallback(() => {
     if (!currentFrame) {
       return;
     }
@@ -2146,12 +2246,20 @@ export function PitStudio() {
     setRevealedBubbleChars(currentFrame.bubbleContent.length);
     setCompletedBubbleIds((current) => ({ ...current, [currentFrame.id]: true }));
     setFrameCompletedAt(Date.now());
-  }
+  }, [currentFrame]);
+
+  const pausePlayback = useCallback(() => {
+    if (!isPlaybackPlaying) {
+      return;
+    }
+
+    showCurrentBubbleFully();
+    setIsPlaybackPlaying(false);
+  }, [isPlaybackPlaying, showCurrentBubbleFully]);
 
   function togglePlayback() {
     if (isPlaybackPlaying) {
-      showCurrentBubbleFully();
-      setIsPlaybackPlaying(false);
+      pausePlayback();
       return;
     }
 
@@ -2184,7 +2292,11 @@ export function PitStudio() {
       return;
     }
 
-    const runWithValidatedKey = hasValidatedApiKey;
+    if (!hasValidatedApiKey) {
+      setError("Add and validate an OpenRouter API key before starting LLM Pit.");
+      return;
+    }
+
     setStudioView("simulation");
     setError(null);
     setActiveFrameIndex(0);
@@ -2196,21 +2308,9 @@ export function PitStudio() {
     const payload: RunInput = {
       ...config,
       mode: "debate",
-      coordinator: runWithValidatedKey
-        ? config.coordinator
-        : {
-            ...config.coordinator,
-            model: OPENROUTER_FREE_MODEL,
-          },
+      coordinator: config.coordinator,
       members: shuffleParticipants(config.members),
     };
-
-    if (!runWithValidatedKey) {
-      payload.members = payload.members.map((member) => ({
-        ...member,
-        model: OPENROUTER_FREE_MODEL,
-      }));
-    }
 
     setResult({
       mode: payload.mode,
@@ -2224,7 +2324,7 @@ export function PitStudio() {
 
     try {
       const resultPayload = await runPitWorkflow(payload, {
-        apiKey: runWithValidatedKey ? apiKey : "",
+        apiKey,
         siteUrl: window.location.origin,
         onProgress: (progressEvent) => {
           applyProgressEvent(progressEvent);
@@ -2239,67 +2339,61 @@ export function PitStudio() {
     }
   }
 
-  useEffect(() => {
-    if (studioView !== "simulation") {
+  const handleTransportKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    const target = event.target;
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      (target instanceof HTMLElement && target.isContentEditable)
+    ) {
       return;
     }
 
-    if (!isTransportEnabled) {
+    if (event.key === " " || event.code === "Space") {
+      event.preventDefault();
+
+      if (isPlaybackPlaying) {
+        pausePlayback();
+      } else {
+        if (currentFrame) {
+          setFrameCompletedAt(revealedBubbleChars >= currentFrame.bubbleContent.length ? Date.now() : null);
+        }
+        setIsPlaybackPlaying(true);
+      }
+      return;
+    }
+
+    if (event.key === "Enter" || event.key === "ArrowRight") {
+      event.preventDefault();
+      if (activeFrameIndex < frames.length - 1) {
+        setActiveFrameIndex(activeFrameIndex + 1);
+        setFrameCompletedAt(null);
+      }
+      return;
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      if (activeFrameIndex > 0) {
+        setActiveFrameIndex(activeFrameIndex - 1);
+        setFrameCompletedAt(null);
+      }
+    }
+  });
+
+  useEffect(() => {
+    if (studioView !== "simulation" || !isTransportEnabled) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target;
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        (target instanceof HTMLElement && target.isContentEditable)
-      ) {
-        return;
-      }
-
-      if (event.key === " " || event.code === "Space") {
-        event.preventDefault();
-
-        if (isPlaybackPlaying) {
-          if (currentFrame) {
-            setRevealedBubbleId(currentFrame.id);
-            setRevealedBubbleChars(currentFrame.bubbleContent.length);
-            setCompletedBubbleIds((current) => ({ ...current, [currentFrame.id]: true }));
-            setFrameCompletedAt(Date.now());
-          }
-          setIsPlaybackPlaying(false);
-        } else {
-          if (currentFrame) {
-            setFrameCompletedAt(revealedBubbleChars >= currentFrame.bubbleContent.length ? Date.now() : null);
-          }
-          setIsPlaybackPlaying(true);
-        }
-        return;
-      }
-
-      if (event.key === "Enter" || event.key === "ArrowRight") {
-        event.preventDefault();
-        if (activeFrameIndex < frames.length - 1) {
-          setActiveFrameIndex(activeFrameIndex + 1);
-          setFrameCompletedAt(null);
-        }
-        return;
-      }
-
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        if (activeFrameIndex > 0) {
-          setActiveFrameIndex(activeFrameIndex - 1);
-          setFrameCompletedAt(null);
-        }
-      }
+      handleTransportKeyDown(event);
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeFrameIndex, currentFrame, frames.length, isPlaybackPlaying, isTransportEnabled, revealedBubbleChars, studioView]);
+  }, [isTransportEnabled, studioView]);
 
   function applyProgressEvent(event: RunProgressEvent) {
     if (event.type === "status") {
@@ -2386,7 +2480,7 @@ export function PitStudio() {
             apiKeyStatusMessage={apiKeyStatusMessage}
             draftApiKey={draftApiKey}
             hasApiKey={hasApiKey}
-            canSubmit={hasLoadedKey && apiKeyStatus !== "checking" && hasPrompt && config.members.length >= 2}
+            canSubmit={hasLoadedKey && hasValidatedApiKey && hasPrompt && config.members.length >= 2}
             hasLoadedKey={hasLoadedKey}
             isRunning={isRunning}
             onDraftApiKeyChange={setDraftApiKey}
@@ -2418,6 +2512,7 @@ export function PitStudio() {
             isPlaybackPlaying={isPlaybackPlaying}
             onPanelModeChange={setPanelMode}
             onOpenParticipant={openParticipantEditor}
+            onPausePlayback={pausePlayback}
             onTogglePlayback={togglePlayback}
             onPreviousFrame={selectPreviousFrame}
             onNextFrame={selectNextFrame}

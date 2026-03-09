@@ -47,8 +47,12 @@ type ChatMessage = {
 
 type OpenRouterResponse = {
   choices?: Array<{
+    text?: string | null;
+    finish_reason?: string | null;
     message?: {
-      content?: string | Array<{ type?: string; text?: string }>;
+      content?: OpenRouterContent | null;
+      refusal?: string | null;
+      tool_calls?: unknown[];
     };
   }>;
   model?: string;
@@ -59,7 +63,11 @@ type OpenRouterResponse = {
   };
 };
 
-type OpenRouterContent = string | Array<{ type?: string; text?: string }> | undefined;
+type OpenRouterContentPart =
+  | string
+  | { type?: string; text?: string; content?: string; value?: string; refusal?: string };
+
+type OpenRouterContent = string | OpenRouterContentPart[] | undefined;
 
 function formatRoster(input: RunInput): string {
   const lines = [
@@ -229,19 +237,33 @@ function resolveSiteUrl(): string | undefined {
   return undefined;
 }
 
-function extractContent(content: OpenRouterContent): string {
+function extractContentPart(part: OpenRouterContentPart): string {
+  if (typeof part === "string") {
+    return part;
+  }
+
+  return part.text ?? part.content ?? part.value ?? part.refusal ?? "";
+}
+
+function extractContent(content: OpenRouterContent | null): string {
   if (typeof content === "string") {
     return content.trim();
   }
 
   if (Array.isArray(content)) {
     return content
-      .map((part) => (part.type === "text" || !part.type ? part.text ?? "" : ""))
+      .map((part) => extractContentPart(part))
       .join("")
       .trim();
   }
 
   return "";
+}
+
+function formatRawPrompt(messages: ChatMessage[]): string {
+  return messages
+    .map((message) => [`[${message.role}]`, message.content.trim()].filter(Boolean).join("\n"))
+    .join("\n\n");
 }
 
 async function callOpenRouter(
@@ -251,12 +273,19 @@ async function callOpenRouter(
   sessionId: string,
   execution: RunExecutionOptions,
   messages: ChatMessage[],
-): Promise<{ content: string; usage: UsageSummary; resolvedModel: string }> {
+): Promise<{ content: string; usage: UsageSummary; resolvedModel: string; rawPrompt: string }> {
   const apiKey = execution.apiKey?.trim();
   const resolvedModel = resolveOpenRouterModel(participant.model, apiKey);
 
   const siteUrl = execution.siteUrl || resolveSiteUrl();
   const headers = buildOpenRouterHeaders({ apiKey, siteUrl });
+  const requestMessages: ChatMessage[] = [
+    {
+      role: "system",
+      content: buildSystemPrompt(input, participant, role),
+    },
+    ...messages,
+  ];
 
   const response = await fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
     method: "POST",
@@ -264,13 +293,7 @@ async function callOpenRouter(
     credentials: "omit",
     body: JSON.stringify({
       model: resolvedModel,
-      messages: [
-        {
-          role: "system",
-          content: buildSystemPrompt(input, participant, role),
-        },
-        ...messages,
-      ],
+      messages: requestMessages,
       temperature: input.temperature,
       max_completion_tokens: input.maxCompletionTokens,
       session_id: sessionId,
@@ -285,14 +308,25 @@ async function callOpenRouter(
   }
 
   const payload = (await response.json()) as OpenRouterResponse;
-  const content = extractContent(payload.choices?.[0]?.message?.content);
+  const firstChoice = payload.choices?.[0];
+  const content =
+    extractContent(firstChoice?.message?.content) ||
+    extractContent(firstChoice?.text) ||
+    extractContent(firstChoice?.message?.refusal);
 
   if (!content) {
-    throw new Error(`OpenRouter returned an empty response for ${participant.name}.`);
+    const finishReason = firstChoice?.finish_reason ? ` Finish reason: ${firstChoice.finish_reason}.` : "";
+    const toolCallNote =
+      firstChoice?.message?.tool_calls && firstChoice.message.tool_calls.length > 0
+        ? " The model returned tool calls, which this app does not support yet."
+        : "";
+
+    throw new Error(`OpenRouter returned no visible text for ${participant.name}.${finishReason}${toolCallNote}`);
   }
 
   return {
     content,
+    rawPrompt: formatRawPrompt(requestMessages),
     resolvedModel: payload.model || resolvedModel,
     usage: {
       promptTokens: payload.usage?.prompt_tokens ?? 0,
@@ -349,6 +383,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     participant: input.coordinator,
     model: openingResult.resolvedModel,
     content: openingResult.content,
+    rawPrompt: openingResult.rawPrompt,
   });
   execution.onProgress?.({ type: "opening", turn: opening, usage: openingResult.usage });
 
@@ -397,6 +432,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         participant: member,
         model: memberResult.resolvedModel,
         content: memberResult.content,
+        rawPrompt: memberResult.rawPrompt,
       });
 
       transcript.push(turn);
@@ -443,6 +479,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         participant: input.coordinator,
         model: interventionResult.resolvedModel,
         content: interventionResult.content,
+        rawPrompt: interventionResult.rawPrompt,
       });
 
       transcript.push(intervention);
@@ -486,6 +523,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     participant: input.coordinator,
     model: consensusResult.resolvedModel,
     content: consensusResult.content,
+    rawPrompt: consensusResult.rawPrompt,
   });
   execution.onProgress?.({ type: "consensus", turn: consensus, usage: consensusResult.usage });
 
