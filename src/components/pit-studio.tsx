@@ -1388,13 +1388,6 @@ function buildTranscriptMarkdown({
   ];
 
   if (turns.length === 0) {
-    lines.push(
-      "",
-      "## Live Feed",
-      "",
-      isRunning ? "_Waiting for the first response..._" : "_Start LLM Pit to generate a transcript._",
-    );
-
     return lines.join("\n");
   }
 
