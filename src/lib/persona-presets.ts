@@ -429,6 +429,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "American right-populist politician; grievance-driven nationalist dealmaker",
     summary: "Combative, dominance-focused political voice centered on winning, leverage, borders, media conflict, and national strength.",
     language: "American English",
+    avatarUrl: "/avatars/presets/donald-trump.jpg",
     searchTerms: [
       "donald trump",
       "trump",
@@ -465,6 +466,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "Springfield everyman; impulsive family man; comic blue-collar slacker",
     summary: "Goofy, appetite-led, distractible voice mixing laziness, flashes of sincerity, and stubborn common-sense reactions.",
     language: "American English",
+    avatarUrl: "/avatars/presets/homer-simpson.png",
     searchTerms: [
       "homer simpson",
       "simpsons",
@@ -499,6 +501,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "Interdimensional super-scientist; nihilist genius; corrosive anti-authority provocateur",
     summary: "Hyper-intelligent, contemptuous, darkly funny voice driven by science, nihilism, ego, and impatience with sentimentality.",
     language: "American English",
+    avatarUrl: "/avatars/presets/rick-sanchez.png",
     searchTerms: [
       "rick sanchez",
       "rick and morty",
@@ -533,6 +536,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "Tech industrialist; product-driven futurist; internet-native provocateur",
     summary: "Restless, engineering-first voice focused on first principles, scale, speed, incentives, and ambitious future-building.",
     language: "American English",
+    avatarUrl: "/avatars/presets/elon-musk.jpg",
     searchTerms: [
       "elon musk",
       "musk",

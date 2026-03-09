@@ -135,6 +135,10 @@ body::-webkit-scrollbar-corner {
   color: rgba(212, 198, 181, 0.48);
 }
 
+select.field {
+  padding-right: 2.75rem;
+}
+
 .avatar-image {
   display: block;
   width: 100%;
@@ -708,7 +712,7 @@ body::-webkit-scrollbar-corner {
 }
 
 .hero-api-form.is-editing {
-  --hero-api-actions-width: 9.8rem;
+  --hero-api-actions-width: 7.3rem;
 }
 
 .hero-api-input {
@@ -737,7 +741,6 @@ body::-webkit-scrollbar-corner {
   color: var(--foreground);
 }
 
-.hero-api-icon-button,
 .hero-api-edit-button {
   display: inline-flex;
   align-items: center;
@@ -771,11 +774,6 @@ body::-webkit-scrollbar-corner {
   color: var(--foreground);
 }
 
-.hero-api-icon-button {
-  min-width: 2.25rem;
-  padding: 0 0.7rem;
-}
-
 .hero-api-edit-button {
   min-width: 2.25rem;
   padding: 0 0.72rem;
@@ -794,19 +792,12 @@ body::-webkit-scrollbar-corner {
   height: 0.82rem;
 }
 
-.hero-api-icon-button svg {
-  width: 0.95rem;
-  height: 0.95rem;
-}
-
-.hero-api-icon-button:hover,
 .hero-api-edit-button:hover {
   transform: translateY(-1px);
   background: rgba(240, 171, 105, 0.18);
   color: var(--accent-strong);
 }
 
-.hero-api-icon-button:disabled,
 .hero-api-edit-button:disabled {
   cursor: wait;
   opacity: 0.65;

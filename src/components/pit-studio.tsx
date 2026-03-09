@@ -25,7 +25,7 @@ import {
   type RunInput,
   type RunResult,
 } from "@/lib/pit";
-import { OPENROUTER_FREE_MODEL, missingOpenRouterKeyMessage, validateOpenRouterKey } from "@/lib/openrouter";
+import { missingOpenRouterKeyMessage, validateOpenRouterKey } from "@/lib/openrouter";
 import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
 import { buildPersonaProfilePreview } from "@/lib/persona-profile";
 import { filterParticipantPersonaPresets, type ParticipantPersonaPreset } from "@/lib/persona-presets";
@@ -568,31 +568,6 @@ function PencilGlyph() {
   );
 }
 
-function EyeGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.8 12s3.3-5.5 9.2-5.5 9.2 5.5 9.2 5.5-3.3 5.5-9.2 5.5S2.8 12 2.8 12Z"
-      />
-      <circle cx="12" cy="12" r="2.7" />
-    </svg>
-  );
-}
-
-function EyeOffGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3.5 3.5 20.5 20.5M9.9 5.1A10.8 10.8 0 0 1 12 4.9c5.9 0 9.2 5.5 9.2 5.5a17.4 17.4 0 0 1-3.4 3.9M14.8 14.9A3.8 3.8 0 0 1 9 9.1M6.4 6.5A17 17 0 0 0 2.8 12s3.3 5.5 9.2 5.5c1.6 0 3-.4 4.3-1"
-      />
-    </svg>
-  );
-}
-
 function CheckGlyph() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -702,10 +677,9 @@ function StudioHero({
   const roster = [config.coordinator, ...config.members];
   const apiKeyLabel = hasLoadedKey ? (hasApiKey ? maskApiKey(apiKey) : "No key saved") : "Loading";
   const [isEditingApiKey, setIsEditingApiKey] = useState(false);
-  const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
   const apiKeyInputRef = useRef<HTMLInputElement | null>(null);
   const isApiKeyEditorVisible = isEditingApiKey || (hasLoadedKey && !hasApiKey);
-  const apiKeyFieldValue = isApiKeyEditorVisible ? draftApiKey : hasApiKey ? (isApiKeyVisible ? apiKey : apiKeyLabel) : apiKeyLabel;
+  const apiKeyFieldValue = isApiKeyEditorVisible ? draftApiKey : apiKeyLabel;
   const statusTone =
     apiKeyStatus === "valid" ? "success" : apiKeyStatus === "invalid" ? "error" : apiKeyStatus === "checking" ? "info" : "warning";
 
@@ -825,7 +799,7 @@ function StudioHero({
             <p className="hero-kicker">OpenRouter Access</p>
             <h2 className="hero-panel-title">API key</h2>
             <p className="hero-panel-copy">
-              Browser runs need a valid OpenRouter API key, including for <span className="mono">{OPENROUTER_FREE_MODEL}</span>. Create one in{" "}
+              Browser runs need a valid OpenRouter API key. Create one in{" "}
               <a href="https://openrouter.ai/" target="_blank" rel="noreferrer" className="hero-api-link">
                 OpenRouter
               </a>{" "}
@@ -844,7 +818,7 @@ function StudioHero({
               id="hero-api-key-input"
               ref={apiKeyInputRef}
               className="field mono hero-api-input"
-              type={isApiKeyEditorVisible ? (isApiKeyVisible ? "text" : "password") : "text"}
+              type="text"
               value={apiKeyFieldValue}
               onChange={(event) => onDraftApiKeyChange(event.target.value)}
               onKeyDown={handleApiKeyInputKeyDown}
@@ -856,15 +830,6 @@ function StudioHero({
             <div className="hero-api-input-actions">
               <button
                 type="button"
-                onClick={() => setIsApiKeyVisible((current) => !current)}
-                className="hero-api-icon-button"
-                aria-label={isApiKeyVisible ? "Hide API key" : "Show API key"}
-                title={isApiKeyVisible ? "Hide API key" : "Show API key"}
-              >
-                {isApiKeyVisible ? <EyeOffGlyph /> : <EyeGlyph />}
-              </button>
-              <button
-                type="button"
                 disabled={apiKeyStatus === "checking"}
                 onClick={
                   isApiKeyEditorVisible
@@ -872,6 +837,7 @@ function StudioHero({
                         void handleApiKeyConfirm();
                       }
                     : () => {
+                        onDraftApiKeyChange(apiKey);
                         setIsEditingApiKey(true);
                       }
                 }
@@ -1287,7 +1253,7 @@ function ParticipantSettingsSheet({
               />
             </FieldShell>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <FieldShell label="Language">
                 <input
                   className="field"
@@ -2203,10 +2169,10 @@ export function PitStudio() {
     const trimmed = draftApiKey.trim();
     if (!trimmed) {
       window.localStorage.removeItem(OPENROUTER_KEY_STORAGE);
-      setApiKey("");
-      setDraftApiKey("");
+      setApiKey(DEFAULT_OPENROUTER_API_KEY);
+      setDraftApiKey(DEFAULT_OPENROUTER_API_KEY);
       await validateStoredApiKey({
-        nextApiKey: "",
+        nextApiKey: DEFAULT_OPENROUTER_API_KEY,
         requestIdRef: keyValidationRequestIdRef,
         siteUrl: window.location.origin,
         setApiKeyStatus,
@@ -2217,7 +2183,11 @@ export function PitStudio() {
       return true;
     }
 
-    window.localStorage.setItem(OPENROUTER_KEY_STORAGE, trimmed);
+    if (trimmed === DEFAULT_OPENROUTER_API_KEY) {
+      window.localStorage.removeItem(OPENROUTER_KEY_STORAGE);
+    } else {
+      window.localStorage.setItem(OPENROUTER_KEY_STORAGE, trimmed);
+    }
     setApiKey(trimmed);
     setDraftApiKey(trimmed);
     await validateStoredApiKey({

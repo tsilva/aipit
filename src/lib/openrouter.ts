@@ -1,10 +1,13 @@
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export const OPENROUTER_CHAT_COMPLETIONS_URL = `${OPENROUTER_BASE_URL}/chat/completions`;
 export const OPENROUTER_KEY_URL = `${OPENROUTER_BASE_URL}/key`;
-export const OPENROUTER_FREE_MODEL = "openrouter/free";
+export const OPENROUTER_VALIDATION_MODEL = "google/gemini-3.1-flash-lite-preview";
+
+const OPENROUTER_KEY_VALIDATION_RETRIES = 3;
+const OPENROUTER_VALIDATION_RETRY_DELAY_MS = 400;
 
 export function missingOpenRouterKeyMessage(): string {
-  return `No API key saved. Add a valid OpenRouter key to run debates. ${OPENROUTER_FREE_MODEL} can still be selected as a model, but this browser-based app cannot use OpenRouter without a key.`;
+  return "No API key saved. Add a valid OpenRouter key to run debates.";
 }
 
 function resolveAppName(): string {
@@ -51,6 +54,37 @@ export function extractOpenRouterErrorMessage(text: string): string {
   return detail.trim();
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function shouldRetryValidation(message: string, status?: number): boolean {
+  if (status === 429 || (status !== undefined && status >= 500)) {
+    return true;
+  }
+
+  const normalized = message.trim().toLowerCase();
+
+  return normalized.includes("user not found") || normalized.includes("temporar") || normalized.includes("timeout");
+}
+
+async function probeOpenRouterChat(apiKey: string, siteUrl?: string): Promise<boolean> {
+  const response = await fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
+    method: "POST",
+    headers: buildOpenRouterHeaders({ apiKey, siteUrl }),
+    body: JSON.stringify({
+      model: OPENROUTER_VALIDATION_MODEL,
+      messages: [{ role: "user", content: "Reply with OK." }],
+      max_completion_tokens: 8,
+      tool_choice: "none",
+    }),
+  });
+
+  return response.ok;
+}
+
 export async function validateOpenRouterKey(
   apiKey: string,
   siteUrl?: string,
@@ -64,20 +98,48 @@ export async function validateOpenRouterKey(
     };
   }
 
-  const response = await fetch(OPENROUTER_KEY_URL, {
-    method: "GET",
-    headers: buildOpenRouterHeaders({ apiKey: trimmedKey, siteUrl }),
-  });
+  let detail = "OpenRouter rejected this API key.";
+  let status: number | undefined;
 
-  if (response.ok) {
-    return {
-      valid: true,
-      message: "OpenRouter API key verified. Selected models are enabled.",
-    };
+  for (let attempt = 1; attempt <= OPENROUTER_KEY_VALIDATION_RETRIES; attempt += 1) {
+    const response = await fetch(OPENROUTER_KEY_URL, {
+      method: "GET",
+      headers: buildOpenRouterHeaders({ apiKey: trimmedKey, siteUrl }),
+    });
+
+    if (response.ok) {
+      return {
+        valid: true,
+        message: "OpenRouter API key verified. Selected models are enabled.",
+      };
+    }
+
+    status = response.status;
+    const text = await response.text();
+    detail = extractOpenRouterErrorMessage(text) || "OpenRouter rejected this API key.";
+
+    if (attempt < OPENROUTER_KEY_VALIDATION_RETRIES && shouldRetryValidation(detail, status)) {
+      await delay(OPENROUTER_VALIDATION_RETRY_DELAY_MS * attempt);
+      continue;
+    }
+
+    break;
   }
 
-  const text = await response.text();
-  const detail = extractOpenRouterErrorMessage(text) || "OpenRouter rejected this API key.";
+  if (shouldRetryValidation(detail, status)) {
+    try {
+      const chatProbeOk = await probeOpenRouterChat(trimmedKey, siteUrl);
+      if (chatProbeOk) {
+        return {
+          valid: true,
+          message:
+            "OpenRouter accepted this key on the chat API after a failed key lookup. Their auth lookup may be transiently inconsistent, but debates should run.",
+        };
+      }
+    } catch {
+      // Fall through to the original validation failure below.
+    }
+  }
 
   return {
     valid: false,

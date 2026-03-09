@@ -69,6 +69,10 @@ type OpenRouterContentPart =
 
 type OpenRouterContent = string | OpenRouterContentPart[] | undefined;
 
+const OPENROUTER_MAX_RETRIES = 3;
+const OPENROUTER_MAX_COMPLETION_TOKENS = 4000;
+const OPENROUTER_RETRY_DELAY_MS = 350;
+
 function formatRoster(input: RunInput): string {
   const lines = [
     `Moderator: ${input.coordinator.name} (${input.coordinator.model})`,
@@ -200,6 +204,7 @@ function buildSystemPrompt(
     `Split your answer into 2 to 5 short speech balloons separated by a line containing exactly ${BALLOON_DELIMITER}.`,
     "Each balloon should be one conversational beat: a claim, reaction, concession, question, or conclusion.",
     "Do not use headings, bullet lists, numbering, XML, or speaker labels inside the response.",
+    "Return plain visible text only. Do not emit tool calls, function calls, or hidden reasoning summaries.",
   ].join("\n");
 
   return [
@@ -266,12 +271,28 @@ function formatRawPrompt(messages: ChatMessage[]): string {
     .join("\n\n");
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function emitWarning(execution: RunExecutionOptions, warnings: string[], warning: string): void {
+  warnings.push(warning);
+  execution.onProgress?.({ type: "warning", warning });
+}
+
+function nextMaxCompletionTokens(current: number): number {
+  return Math.min(OPENROUTER_MAX_COMPLETION_TOKENS, Math.max(current + 400, Math.ceil(current * 1.75)));
+}
+
 async function callOpenRouter(
   input: RunInput,
   participant: ParticipantConfig,
   role: "coordinator" | "member",
   sessionId: string,
   execution: RunExecutionOptions,
+  warnings: string[],
   messages: ChatMessage[],
 ): Promise<{ content: string; usage: UsageSummary; resolvedModel: string; rawPrompt: string }> {
   const apiKey = execution.apiKey?.trim();
@@ -286,54 +307,80 @@ async function callOpenRouter(
     },
     ...messages,
   ];
+  let maxCompletionTokens = input.maxCompletionTokens;
+  let lastEmptyContentMessage = `OpenRouter returned no visible text for ${participant.name}.`;
 
-  const response = await fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
-    method: "POST",
-    headers,
-    credentials: "omit",
-    body: JSON.stringify({
-      model: resolvedModel,
-      messages: requestMessages,
-      temperature: input.temperature,
-      max_completion_tokens: input.maxCompletionTokens,
-      session_id: sessionId,
-    }),
-  });
+  for (let attempt = 1; attempt <= OPENROUTER_MAX_RETRIES; attempt += 1) {
+    const response = await fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
+      method: "POST",
+      headers,
+      credentials: "omit",
+      body: JSON.stringify({
+        model: resolvedModel,
+        messages: requestMessages,
+        temperature: input.temperature,
+        max_completion_tokens: maxCompletionTokens,
+        tool_choice: "none",
+        session_id: sessionId,
+      }),
+    });
 
-  if (!response.ok) {
-    const text = await response.text();
-    const detail = extractOpenRouterErrorMessage(text);
+    if (!response.ok) {
+      const text = await response.text();
+      const detail = extractOpenRouterErrorMessage(text);
 
-    throw new Error(`OpenRouter error for ${participant.name}: ${detail}`);
+      throw new Error(`OpenRouter error for ${participant.name}: ${detail}`);
+    }
+
+    const payload = (await response.json()) as OpenRouterResponse;
+    const firstChoice = payload.choices?.[0];
+    const content =
+      extractContent(firstChoice?.message?.content) ||
+      extractContent(firstChoice?.text) ||
+      extractContent(firstChoice?.message?.refusal);
+
+    if (content) {
+      return {
+        content,
+        rawPrompt: formatRawPrompt(requestMessages),
+        resolvedModel: payload.model || resolvedModel,
+        usage: {
+          promptTokens: payload.usage?.prompt_tokens ?? 0,
+          completionTokens: payload.usage?.completion_tokens ?? 0,
+          totalTokens: payload.usage?.total_tokens ?? 0,
+        },
+      };
+    }
+
+    const finishReason = firstChoice?.finish_reason ?? undefined;
+    const hasToolCalls = Boolean(firstChoice?.message?.tool_calls && firstChoice.message.tool_calls.length > 0);
+    const finishReasonText = finishReason ? ` Finish reason: ${finishReason}.` : "";
+    const toolCallNote = hasToolCalls ? " The model returned tool calls, which this app does not support yet." : "";
+
+    lastEmptyContentMessage = `OpenRouter returned no visible text for ${participant.name}.${finishReasonText}${toolCallNote}`;
+
+    if (hasToolCalls) {
+      break;
+    }
+
+    const canRetry = attempt < OPENROUTER_MAX_RETRIES;
+
+    if (finishReason === "length" && canRetry && maxCompletionTokens < OPENROUTER_MAX_COMPLETION_TOKENS) {
+      const nextTokens = nextMaxCompletionTokens(maxCompletionTokens);
+      emitWarning(
+        execution,
+        warnings,
+        `${participant.name} returned no visible text after hitting the token limit. Retrying with a larger completion budget (${maxCompletionTokens} -> ${nextTokens}).`,
+      );
+      maxCompletionTokens = nextTokens;
+      await delay(OPENROUTER_RETRY_DELAY_MS);
+      continue;
+    }
+
+    break;
   }
 
-  const payload = (await response.json()) as OpenRouterResponse;
-  const firstChoice = payload.choices?.[0];
-  const content =
-    extractContent(firstChoice?.message?.content) ||
-    extractContent(firstChoice?.text) ||
-    extractContent(firstChoice?.message?.refusal);
-
-  if (!content) {
-    const finishReason = firstChoice?.finish_reason ? ` Finish reason: ${firstChoice.finish_reason}.` : "";
-    const toolCallNote =
-      firstChoice?.message?.tool_calls && firstChoice.message.tool_calls.length > 0
-        ? " The model returned tool calls, which this app does not support yet."
-        : "";
-
-    throw new Error(`OpenRouter returned no visible text for ${participant.name}.${finishReason}${toolCallNote}`);
-  }
-
-  return {
-    content,
-    rawPrompt: formatRawPrompt(requestMessages),
-    resolvedModel: payload.model || resolvedModel,
-    usage: {
-      promptTokens: payload.usage?.prompt_tokens ?? 0,
-      completionTokens: payload.usage?.completion_tokens ?? 0,
-      totalTokens: payload.usage?.total_tokens ?? 0,
-    },
-  };
+  throw new Error(lastEmptyContentMessage);
 }
 
 async function runDebate(input: RunInput, execution: RunExecutionOptions): Promise<RunResult> {
@@ -357,6 +404,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     "coordinator",
     sessionId,
     execution,
+    warnings,
     [
     {
       role: "user",
@@ -402,7 +450,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         type: "status",
         message: `${member.name} is responding in round ${round}.`,
       });
-      const memberResult = await callOpenRouter(input, member, "member", sessionId, execution, [
+      const memberResult = await callOpenRouter(input, member, "member", sessionId, execution, warnings, [
         {
           role: "user",
           content: [
@@ -454,6 +502,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         "coordinator",
         sessionId,
         execution,
+        warnings,
         [
           {
             role: "user",
@@ -500,6 +549,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     "coordinator",
     sessionId,
     execution,
+    warnings,
     [
       {
         role: "user",

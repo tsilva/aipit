@@ -1,5 +1,4 @@
 import { PARTICIPANT_PERSONA_PRESETS } from "@/lib/persona-presets";
-import { OPENROUTER_FREE_MODEL } from "@/lib/openrouter";
 import {
   buildPersonaProfileSummary,
   clonePersonaProfile,
@@ -81,14 +80,13 @@ export interface RunResult {
 }
 
 export const MODEL_SUGGESTIONS = [
-  OPENROUTER_FREE_MODEL,
   "google/gemini-3.1-flash-lite-preview",
   "x-ai/grok-4.1-fast",
   "openai/gpt-5.4",
   "qwen/qwen3.5-35b-a3b",
 ] as const;
 
-export const DEFAULT_PRESET_MODEL = OPENROUTER_FREE_MODEL;
+export const DEFAULT_PRESET_MODEL = "x-ai/grok-4.1-fast";
 export const COORDINATOR_PRESET_ID = "jose-rodrigues-dos-santos";
 
 export const BALLOON_DELIMITER = "<<<BALLOON>>>";
@@ -147,7 +145,7 @@ export function createMember(index: number): ParticipantConfig {
   return {
     id: makeId(`member-${index}`),
     name: `Debater ${index}`,
-    model: MODEL_SUGGESTIONS[(index - 1) % MODEL_SUGGESTIONS.length] ?? DEFAULT_PRESET_MODEL,
+    model: DEFAULT_PRESET_MODEL,
     personaProfile:
       index % 2 === 0
         ? createPersonaProfile({
@@ -171,7 +169,11 @@ export function generateControversialPrompt(): string {
 }
 
 export function createDefaultInput(): RunInput {
-  const defaultMemberPresetIds = ["luis-montenegro", "mariana-mortagua"] as const;
+  const defaultMemberPresetIds = [
+    "luis-montenegro",
+    "mariana-mortagua",
+    "andre-ventura",
+  ] as const;
   const presetMap = new Map(PARTICIPANT_PERSONA_PRESETS.map((preset) => [preset.id, preset]));
 
   return {
