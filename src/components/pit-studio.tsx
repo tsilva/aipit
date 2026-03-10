@@ -20,9 +20,9 @@ import {
   addUsage,
   createRosterSnapshot,
   createDefaultInput,
+  createRandomStarterInput,
   createMember,
   emptyUsage,
-  generateControversialPrompt,
   type PitTurn,
   type ParticipantConfig,
   type RunInput,
@@ -101,7 +101,12 @@ function syncLineupOrder(lineupOrder: string[], roster: ParticipantConfig[]): st
   return arraysEqual(lineupOrder, nextOrder) ? lineupOrder : nextOrder;
 }
 
-function readStoredLineup(): (Pick<RunInput, "coordinator" | "members"> & { order: string[] }) | null {
+type StoredSetup = Pick<RunInput, "coordinator" | "members" | "prompt"> & {
+  order: string[];
+  starterBundleId?: string;
+};
+
+function readStoredSetup(): StoredSetup | null {
   const storedLineup = window.localStorage.getItem(PIT_LINEUP_STORAGE);
 
   if (!storedLineup) {
@@ -122,15 +127,20 @@ function readStoredLineup(): (Pick<RunInput, "coordinator" | "members"> & { orde
       ? parsed.members.map((member, index) => normalizeStoredParticipant(member, createMember(index + 1)))
       : defaultInput.members;
     const roster = [coordinator, ...members];
+    const prompt = typeof parsed.prompt === "string" && parsed.prompt.trim() ? parsed.prompt.trim() : defaultInput.prompt;
     const validIds = new Set(roster.map((participant) => participant.id));
     const order = Array.isArray(parsed.order)
       ? parsed.order.filter((participantId): participantId is string => typeof participantId === "string" && validIds.has(participantId))
       : [];
 
     return {
+      prompt,
       coordinator,
       members,
       order: syncLineupOrder(order, roster),
+      starterBundleId: typeof parsed.starterBundleId === "string" && parsed.starterBundleId.trim()
+        ? parsed.starterBundleId
+        : undefined,
     };
   } catch {
     window.localStorage.removeItem(PIT_LINEUP_STORAGE);
@@ -153,6 +163,7 @@ function unresolvedApiKeyStatusMessage(): string {
 type InitialStudioState = {
   config: RunInput;
   lineupOrder: string[];
+  starterBundleId?: string;
   apiKey: string;
   apiKeyStatus: ApiKeyStatus;
   apiKeyStatusMessage: string;
@@ -162,12 +173,14 @@ type InitialStudioState = {
 };
 
 function buildInitialStudioState(): InitialStudioState {
-  const defaultInput = createDefaultInput();
+  const defaultStarter = createRandomStarterInput();
+  const defaultInput = defaultStarter.input;
 
   if (typeof window === "undefined") {
     return {
       config: defaultInput,
       lineupOrder: [],
+      starterBundleId: defaultStarter.bundle.id,
       apiKey: "",
       apiKeyStatus: "empty",
       apiKeyStatusMessage: emptyApiKeyStatusMessage(),
@@ -177,18 +190,20 @@ function buildInitialStudioState(): InitialStudioState {
     };
   }
 
-  const storedLineup = readStoredLineup();
+  const storedSetup = readStoredSetup();
   const storedApiKey = readStoredApiKey();
 
   return {
-    config: storedLineup
+    config: storedSetup
       ? {
           ...defaultInput,
-          coordinator: storedLineup.coordinator,
-          members: storedLineup.members,
+          prompt: storedSetup.prompt,
+          coordinator: storedSetup.coordinator,
+          members: storedSetup.members,
         }
       : defaultInput,
-    lineupOrder: storedLineup?.order ?? [],
+    lineupOrder: storedSetup?.order ?? [],
+    starterBundleId: storedSetup?.starterBundleId ?? (!storedSetup ? defaultStarter.bundle.id : undefined),
     apiKey: storedApiKey,
     apiKeyStatus: "checking",
     apiKeyStatusMessage: storedApiKey
@@ -1019,6 +1034,7 @@ function StudioHero({
   onDraftApiKeyChange,
   onSaveApiKey,
   onPromptChange,
+  onRerollStarterBundle,
   onAddMember,
   onSelectModerator,
   onOpenParticipant,
@@ -1036,6 +1052,7 @@ function StudioHero({
   onDraftApiKeyChange: (value: string) => void;
   onSaveApiKey: () => Promise<boolean>;
   onPromptChange: (value: string) => void;
+  onRerollStarterBundle: () => void;
   onAddMember: () => void;
   onSelectModerator: (id: string) => void;
   onOpenParticipant: (id: string) => void;
@@ -1167,10 +1184,10 @@ function StudioHero({
           <div className="hero-prompt-input-shell">
             <button
               type="button"
-              onClick={() => onPromptChange(generateControversialPrompt())}
+              onClick={onRerollStarterBundle}
               className="icon-circle-button hero-prompt-wand-button"
-              aria-label="Generate a controversial prompt"
-              title="Generate a controversial prompt"
+              aria-label="Load another starter debate"
+              title="Load another starter debate"
             >
               <WandGlyph />
             </button>
@@ -2441,6 +2458,7 @@ export function PitStudio() {
   const initialStudioState = initialStudioStateRef.current;
   const [config, setConfig] = useState<RunInput>(initialStudioState.config);
   const [lineupOrder, setLineupOrder] = useState<string[]>(initialStudioState.lineupOrder);
+  const [starterBundleId, setStarterBundleId] = useState<string | undefined>(initialStudioState.starterBundleId);
   const [result, setResult] = useState<RunResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -2517,12 +2535,14 @@ export function PitStudio() {
     window.localStorage.setItem(
       PIT_LINEUP_STORAGE,
       JSON.stringify({
+        prompt: config.prompt,
         coordinator: config.coordinator,
         members: config.members,
         order: lineupOrder,
+        starterBundleId,
       }),
     );
-  }, [config.coordinator, config.members, hasLoadedLineup, lineupOrder]);
+  }, [config.coordinator, config.members, config.prompt, hasLoadedLineup, lineupOrder, starterBundleId]);
 
   useEffect(() => {
     if (activeEditorId && !editableParticipant) {
@@ -2625,6 +2645,7 @@ export function PitStudio() {
   ]);
 
   function updateCoordinator(patch: Partial<ParticipantConfig>) {
+    setStarterBundleId(undefined);
     setConfig((current) => ({
       ...current,
       coordinator: { ...current.coordinator, ...patch },
@@ -2632,6 +2653,7 @@ export function PitStudio() {
   }
 
   function updateMember(id: string, patch: Partial<ParticipantConfig>) {
+    setStarterBundleId(undefined);
     setConfig((current) => ({
       ...current,
       members: current.members.map((member) => (member.id === id ? { ...member, ...patch } : member)),
@@ -2639,19 +2661,28 @@ export function PitStudio() {
   }
 
   function addMemberFromPreset(preset: ParticipantPersonaPreset) {
+    setStarterBundleId(undefined);
     setConfig((current) => addParticipantToLineup(current, preset));
   }
 
   function selectModerator(id: string) {
+    setStarterBundleId(undefined);
     setConfig((current) => promoteParticipantToModerator(current, id));
   }
 
   function removeParticipant(id: string) {
+    setStarterBundleId(undefined);
     setConfig((current) => removeParticipantFromLineup(current, id));
   }
 
   function openParticipantEditor(id: string) {
     setActiveEditorId(id);
+  }
+
+  function rerollStarterBundle() {
+    const nextStarter = createRandomStarterInput(starterBundleId);
+    setStarterBundleId(nextStarter.bundle.id);
+    setConfig(nextStarter.input);
   }
 
   async function saveApiKey() {
@@ -2998,6 +3029,7 @@ export function PitStudio() {
             onDraftApiKeyChange={setDraftApiKey}
             onSaveApiKey={saveApiKey}
             onPromptChange={(prompt) => setConfig((current) => ({ ...current, prompt }))}
+            onRerollStarterBundle={rerollStarterBundle}
             onAddMember={() => setShowPersonaSelectorModal(true)}
             onSelectModerator={selectModerator}
             onOpenParticipant={openParticipantEditor}

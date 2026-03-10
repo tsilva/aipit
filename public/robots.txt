@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://aipit.tsilva.eu/sitemap.xml

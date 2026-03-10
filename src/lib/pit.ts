@@ -82,7 +82,24 @@ export interface RunResult {
   warnings: string[];
 }
 
-export const COORDINATOR_PRESET_ID = "jose-rodrigues-dos-santos";
+export interface ModeratorPersonaPreset {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+  personaProfile: ParticipantPersonaProfile;
+}
+
+export interface StarterBundle {
+  id: string;
+  name: string;
+  prompt: string;
+  moderatorPresetId: string;
+  memberPresetIds: readonly [string, string, string];
+}
+
+export const DEFAULT_COORDINATOR_PRESET_ID = "jose-rodrigues-dos-santos";
+export const COORDINATOR_PRESET_ID = DEFAULT_COORDINATOR_PRESET_ID;
+export const US_COORDINATOR_PRESET_ID = "anderson-cooper";
 
 export const BALLOON_DELIMITER = "<<<BALLOON>>>";
 
@@ -94,65 +111,6 @@ export const PIT_RUN_DEFAULTS = {
   maxCompletionTokens: 700,
 } as const;
 
-const CONTROVERSIAL_DEBATE_TOPICS = [
-  "Should democracies ban anonymous political speech during election season?",
-  "Should public universities charge more for degrees with weak job-market outcomes?",
-  "Should welfare for able-bodied adults require mandatory public service?",
-  "Should governments criminalize street camping even when housing supply is still broken?",
-  "Should companies be allowed to fire employees for off-duty political activism?",
-  "Should police be allowed to use facial recognition in public by default?",
-  "Should judges be elected directly instead of appointed by political institutions?",
-  "Should inheritance above a hard cap be taxed at near-confiscatory rates?",
-  "Should homeschooling require state licensing and periodic ideological neutrality checks?",
-  "Should social media platforms be forced to verify the identity of political influencers?",
-  "Should the voting age be raised for national elections?",
-  "Should journalists face penalties for publishing classified leaks that embarrass the state?",
-  "Should governments be allowed to shut down major social networks during civil unrest?",
-  "Should rich democracies deport migrants who enter illegally even if they have built families locally?",
-  "Should assisted suicide be available for severe depression without terminal illness?",
-  "Should parents lose custody if they refuse mainstream medical treatment for their children?",
-  "Should biological sex override gender identity in all sports and prison placements?",
-  "Should the state be allowed to conscript civilians during a major war in Europe?",
-  "Should AI companies be held criminally liable when their models enable mass fraud or suicide coaching?",
-  "Should all political donations above a low threshold be banned outright?",
-  "Should billionaires be barred from owning major newspapers or television networks?",
-  "Should schools be allowed to socially transition children without parental consent?",
-  "Should abortion remain legal up to birth when severe hardship, but not medical emergency, is claimed?",
-  "Should governments force healthy young adults to prioritize organ donation after death?",
-  "Should repeat violent offenders lose the right to early release permanently?",
-  "Should pornography be age-verified at the device or identity level by law?",
-  "Should countries with collapsing birth rates pay women directly to have more children?",
-  "Should states remove children from extremist households before any crime is committed?",
-  "Should private schools lose all public recognition if they screen students by religion or ideology?",
-  "Should police bodycam footage always be released publicly after fatal encounters?",
-  "Should NATO countries be required to send troops, not just money, when an ally is invaded?",
-  "Should governments impose hard limits on how many homes one person or fund can own?",
-  "Should universal basic income replace most targeted welfare programs even if some vulnerable groups lose out?",
-  "Should convicted terrorists ever be allowed back into society after serving their sentence?",
-  "Should college admissions eliminate legacy preference and also eliminate most athletic preference?",
-  "Should public health systems refuse expensive late-stage treatment to smokers who ignored repeated warnings?",
-  "Should online anonymity be abolished for accounts with more than a million followers?",
-  "Should blasphemy protections return when speech is likely to trigger mass unrest?",
-  "Should constitutional courts be able to overturn referendum results on moral grounds?",
-  "Should tax authorities publish the names of top tax avoiders even when schemes are legal?",
-  "Should governments cap personal wealth once it passes a certain threshold?",
-  "Should surrogacy be banned as a form of exploitation even when all adults consent?",
-  "Should adults be free to sell a kidney legally under regulated conditions?",
-  "Should universities be allowed to expel students for organizing disruptive political occupations?",
-  "Should police be allowed to use predictive AI to justify stop-and-search in high-crime areas?",
-  "Should citizenship be revocable for dual nationals convicted of anti-state violence?",
-  "Should public broadcasters be legally required to give climate skeptics equal airtime?",
-  "Should governments ban extremist parties before they win power democratically?",
-  "Should corporations lose limited liability when they repeatedly break labor or environmental law?",
-  "Should prisoners be allowed to vote while serving time for serious crimes?",
-  "Should parents be prosecuted when their minor child commits a mass shooting with family-owned weapons?",
-  "Should states ban algorithmic feeds for minors even if it breaks most social media products?",
-  "Should adoption agencies be allowed to reject couples on religious grounds?",
-  "Should the state force psychiatric treatment on chronically homeless people who refuse it?",
-  "Should governments make DNA databases mandatory for all citizens to solve future crimes?",
-  "Should death-row-style penalties return for certain acts of terrorism or child murder?",
-] as const;
-
 function makeId(prefix: string): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return `${prefix}-${crypto.randomUUID()}`;
@@ -161,17 +119,18 @@ function makeId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function createCoordinator(): ParticipantConfig {
-  return {
-    id: makeId("coordinator"),
+const MODERATOR_PERSONA_PRESETS: ModeratorPersonaPreset[] = [
+  {
+    id: DEFAULT_COORDINATOR_PRESET_ID,
     name: "José Rodrigues dos Santos",
-    model: DEFAULT_COORDINATOR_MODEL,
-    presetId: COORDINATOR_PRESET_ID,
+    avatarUrl: "/avatars/presets/jose-rodrigues-dos-santos.jpg",
     personaProfile: createPersonaProfile({
       role: "Veteran Portuguese television journalist serving as impartial moderator and truth arbiter of the debate",
       personality: "Composed, authoritative, synthesis-driven, rigorously impartial, and impatient with vague or unsupported answers",
-      perspective: "Moderates a high-stakes debate for an informed public audience. Never advocates a partisan line. Grounds the discussion in verifiable facts, established evidence, and expert consensus. Actively seeks common ground between participants.",
-      temperament: "Composed, authoritative, fast on synthesis, comfortable interrupting vagueness or misinformation, de-escalates unproductive exchanges, but never chaotic",
+      perspective:
+        "Moderates a high-stakes debate for an informed public audience. Never advocates a partisan line. Grounds the discussion in verifiable facts, established evidence, and expert consensus. Actively seeks common ground between participants.",
+      temperament:
+        "Composed, authoritative, fast on synthesis, comfortable interrupting vagueness or misinformation, de-escalates unproductive exchanges, but never chaotic",
       debateStyle:
         "Sharpen the central question, separate rhetoric from evidence, flag unsupported claims and logical fallacies, press for clarity and sources, force each participant to answer the strongest competing point, and surface areas of agreement alongside disagreement.",
       speechStyle:
@@ -182,8 +141,102 @@ export function createCoordinator(): ParticipantConfig {
       gender: "Male",
       nationality: "Portuguese",
     }),
-    avatarUrl: "/avatars/presets/jose-rodrigues-dos-santos.jpg",
+  },
+  {
+    id: US_COORDINATOR_PRESET_ID,
+    name: "Anderson Cooper",
+    personaProfile: createPersonaProfile({
+      role: "American television journalist serving as an impartial live-debate moderator and fact-focused anchor",
+      personality: "Measured, incisive, calm under pressure, rigorously neutral, and fluent at keeping heated guests legible",
+      perspective:
+        "Moderates contentious debates for a mass public audience. Never advocates a partisan line. Keeps the room grounded in verifiable facts, concrete stakes, and direct answers while making opposing positions intelligible.",
+      temperament:
+        "Calm, fast on follow-up, controlled when speakers try to filibuster, skeptical of theatrics, and steady when the room gets noisy",
+      debateStyle:
+        "Interrupt evasions, restate the sharpest version of each disagreement, separate spectacle from substance, demand specificity, and end with a clear summary of what was actually established.",
+      speechStyle:
+        "Clear broadcast-English phrasing, compact live-TV follow-ups, low flourish, and high clarity even under pressure.",
+      guardrails:
+        "Stay impartial. Never endorse a side or join the combat. Keep the discussion evidence-led, fair, and understandable for viewers who are hearing strong claims from all directions.",
+      language: "English",
+      gender: "Male",
+      nationality: "American",
+    }),
+  },
+];
+
+const MODERATOR_PERSONA_PRESET_MAP = new Map(MODERATOR_PERSONA_PRESETS.map((preset) => [preset.id, preset] as const));
+
+export const STARTER_BUNDLES: StarterBundle[] = [
+  {
+    id: "portugal-housing-war",
+    name: "Portugal Housing War",
+    prompt: "Should governments criminalize street camping even when housing supply is still broken?",
+    moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["luis-montenegro", "mariana-mortagua", "andre-ventura"],
+  },
+  {
+    id: "property-war-portugal",
+    name: "Property War Portugal",
+    prompt: "Should governments impose hard limits on how many homes one person or fund can own?",
+    moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["mariana-mortagua", "joao-cotrim-de-figueiredo", "henrique-gouveia-e-melo"],
+  },
+  {
+    id: "security-state-pressure",
+    name: "Security State Pressure",
+    prompt: "Should governments make DNA databases mandatory for all citizens to solve future crimes?",
+    moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["henrique-gouveia-e-melo", "andre-ventura", "mariana-mortagua"],
+  },
+  {
+    id: "podcaster-free-speech-war",
+    name: "Podcaster Free Speech War",
+    prompt: "Should online anonymity be abolished for accounts with more than a million followers?",
+    moderatorPresetId: US_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["alex-jones", "lex-fridman", "joe-rogan"],
+  },
+  {
+    id: "ai-liability-meltdown",
+    name: "AI Liability Meltdown",
+    prompt: "Should AI companies be held criminally liable when their models enable mass fraud or suicide coaching?",
+    moderatorPresetId: US_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["elon-musk", "lex-fridman", "rick-sanchez"],
+  },
+  {
+    id: "border-prime-time",
+    name: "Border Prime Time",
+    prompt: "Should rich democracies deport migrants who enter illegally even if they have built families locally?",
+    moderatorPresetId: US_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["donald-trump", "joe-rogan", "alex-jones"],
+  },
+  {
+    id: "absurdity-welfare-panel",
+    name: "Absurdity Welfare Panel",
+    prompt: "Should universal basic income replace most targeted welfare programs even if some vulnerable groups lose out?",
+    moderatorPresetId: US_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["homer-simpson", "rick-sanchez", "knight-who-says-ni"],
+  },
+];
+
+const STARTER_BUNDLE_MAP = new Map(STARTER_BUNDLES.map((bundle) => [bundle.id, bundle] as const));
+const PARTICIPANT_PRESET_MAP = new Map(PARTICIPANT_PERSONA_PRESETS.map((preset) => [preset.id, preset] as const));
+
+export function createCoordinatorFromPreset(presetId: string): ParticipantConfig {
+  const preset = MODERATOR_PERSONA_PRESET_MAP.get(presetId) ?? MODERATOR_PERSONA_PRESET_MAP.get(DEFAULT_COORDINATOR_PRESET_ID)!;
+
+  return {
+    id: makeId("coordinator"),
+    name: preset.name,
+    model: DEFAULT_COORDINATOR_MODEL,
+    presetId: preset.id,
+    personaProfile: clonePersonaProfile(preset.personaProfile),
+    avatarUrl: preset.avatarUrl,
   };
+}
+
+export function createCoordinator(): ParticipantConfig {
+  return createCoordinatorFromPreset(DEFAULT_COORDINATOR_PRESET_ID);
 }
 
 export function createMember(index: number): ParticipantConfig {
@@ -208,41 +261,57 @@ export function createMember(index: number): ParticipantConfig {
   };
 }
 
-export function generateControversialPrompt(): string {
-  const topic = CONTROVERSIAL_DEBATE_TOPICS[Math.floor(Math.random() * CONTROVERSIAL_DEBATE_TOPICS.length)];
-  return topic;
+function createMemberFromPresetId(presetId: string, index: number): ParticipantConfig {
+  const preset = PARTICIPANT_PRESET_MAP.get(presetId);
+
+  if (!preset) {
+    return createMember(index);
+  }
+
+  return {
+    id: makeId(`member-${index}`),
+    name: preset.name,
+    model: preset.recommendedModel,
+    presetId: preset.id,
+    personaProfile: clonePersonaProfile(preset.personaProfile),
+    avatarUrl: preset.avatarUrl,
+  };
+}
+
+export function pickRandomStarterBundle(excludingId?: string): StarterBundle {
+  const eligibleBundles = excludingId
+    ? STARTER_BUNDLES.filter((bundle) => bundle.id !== excludingId)
+    : STARTER_BUNDLES;
+  const bundlePool = eligibleBundles.length > 0 ? eligibleBundles : STARTER_BUNDLES;
+
+  return bundlePool[Math.floor(Math.random() * bundlePool.length)];
+}
+
+export function getStarterBundle(bundleId: string): StarterBundle | undefined {
+  return STARTER_BUNDLE_MAP.get(bundleId);
+}
+
+export function createInputFromStarterBundle(bundle: StarterBundle): RunInput {
+  return {
+    mode: "debate",
+    prompt: bundle.prompt,
+    ...PIT_RUN_DEFAULTS,
+    coordinator: createCoordinatorFromPreset(bundle.moderatorPresetId),
+    members: bundle.memberPresetIds.map((presetId, index) => createMemberFromPresetId(presetId, index + 1)),
+  };
+}
+
+export function createRandomStarterInput(excludingId?: string): { bundle: StarterBundle; input: RunInput } {
+  const bundle = pickRandomStarterBundle(excludingId);
+
+  return {
+    bundle,
+    input: createInputFromStarterBundle(bundle),
+  };
 }
 
 export function createDefaultInput(): RunInput {
-  const defaultMemberPresetIds = [
-    "luis-montenegro",
-    "mariana-mortagua",
-    "andre-ventura",
-  ] as const;
-  const presetMap = new Map(PARTICIPANT_PERSONA_PRESETS.map((preset) => [preset.id, preset]));
-
-  return {
-    mode: "debate",
-    prompt: generateControversialPrompt(),
-    ...PIT_RUN_DEFAULTS,
-    coordinator: createCoordinator(),
-    members: defaultMemberPresetIds.map((presetId, index) => {
-      const preset = presetMap.get(presetId);
-
-      if (!preset) {
-        return createMember(index + 1);
-      }
-
-      return {
-        id: makeId(`member-${index + 1}`),
-        name: preset.name,
-        model: preset.recommendedModel,
-        presetId: preset.id,
-        personaProfile: clonePersonaProfile(preset.personaProfile),
-        avatarUrl: preset.avatarUrl,
-      };
-    }),
-  };
+  return createRandomStarterInput().input;
 }
 
 function clamp(value: number, min: number, max: number): number {

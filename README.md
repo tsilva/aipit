@@ -12,7 +12,8 @@
 ## ✨ Features
 
 - 🎭 **Rich persona profiles** — 12-field character sheets (role, personality, perspective, temperament, debate style, speech style, guardrails, language, gender, nationality, birth date, prompt notes)
-- 👥 **15 built-in presets** — Portuguese political figures (Montenegro, Mortágua, Ventura, Marques Mendes, Gouveia e Melo, Cotrim de Figueiredo, Seguro) + international media & pop-culture voices (Alex Jones, Lex Fridman, Joe Rogan, Donald Trump, Elon Musk, Homer Simpson, Rick Sanchez, The Knight Who Says "Ni")
+- 👥 **15 built-in debater presets** — Portuguese political figures (Montenegro, Mortágua, Ventura, Marques Mendes, Gouveia e Melo, Cotrim de Figueiredo, Seguro) + international media & pop-culture voices (Alex Jones, Lex Fridman, Joe Rogan, Donald Trump, Elon Musk, Homer Simpson, Rick Sanchez, The Knight Who Says "Ni")
+- 🎬 **7 curated starter bundles** — cold-start debates seed a moderator, three debaters, and a high-friction topic in one click
 - 🏟️ **Structured debate flow** — opening → rounds → interventions → consensus
 - 🔗 **Persona relationships** — pairwise awareness so debaters know how to engage each other
 - 🤖 **Multi-model support via OpenRouter** — Claude, DeepSeek, Grok, Gemini, Mistral, and more
@@ -20,14 +21,13 @@
 - 💬 **Bubble-based playback** — conversation and transcript views
 - 📊 **Token and cost tracking** — per-debate usage summary
 - 🐛 **Raw prompt debug mode** — inspect exactly what each model receives
-- 🎲 **57 built-in controversial debate topics** — random topic picker for instant pit sessions
 - 🔐 **Server-side OpenRouter proxy** — requests flow through Next.js route handlers, with optional Vercel-hosted API key
 - 🛡️ **Hosted-key abuse guardrails** — same-origin enforcement, per-IP rate limits, model allowlisting, payload caps, and no server-key metadata exposure
 
 ## 🏗️ How It Works
 
-1. **Setup** — Pick a topic (or roll a random one), choose your debaters from presets or build custom personas, assign models, and configure round count / temperature / max tokens.
-2. **Opening** — The moderator (José Rodrigues dos Santos by default) frames the prompt and sets the stage.
+1. **Setup** — Start from a curated bundle or customize manually: each starter bundle seeds a moderator, three debaters, and a topic; the wand rerolls the full bundle.
+2. **Opening** — The moderator (José Rodrigues dos Santos or Anderson Cooper, depending on the starter bundle) frames the prompt and sets the stage.
 3. **Rounds** — Each debater argues in sequence for N rounds. The moderator intervenes between rounds to sharpen the discussion.
 4. **Consensus** — The moderator closes with a balanced wrap-up synthesizing the key arguments.
 
