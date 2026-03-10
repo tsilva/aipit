@@ -57,43 +57,12 @@ import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
 import { buildPersonaProfilePreview } from "@/lib/persona-profile";
 import type { ParticipantPersonaPreset } from "@/lib/persona-presets";
 
-const OPENROUTER_KEY_STORAGE = "aipit.openrouter.key";
-const PIT_LINEUP_STORAGE = "aipit.lineup";
 type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
 
 const TranscriptMarkdownContent = dynamic(() => import("@/components/transcript-markdown"), {
   loading: () => <p className="transcript-markdown-p">Loading transcript...</p>,
   ssr: false,
 });
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function normalizeStoredParticipant(value: unknown, fallback: ParticipantConfig): ParticipantConfig {
-  const raw = isRecord(value) ? value : {};
-  const personaProfile = isRecord(raw.personaProfile) ? raw.personaProfile : {};
-  const normalizedPersonaProfile = Object.entries(personaProfile).reduce<Record<string, string>>((accumulator, [field, fieldValue]) => {
-    if (typeof fieldValue === "string") {
-      accumulator[field] = fieldValue;
-    }
-
-    return accumulator;
-  }, {});
-
-  return {
-    ...fallback,
-    id: typeof raw.id === "string" && raw.id.trim() ? raw.id : fallback.id,
-    name: typeof raw.name === "string" ? raw.name : fallback.name,
-    model: typeof raw.model === "string" ? raw.model : fallback.model,
-    presetId: typeof raw.presetId === "string" && raw.presetId.trim() ? raw.presetId : undefined,
-    avatarUrl: typeof raw.avatarUrl === "string" && raw.avatarUrl.trim() ? raw.avatarUrl : undefined,
-    personaProfile: {
-      ...fallback.personaProfile,
-      ...normalizedPersonaProfile,
-    },
-  };
-}
 
 function arraysEqual(left: string[], right: string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
@@ -122,57 +91,6 @@ function syncLineupOrder(lineupOrder: string[], roster: ParticipantConfig[]): st
   return arraysEqual(lineupOrder, nextOrder) ? lineupOrder : nextOrder;
 }
 
-type StoredSetup = Pick<RunInput, "coordinator" | "members" | "prompt"> & {
-  order: string[];
-  starterBundleId?: string;
-};
-
-function readStoredSetup(): StoredSetup | null {
-  const storedLineup = window.localStorage.getItem(PIT_LINEUP_STORAGE);
-
-  if (!storedLineup) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(storedLineup);
-
-    if (!isRecord(parsed)) {
-      window.localStorage.removeItem(PIT_LINEUP_STORAGE);
-      return null;
-    }
-
-    const defaultInput = createDefaultInput();
-    const coordinator = normalizeStoredParticipant(parsed.coordinator, defaultInput.coordinator);
-    const members = Array.isArray(parsed.members)
-      ? parsed.members.map((member, index) => normalizeStoredParticipant(member, createMember(index + 1)))
-      : defaultInput.members;
-    const roster = [coordinator, ...members];
-    const prompt = typeof parsed.prompt === "string" && parsed.prompt.trim() ? parsed.prompt.trim() : defaultInput.prompt;
-    const validIds = new Set(roster.map((participant) => participant.id));
-    const order = Array.isArray(parsed.order)
-      ? parsed.order.filter((participantId): participantId is string => typeof participantId === "string" && validIds.has(participantId))
-      : [];
-
-    return {
-      prompt,
-      coordinator,
-      members,
-      order: syncLineupOrder(order, roster),
-      starterBundleId: typeof parsed.starterBundleId === "string" && parsed.starterBundleId.trim()
-        ? parsed.starterBundleId
-        : undefined,
-    };
-  } catch {
-    window.localStorage.removeItem(PIT_LINEUP_STORAGE);
-    return null;
-  }
-}
-
-function readStoredApiKey(): string {
-  return window.localStorage.getItem(OPENROUTER_KEY_STORAGE)?.trim() ?? "";
-}
-
 function emptyApiKeyStatusMessage(): string {
   return "Usage will be limited if no key is provided.";
 }
@@ -185,32 +103,11 @@ type InitialStudioState = {
   config: RunInput;
   lineupOrder: string[];
   starterBundleId?: string;
-  transientSetupSnapshot: string | null;
   apiKey: string;
   apiKeyStatus: ApiKeyStatus;
   apiKeyStatusMessage: string;
   draftApiKey: string;
-  hasLoadedKey: boolean;
-  hasLoadedLineup: boolean;
 };
-
-function buildStoredSetupSnapshot({
-  config,
-  lineupOrder,
-  starterBundleId,
-}: {
-  config: RunInput;
-  lineupOrder: string[];
-  starterBundleId?: string;
-}): string {
-  return JSON.stringify({
-    prompt: config.prompt,
-    coordinator: config.coordinator,
-    members: config.members,
-    order: lineupOrder,
-    starterBundleId,
-  });
-}
 
 function readStarterBundleFromQuery() {
   const params = new URLSearchParams(window.location.search);
@@ -226,67 +123,37 @@ function readStarterBundleFromQuery() {
 function buildInitialStudioState(): InitialStudioState {
   const defaultStarter = createRandomStarterInput();
   const defaultInput = defaultStarter.input;
+  const defaultLineupOrder = syncLineupOrder([], [defaultInput.coordinator, ...defaultInput.members]);
 
   if (typeof window === "undefined") {
     return {
       config: defaultInput,
-      lineupOrder: [],
+      lineupOrder: defaultLineupOrder,
       starterBundleId: defaultStarter.bundle.id,
-      transientSetupSnapshot: null,
       apiKey: "",
       apiKeyStatus: "empty",
       apiKeyStatusMessage: emptyApiKeyStatusMessage(),
       draftApiKey: "",
-      hasLoadedKey: false,
-      hasLoadedLineup: false,
     };
   }
 
-  const storedSetup = readStoredSetup();
-  const storedApiKey = readStoredApiKey();
   const queryStarterBundle = readStarterBundleFromQuery();
-  const queryBundleInput = queryStarterBundle ? createInputFromStarterBundle(queryStarterBundle) : null;
-  const queryBundleLineupOrder = queryBundleInput
-    ? syncLineupOrder([], [queryBundleInput.coordinator, ...queryBundleInput.members])
-    : [];
-  const config = queryBundleInput
-    ? queryBundleInput
-    : storedSetup
-      ? {
-          ...defaultInput,
-          prompt: storedSetup.prompt,
-          coordinator: storedSetup.coordinator,
-          members: storedSetup.members,
-        }
-      : defaultInput;
-  const lineupOrder = queryBundleInput ? queryBundleLineupOrder : (storedSetup?.order ?? []);
-  const starterBundleId = queryStarterBundle
-    ? queryStarterBundle.id
-    : storedSetup?.starterBundleId ?? (!storedSetup ? defaultStarter.bundle.id : undefined);
+  const config = queryStarterBundle ? createInputFromStarterBundle(queryStarterBundle) : defaultInput;
+  const lineupOrder = syncLineupOrder([], [config.coordinator, ...config.members]);
+  const starterBundleId = queryStarterBundle?.id ?? defaultStarter.bundle.id;
 
   return {
     config,
     lineupOrder,
     starterBundleId,
-    transientSetupSnapshot: queryBundleInput
-      ? buildStoredSetupSnapshot({
-          config,
-          lineupOrder,
-          starterBundleId,
-        })
-      : null,
-    apiKey: storedApiKey,
+    apiKey: "",
     apiKeyStatus: "checking",
-    apiKeyStatusMessage: storedApiKey
-      ? "Validating API key with OpenRouter..."
-      : "Checking for a server-side OpenRouter key...",
-    draftApiKey: storedApiKey,
-    hasLoadedKey: true,
-    hasLoadedLineup: true,
+    apiKeyStatusMessage: "Checking for a server-side OpenRouter key...",
+    draftApiKey: "",
   };
 }
 
-async function validateStoredApiKey({
+async function validateApiKey({
   nextApiKey,
   requestIdRef,
   siteUrl,
@@ -969,7 +836,6 @@ function StudioHero({
   draftApiKey,
   canSubmit,
   hasApiKey,
-  hasLoadedKey,
   isRunning,
   onDraftApiKeyChange,
   onSaveApiKey,
@@ -987,7 +853,6 @@ function StudioHero({
   draftApiKey: string;
   canSubmit: boolean;
   hasApiKey: boolean;
-  hasLoadedKey: boolean;
   isRunning: boolean;
   onDraftApiKeyChange: (value: string) => void;
   onSaveApiKey: () => Promise<boolean>;
@@ -997,8 +862,8 @@ function StudioHero({
   onSelectModerator: (id: string) => void;
   onOpenParticipant: (id: string) => void;
 }) {
-  const apiKeyLabel = hasLoadedKey ? (hasApiKey ? maskApiKey(apiKey) : "No key saved") : "Loading";
-  const [isEditingApiKey, setIsEditingApiKey] = useState(() => hasLoadedKey && !apiKey.trim());
+  const apiKeyLabel = hasApiKey ? maskApiKey(apiKey) : "No personal key";
+  const [isEditingApiKey, setIsEditingApiKey] = useState(() => !apiKey.trim());
   const apiKeyInputRef = useRef<HTMLInputElement | null>(null);
   const hasMountedApiKeyEditorRef = useRef(false);
   const isApiKeyEditorVisible = isEditingApiKey;
@@ -1172,7 +1037,7 @@ function StudioHero({
               value={apiKeyFieldValue}
               onChange={(event) => onDraftApiKeyChange(event.target.value)}
               onKeyDown={handleApiKeyInputKeyDown}
-              placeholder="sk-or-v1-... (optional if server key exists)"
+              placeholder="sk-or-v1-..."
               autoComplete="off"
               readOnly={!isApiKeyEditorVisible}
               aria-label="OpenRouter API key"
@@ -2111,6 +1976,7 @@ function ChamberStage({
   const thinkingEntry = queueEntries.find((entry) => entry.state === "thinking") ?? null;
   const queuedFocusEntry = activeEntry ?? thinkingEntry ?? queueEntries.find((entry) => entry.state !== "waiting") ?? null;
   const isShowingPendingTurn = isAwaitingTurnResponse && pendingTurn !== null;
+  const maxNavigableFrameIndex = isShowingPendingTurn ? frames.length : Math.max(frames.length - 1, 0);
   const queueScrollTargetId = (isShowingPendingTurn ? thinkingEntry?.id : activeEntry?.id) ?? thinkingEntry?.id ?? null;
   const pendingParticipant =
     pendingTurn ? roster.find((participant) => participant.id === pendingTurn.speakerId) ?? null : null;
@@ -2123,7 +1989,7 @@ function ChamberStage({
 
   const canConfigureActiveSpeaker = false;
   const canGoPrevious = activeFrameIndex > 0;
-  const canGoNext = activeFrameIndex < frames.length - 1;
+  const canGoNext = activeFrameIndex < maxNavigableFrameIndex;
   const isPlayButtonActive = isPlaybackPlaying && (isRunning || canGoNext || isBubbleStreaming);
   const [debugFrame, setDebugFrame] = useState<PlaybackFrame | null>(null);
   const showBubbleDebugButton = useSyncExternalStore(subscribeToRuntime, isLocalRuntime, () => false);
@@ -2433,8 +2299,6 @@ export function PitStudio() {
   const keyValidationRequestIdRef = useRef(0);
   const runAbortControllerRef = useRef<AbortController | null>(null);
   const activeRunIdRef = useRef(0);
-  const hasLoadedKey = initialStudioState.hasLoadedKey;
-  const hasLoadedLineup = initialStudioState.hasLoadedLineup;
 
   const roster = [config.coordinator, ...config.members];
   const orderedRoster = orderParticipants(roster, lineupOrder);
@@ -2455,7 +2319,13 @@ export function PitStudio() {
   const frames = timeline.frames;
   const chapters = timeline.chapters;
   const totalDurationMs = timeline.totalDurationMs;
-  const currentFrame = frames[Math.min(activeFrameIndex, Math.max(frames.length - 1, 0))];
+  const hasPendingFrame = isAwaitingTurnResponse && pendingTurn !== null;
+  const pendingFrameIndex = frames.length;
+  const maxNavigableFrameIndex = hasPendingFrame ? pendingFrameIndex : Math.max(frames.length - 1, 0);
+  const currentFrame =
+    hasPendingFrame && activeFrameIndex === pendingFrameIndex
+      ? undefined
+      : frames[Math.min(activeFrameIndex, Math.max(frames.length - 1, 0))];
   const editableParticipant = roster.find((participant) => participant.id === activeEditorId) ?? null;
   const isTransportEnabled = panelMode === "conversation";
   const isPlaybackActive = panelMode === "transcript" ? true : isPlaybackPlaying;
@@ -2466,7 +2336,7 @@ export function PitStudio() {
     : "";
 
   useEffect(() => {
-    void validateStoredApiKey({
+    void validateApiKey({
       nextApiKey: initialStudioState.apiKey,
       requestIdRef: keyValidationRequestIdRef,
       siteUrl: window.location.origin,
@@ -2481,50 +2351,16 @@ export function PitStudio() {
   }, [config.coordinator, config.members]);
 
   useEffect(() => {
-    if (!hasLoadedLineup) {
-      return;
-    }
-
-    const nextSnapshot = buildStoredSetupSnapshot({
-      config,
-      lineupOrder,
-      starterBundleId,
-    });
-
-    if (initialStudioState.transientSetupSnapshot === nextSnapshot) {
-      return;
-    }
-
-    window.localStorage.setItem(
-      PIT_LINEUP_STORAGE,
-      nextSnapshot,
-    );
-  }, [
-    config,
-    hasLoadedLineup,
-    initialStudioState.transientSetupSnapshot,
-    lineupOrder,
-    starterBundleId,
-  ]);
-
-  useEffect(() => {
     if (activeEditorId && !editableParticipant) {
       setActiveEditorId(null);
     }
   }, [activeEditorId, editableParticipant]);
 
   useEffect(() => {
-    if (frames.length === 0) {
-      if (activeFrameIndex !== 0) {
-        setActiveFrameIndex(0);
-      }
-      return;
+    if (activeFrameIndex > maxNavigableFrameIndex) {
+      setActiveFrameIndex(maxNavigableFrameIndex);
     }
-
-    if (activeFrameIndex > frames.length - 1) {
-      setActiveFrameIndex(frames.length - 1);
-    }
-  }, [activeFrameIndex, frames.length]);
+  }, [activeFrameIndex, maxNavigableFrameIndex]);
 
   useEffect(() => {
     if (!currentFrame) {
@@ -2587,7 +2423,7 @@ export function PitStudio() {
     }
 
     const nextIndex = activeFrameIndex + 1;
-    if (nextIndex >= frames.length) {
+    if (nextIndex > maxNavigableFrameIndex) {
       return;
     }
 
@@ -2603,6 +2439,7 @@ export function PitStudio() {
     frames.length,
     frameCompletedAt,
     isPlaybackActive,
+    maxNavigableFrameIndex,
     revealedBubbleId,
     revealedBubbleChars,
   ]);
@@ -2651,10 +2488,9 @@ export function PitStudio() {
   async function saveApiKey() {
     const trimmed = draftApiKey.trim();
     if (!trimmed) {
-      window.localStorage.removeItem(OPENROUTER_KEY_STORAGE);
       setApiKey("");
       setDraftApiKey("");
-      await validateStoredApiKey({
+      await validateApiKey({
         nextApiKey: "",
         requestIdRef: keyValidationRequestIdRef,
         siteUrl: window.location.origin,
@@ -2665,10 +2501,9 @@ export function PitStudio() {
       return true;
     }
 
-    window.localStorage.setItem(OPENROUTER_KEY_STORAGE, trimmed);
     setApiKey(trimmed);
     setDraftApiKey(trimmed);
-    await validateStoredApiKey({
+    await validateApiKey({
       nextApiKey: trimmed,
       requestIdRef: keyValidationRequestIdRef,
       siteUrl: window.location.origin,
@@ -2680,7 +2515,7 @@ export function PitStudio() {
   }
 
   function selectFrame(index: number) {
-    setActiveFrameIndex(index);
+    setActiveFrameIndex(Math.max(0, Math.min(index, maxNavigableFrameIndex)));
     setFrameCompletedAt(null);
   }
 
@@ -2725,7 +2560,7 @@ export function PitStudio() {
   }
 
   function selectNextFrame() {
-    if (activeFrameIndex >= frames.length - 1) {
+    if (activeFrameIndex >= maxNavigableFrameIndex) {
       return;
     }
 
@@ -2861,7 +2696,7 @@ export function PitStudio() {
 
     if (event.key === "Enter" || event.key === "ArrowRight") {
       event.preventDefault();
-      if (activeFrameIndex < frames.length - 1) {
+      if (activeFrameIndex < maxNavigableFrameIndex) {
         setActiveFrameIndex(activeFrameIndex + 1);
         setFrameCompletedAt(null);
       }
@@ -2991,8 +2826,7 @@ export function PitStudio() {
             apiKeyStatusMessage={apiKeyStatusMessage}
             draftApiKey={draftApiKey}
             hasApiKey={hasApiKey}
-            canSubmit={hasLoadedKey && hasValidatedApiKey && hasPrompt && config.members.length >= 2}
-            hasLoadedKey={hasLoadedKey}
+            canSubmit={hasValidatedApiKey && hasPrompt && config.members.length >= 2}
             isRunning={isRunning}
             onDraftApiKeyChange={setDraftApiKey}
             onSaveApiKey={saveApiKey}
@@ -3011,7 +2845,7 @@ export function PitStudio() {
             displayedBubbleContent={displayedBubbleContent}
             chapters={chapters}
             frames={frames}
-            activeFrameIndex={Math.min(activeFrameIndex, Math.max(frames.length - 1, 0))}
+            activeFrameIndex={activeFrameIndex}
             totalDurationMs={totalDurationMs}
             isRunning={isRunning}
             isBubbleStreaming={isBubbleStreaming}

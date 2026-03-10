@@ -31,7 +31,7 @@
 3. **Rounds** — Each debater argues in sequence for N rounds. The moderator intervenes between rounds to sharpen the discussion.
 4. **Consensus** — The moderator closes with a balanced wrap-up synthesizing the key arguments.
 
-You can deep-link a starter bundle with `?id=<bundle-id>`, for example `http://localhost:3000/?id=ai-liability-meltdown`. That URL loads the requested bundle on first render without overwriting the lineup and prompt already saved in the browser unless the user then edits the loaded setup.
+Each fresh page load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`, for example `http://localhost:3000/?id=ai-liability-meltdown`.
 
 The orchestration engine lives in [`pit-engine.ts`](src/lib/pit-engine.ts) and the full UI in [`pit-studio.tsx`](src/components/pit-studio.tsx).
 
@@ -67,7 +67,7 @@ Open [http://localhost:3000](http://localhost:3000).
 OpenRouter traffic is proxied through internal Next.js API routes under `src/app/api/openrouter`.
 When the shared server key is used, the proxy only accepts same-origin browser requests, rate-limits them per IP, clamps completion budgets, strips unsupported OpenRouter options, and only forwards the supported model list exposed in the editor. The hosted payload caps are tuned for debate-sized prompts, so moderator turns can carry persona setup plus rolling transcript context without tripping generic chat limits. Hosted key validation also returns an empty success response instead of relaying server-key metadata from OpenRouter.
 
-If `OPENROUTER_API_KEY` is configured on the server, the proxy uses that key whenever the browser does not send a user-provided key. Users can still paste their own key, and that key takes precedence for validation and debate runs.
+If `OPENROUTER_API_KEY` is configured on the server, the proxy uses that key whenever the browser does not send a user-provided key. Users can still paste their own key, and that key takes precedence for validation and debate runs. Personal keys are kept in memory for the current page session only and are cleared on reload.
 
 ## ⚙️ Environment Variables
 
@@ -125,6 +125,7 @@ src/
 
 - OpenRouter requests are sent through internal route handlers in `src/app/api/openrouter`.
 - `OPENROUTER_API_KEY` is server-only and should not be prefixed with `NEXT_PUBLIC_`.
+- Starter bundles and personal API keys are not persisted in browser storage; reloads start from a fresh random bundle unless `?id=` is provided.
 - The UI is implemented in `src/components/pit-studio.tsx`.
 - The orchestration logic lives in `src/lib/pit-engine.ts`.
 

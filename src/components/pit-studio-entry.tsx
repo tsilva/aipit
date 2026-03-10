@@ -14,6 +14,15 @@ function PitStudioLoadingFallback() {
             </div>
           </section>
 
+          <section className="hero-panel hero-prompt-shell">
+            <div>
+              <p className="hero-kicker">Debate Topic</p>
+              <h2 className="hero-panel-title">What is the debate topic about?</h2>
+            </div>
+
+            <div className="hero-loading-block hero-loading-block-prompt" aria-hidden="true" />
+          </section>
+
           <section className="hero-panel hero-roster-shell">
             <div className="hero-roster-header">
               <div>
@@ -45,15 +54,6 @@ function PitStudioLoadingFallback() {
                 </div>
               ))}
             </div>
-          </section>
-
-          <section className="hero-panel hero-prompt-shell">
-            <div>
-              <p className="hero-kicker">Debate Topic</p>
-              <h2 className="hero-panel-title">What is the debate topic about?</h2>
-            </div>
-
-            <div className="hero-loading-block hero-loading-block-prompt" aria-hidden="true" />
           </section>
 
           <section className="hero-panel hero-api-shell">
