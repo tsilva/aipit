@@ -19,7 +19,7 @@ export function invalidOpenRouterKeyMessage(): string {
 }
 
 export function serverOpenRouterKeyMessage(): string {
-  return "No personal API key saved. Using the server-side OpenRouter key.";
+  return "Usage will be limited if no key is provided.";
 }
 
 function resolveAppName(): string {

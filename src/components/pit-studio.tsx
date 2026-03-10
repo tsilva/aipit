@@ -143,7 +143,7 @@ function readStoredApiKey(): string {
 }
 
 function emptyApiKeyStatusMessage(): string {
-  return "No personal API key saved. Confirm to use your own key or fall back to the server key.";
+  return "Usage will be limited if no key is provided.";
 }
 
 function unresolvedApiKeyStatusMessage(): string {
@@ -754,6 +754,20 @@ function PlayGlyph() {
   );
 }
 
+function WarningGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 4.25 20 18a1.4 1.4 0 0 1-1.21 2.1H5.2A1.4 1.4 0 0 1 4 18L12 4.25Z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4.9" />
+      <circle cx="12" cy="17.2" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 function PauseGlyph() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -1022,9 +1036,12 @@ function StudioHero({
   const apiKeyFieldValue = isApiKeyEditorVisible ? draftApiKey : apiKeyLabel;
   const displayedApiKeyStatus = hasPendingApiKeyChanges ? "unresolved" : apiKeyStatus;
   const displayedApiKeyStatusMessage = hasPendingApiKeyChanges ? unresolvedApiKeyStatusMessage() : apiKeyStatusMessage;
-  const showUsageLimitNotice = !apiKey.trim() && !hasPendingApiKeyChanges;
+  const showHostedUsageWarning = !apiKey.trim() && !hasPendingApiKeyChanges && apiKeyStatus === "valid";
+  const showWarningStatusIcon = showHostedUsageWarning || displayedApiKeyStatus === "empty" || displayedApiKeyStatus === "unresolved";
   const statusTone =
-    displayedApiKeyStatus === "valid"
+    showHostedUsageWarning
+      ? "warning"
+      : displayedApiKeyStatus === "valid"
       ? "success"
       : displayedApiKeyStatus === "invalid"
         ? "error"
@@ -1217,12 +1234,13 @@ function StudioHero({
               <span className="hero-api-status-icon" aria-hidden="true">
                 <CheckGlyph />
               </span>
+            ) : showWarningStatusIcon ? (
+              <span className="hero-api-status-icon" aria-hidden="true">
+                <WarningGlyph />
+              </span>
             ) : null}
             <span>{displayedApiKeyStatusMessage}</span>
           </div>
-          {showUsageLimitNotice ? (
-            <p className="hero-api-note">Without a personal key, hosted usage limits may apply.</p>
-          ) : null}
         </div>
       </section>
 
