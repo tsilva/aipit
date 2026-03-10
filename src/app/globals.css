@@ -3135,6 +3135,74 @@ select.field {
 }
 
 @media (max-width: 640px) {
+  .transcript-sheet-inline {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .transcript-sheet-actions.transcript-sheet-actions-top {
+    position: static;
+    width: 100%;
+    padding: 0.85rem 1rem 0;
+    justify-content: flex-end;
+  }
+
+  .transcript-sheet-body-with-top-actions {
+    padding-top: 0.9rem;
+    padding-right: 1rem;
+  }
+
+  .timeline-shell {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.75rem;
+  }
+
+  .timeline-shell > .timeline-button {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .timeline-button-group {
+    display: contents;
+  }
+
+  .timeline-track-shell {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    order: initial;
+    width: 100%;
+  }
+
+  .timeline-button-group .timeline-button:first-child {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: center;
+  }
+
+  .timeline-button-group .timeline-button:last-child {
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: end;
+  }
+
+  .speaker-focus-bubble::before {
+    left: 1.1rem;
+    top: -0.58rem;
+    width: 1rem;
+    height: 1rem;
+    border-top: 1px solid rgba(255, 231, 198, 0.14);
+    border-left: 1px solid rgba(255, 231, 198, 0.14);
+    border-right: none;
+    background: rgba(252, 248, 242, 0.98);
+    clip-path: none;
+    transform: rotate(45deg);
+  }
+
+  .speaker-focus-bubble.is-idle::before {
+    background: rgba(247, 238, 227, 0.95);
+  }
+
   .studio-form-simulation {
     height: auto;
     max-height: none;
