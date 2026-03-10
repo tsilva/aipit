@@ -85,6 +85,7 @@ const OPENROUTER_RETRY_DELAY_MS = 350;
 interface PromptFrame {
   objective: string;
   transcript: PitTurn[];
+  speakingOrder?: ParticipantConfig[];
 }
 
 function buildCompactProfile(participant: ParticipantConfig): string {
@@ -177,6 +178,15 @@ function buildSystemPrompt(
   ];
 
   const relationshipHints = buildRelationshipHints(participant, input);
+  const speakingOrderSection =
+    frame.speakingOrder && frame.speakingOrder.length > 0
+      ? [
+          "# SPEAKING ORDER",
+          `- First speaker: ${frame.speakingOrder[0]?.name ?? "Unknown"}`,
+          ...frame.speakingOrder.map((member, index) => `- Slot ${index + 1}: ${member.name}`),
+          "- If you announce who speaks first, use the first speaker named above.",
+        ].join("\n")
+      : "";
 
   const sections = [
     "# CONTEXT",
@@ -196,6 +206,7 @@ function buildSystemPrompt(
   }
 
   sections.push(
+    speakingOrderSection,
     "# ROOM",
     formatParticipantProfiles(input, participant),
     "# TRANSCRIPT",
@@ -468,6 +479,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
       objective:
         "Open the debate neutrally and impartially. Briefly frame the factual landscape and established evidence around the topic. Surface the main fault lines these debaters are likely to contest. Announce who speaks first.",
       transcript: [],
+      speakingOrder,
     },
     sessionId,
     execution,
@@ -475,7 +487,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     [
       {
         role: "user",
-        content: `Round plan: ${input.rounds} rounds.\n\nProduce the opening turn now.`,
+        content: `Round plan: ${input.rounds} rounds.\nFirst speaker: ${speakingOrder[0]?.name ?? "Unknown"}.\n\nProduce the opening turn now.`,
       },
     ],
   );

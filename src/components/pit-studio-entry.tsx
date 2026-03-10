@@ -28,7 +28,7 @@ function PitStudioLoadingFallback() {
             </div>
 
             <div className="hero-roster-grid hero-roster-grid-loading" aria-hidden="true">
-              {Array.from({ length: 3 }).map((_, index) => (
+              {Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="hero-roster-card hero-roster-card-loading">
                   <div className="hero-roster-select">
                     <div className="hero-roster-card-top">

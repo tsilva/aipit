@@ -810,6 +810,20 @@ function PencilGlyph() {
   );
 }
 
+function SaveGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 4.8A1.8 1.8 0 0 1 6.8 3h9.52c.48 0 .94.19 1.28.53l2.87 2.87c.34.34.53.8.53 1.28V19.2A1.8 1.8 0 0 1 19.2 21H6.8A1.8 1.8 0 0 1 5 19.2V4.8Z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 3.5V9h7V4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.2 20v-5.1a1 1 0 0 1 1-1h5.6a1 1 0 0 1 1 1V20" />
+    </svg>
+  );
+}
+
 function CheckGlyph() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -1033,6 +1047,7 @@ function StudioHero({
   const isApiKeyEditorVisible = isEditingApiKey;
   const previousApiKeyEditorVisibilityRef = useRef(isApiKeyEditorVisible);
   const hasPendingApiKeyChanges = draftApiKey.trim() !== apiKey.trim();
+  const canConfirmApiKey = draftApiKey.trim().length > 0;
   const apiKeyFieldValue = isApiKeyEditorVisible ? draftApiKey : apiKeyLabel;
   const displayedApiKeyStatus = hasPendingApiKeyChanges ? "unresolved" : apiKeyStatus;
   const displayedApiKeyStatusMessage = hasPendingApiKeyChanges ? unresolvedApiKeyStatusMessage() : apiKeyStatusMessage;
@@ -1208,25 +1223,27 @@ function StudioHero({
               aria-label="OpenRouter API key"
             />
             <div className="hero-api-input-actions">
-              <button
-                type="button"
-                disabled={displayedApiKeyStatus === "checking"}
-                onClick={
-                  isApiKeyEditorVisible
-                    ? () => {
-                        void handleApiKeyConfirm();
-                      }
-                    : () => {
-                        onDraftApiKeyChange(apiKey);
-                        setIsEditingApiKey(true);
-                      }
-                }
-                className={`hero-api-edit-button ${isApiKeyEditorVisible ? "is-confirm" : ""}`}
-                aria-label={isApiKeyEditorVisible ? "Confirm API key" : "Edit API key"}
-                title={isApiKeyEditorVisible ? "Confirm API key" : "Edit API key"}
-              >
-                {isApiKeyEditorVisible ? (displayedApiKeyStatus === "checking" ? "Testing..." : "Confirm") : <PencilGlyph />}
-              </button>
+              {(!isApiKeyEditorVisible || canConfirmApiKey) && (
+                <button
+                  type="button"
+                  disabled={displayedApiKeyStatus === "checking"}
+                  onClick={
+                    isApiKeyEditorVisible
+                      ? () => {
+                          void handleApiKeyConfirm();
+                        }
+                      : () => {
+                          onDraftApiKeyChange(apiKey);
+                          setIsEditingApiKey(true);
+                        }
+                  }
+                  className={`hero-api-edit-button ${isApiKeyEditorVisible ? "is-confirm" : ""}`}
+                  aria-label={isApiKeyEditorVisible ? "Save API key" : "Edit API key"}
+                  title={isApiKeyEditorVisible ? "Save API key" : "Edit API key"}
+                >
+                  {isApiKeyEditorVisible ? <SaveGlyph /> : <PencilGlyph />}
+                </button>
+              )}
             </div>
           </div>
           <div className={`hero-api-status hero-api-status-${statusTone}`} role="status" aria-live="polite">
@@ -2290,7 +2307,10 @@ function ChamberStage({
 
                       </div>
 
-                      <div className={`speaker-focus-bubble ${!currentFrame && !queuedFocusEntry ? "is-idle" : ""}`}>
+                      <div
+                        key={currentFrame?.id ?? queuedFocusEntry?.id ?? "speaker-focus-idle"}
+                        className={`speaker-focus-bubble ${!currentFrame && !queuedFocusEntry ? "is-idle" : ""}`}
+                      >
                         {currentFrame ? (
                           <article
                             key={currentFrame.id}
