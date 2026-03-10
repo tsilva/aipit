@@ -1022,6 +1022,7 @@ function StudioHero({
   const apiKeyFieldValue = isApiKeyEditorVisible ? draftApiKey : apiKeyLabel;
   const displayedApiKeyStatus = hasPendingApiKeyChanges ? "unresolved" : apiKeyStatus;
   const displayedApiKeyStatusMessage = hasPendingApiKeyChanges ? unresolvedApiKeyStatusMessage() : apiKeyStatusMessage;
+  const showUsageLimitNotice = !apiKey.trim() && !hasPendingApiKeyChanges;
   const statusTone =
     displayedApiKeyStatus === "valid"
       ? "success"
@@ -1219,6 +1220,9 @@ function StudioHero({
             ) : null}
             <span>{displayedApiKeyStatusMessage}</span>
           </div>
+          {showUsageLimitNotice ? (
+            <p className="hero-api-note">Without a personal key, hosted usage limits may apply.</p>
+          ) : null}
         </div>
       </section>
 

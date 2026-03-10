@@ -762,6 +762,13 @@ select.field {
   height: 1rem;
 }
 
+.hero-api-note {
+  margin: 0;
+  color: #f2c486;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .hero-panel-title {
   margin-top: 0.7rem;
   font-size: 1.6rem;
