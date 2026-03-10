@@ -1,3 +1,4 @@
+import { DEFAULT_COORDINATOR_MODEL, DEFAULT_PRESET_MODEL } from "@/lib/openrouter-models";
 import { PARTICIPANT_PERSONA_PRESETS } from "@/lib/persona-presets";
 import {
   buildPersonaProfileSummary,
@@ -9,6 +10,7 @@ import {
 } from "@/lib/persona-profile";
 
 export type PitMode = "debate";
+export { DEFAULT_PRESET_MODEL, MODEL_SUGGESTIONS } from "@/lib/openrouter-models";
 
 export type TurnKind =
   | "opening"
@@ -80,19 +82,17 @@ export interface RunResult {
   warnings: string[];
 }
 
-export const MODEL_SUGGESTIONS = [
-  "google/gemini-3.1-flash-lite-preview",
-  "x-ai/grok-4.1-fast",
-  "openai/gpt-5.4",
-  "qwen/qwen3.5-35b-a3b",
-] as const;
-
-export const DEFAULT_PRESET_MODEL = "x-ai/grok-4.1-fast";
 export const COORDINATOR_PRESET_ID = "jose-rodrigues-dos-santos";
 
 export const BALLOON_DELIMITER = "<<<BALLOON>>>";
 
 export const DEFAULT_SHARED_DIRECTIVE = `You are participating in a persona-versus-persona debate. Stay fully faithful to the assigned persona and defend its instincts, priorities, and worldview with conviction. Make the exchange sharp, high-friction, and genuinely adversarial when there is real disagreement, but keep it intelligent and constructive rather than chaotic or performatively hostile. Engage directly with the strongest points raised by the other debaters, digest what has already been said, and respond to the actual debate instead of repeating a canned stump speech. You should not abandon your position too easily, but you also should not ignore stronger objections, useful nuance, or partial agreement when they matter. Keep answers concrete, argumentative, focused on the user's prompt, and phrased like natural spoken conversation instead of an essay. Each participant should keep speaking in their own native language throughout the debate and assume translators are handling mutual understanding.`;
+export const PIT_RUN_DEFAULTS = {
+  sharedDirective: DEFAULT_SHARED_DIRECTIVE,
+  rounds: 2,
+  temperature: 0.7,
+  maxCompletionTokens: 700,
+} as const;
 
 const CONTROVERSIAL_DEBATE_TOPICS = [
   "Should democracies ban anonymous political speech during election season?",
@@ -165,7 +165,7 @@ export function createCoordinator(): ParticipantConfig {
   return {
     id: makeId("coordinator"),
     name: "José Rodrigues dos Santos",
-    model: DEFAULT_PRESET_MODEL,
+    model: DEFAULT_COORDINATOR_MODEL,
     presetId: COORDINATOR_PRESET_ID,
     personaProfile: createPersonaProfile({
       role: "Veteran Portuguese television journalist moderating the debate",
@@ -224,10 +224,7 @@ export function createDefaultInput(): RunInput {
   return {
     mode: "debate",
     prompt: generateControversialPrompt(),
-    sharedDirective: DEFAULT_SHARED_DIRECTIVE,
-    rounds: 2,
-    temperature: 0.7,
-    maxCompletionTokens: 700,
+    ...PIT_RUN_DEFAULTS,
     coordinator: createCoordinator(),
     members: defaultMemberPresetIds.map((presetId, index) => {
       const preset = presetMap.get(presetId);
@@ -239,7 +236,7 @@ export function createDefaultInput(): RunInput {
       return {
         id: makeId(`member-${index + 1}`),
         name: preset.name,
-        model: DEFAULT_PRESET_MODEL,
+        model: preset.recommendedModel,
         presetId: preset.id,
         personaProfile: clonePersonaProfile(preset.personaProfile),
         avatarUrl: preset.avatarUrl,
@@ -283,10 +280,10 @@ export function normalizeRunInput(value: unknown): RunInput {
   const input: RunInput = {
     mode: "debate",
     prompt: normalizeText(raw.prompt),
-    sharedDirective: normalizeText(raw.sharedDirective, DEFAULT_SHARED_DIRECTIVE),
-    rounds: clamp(Number(raw.rounds) || 2, 1, 6),
-    temperature: clamp(Number(raw.temperature) || 0.7, 0, 2),
-    maxCompletionTokens: clamp(Number(raw.maxCompletionTokens) || 700, 200, 4000),
+    sharedDirective: normalizeText(raw.sharedDirective, PIT_RUN_DEFAULTS.sharedDirective),
+    rounds: clamp(Number(raw.rounds) || PIT_RUN_DEFAULTS.rounds, 1, 6),
+    temperature: clamp(Number(raw.temperature) || PIT_RUN_DEFAULTS.temperature, 0, 2),
+    maxCompletionTokens: clamp(Number(raw.maxCompletionTokens) || PIT_RUN_DEFAULTS.maxCompletionTokens, 200, 4000),
     coordinator: normalizeParticipant(raw.coordinator, "Moderator"),
     members,
   };

@@ -558,6 +558,7 @@ select.field {
 
 .studio-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background:
     radial-gradient(circle at 50% 18%, rgba(255, 227, 186, 0.07), transparent 28%),
     radial-gradient(circle at 50% 100%, rgba(80, 140, 148, 0.12), transparent 35%);
@@ -569,11 +570,18 @@ select.field {
 
 .studio-form-simulation {
   min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
 }
 
 .studio-form-simulation .chamber-shell {
   flex: 1 1 auto;
+  height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
 .hero-shell {
@@ -1522,6 +1530,9 @@ select.field {
   grid-template-rows: minmax(0, 1fr) auto;
   align-items: stretch;
   column-gap: 1rem;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .cinema-stage-transcript {
@@ -1530,7 +1541,8 @@ select.field {
 }
 
 .studio-form-simulation .cinema-stage {
-  min-height: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 .cinema-vignette,
@@ -1796,6 +1808,8 @@ select.field {
     0 1rem 2rem rgba(2, 5, 8, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(14px);
+  min-height: 0;
+  overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -1807,19 +1821,35 @@ select.field {
   bottom: auto;
   left: auto;
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 1 / span 2;
   align-self: stretch;
   width: 100%;
+  height: 100%;
+  max-height: 100%;
   min-height: 0;
 }
 
 .speaker-queue-kicker {
-  margin: 0 0 0.6rem;
+  margin: 0;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--accent-strong);
+}
+
+.speaker-queue-header {
+  position: relative;
+  min-height: 1rem;
+  padding-right: 8.25rem;
+  margin-bottom: 0.6rem;
+}
+
+.speaker-queue-usage {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding-right: 0;
 }
 
 .speaker-queue-list {
@@ -1835,7 +1865,7 @@ select.field {
 
 .speaker-queue-item {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.65rem;
   width: 100%;
@@ -1864,13 +1894,7 @@ select.field {
   -webkit-user-drag: none;
 }
 
-.speaker-queue-rank {
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-}
-
-.speaker-queue-item.is-active {
+.speaker-queue-item.is-speaking {
   border-color: rgba(240, 171, 105, 0.36);
   background:
     linear-gradient(180deg, rgba(216, 122, 59, 0.2), rgba(255, 248, 237, 0.06)),
@@ -1887,7 +1911,7 @@ select.field {
     rgba(255, 248, 237, 0.05);
 }
 
-.speaker-queue-item.is-done {
+.speaker-queue-item.is-waiting {
   border-color: rgba(148, 163, 184, 0.14);
   background: rgba(148, 163, 184, 0.05);
 }
@@ -1938,7 +1962,7 @@ select.field {
     #5e8abc;
 }
 
-.speaker-queue-item.is-done .speaker-queue-avatar {
+.speaker-queue-item.is-waiting .speaker-queue-avatar {
   background:
     radial-gradient(circle at 30% 30%, rgba(228, 232, 239, 0.72), rgba(120, 132, 150, 0.86)),
     #788496;
@@ -1983,7 +2007,7 @@ select.field {
   text-transform: uppercase;
 }
 
-.speaker-queue-state-active {
+.speaker-queue-state-speaking {
   background: rgba(216, 122, 59, 0.16);
   color: #ffd3b2;
 }
@@ -1993,7 +2017,7 @@ select.field {
   color: #d8ebff;
 }
 
-.speaker-queue-state-done {
+.speaker-queue-state-waiting {
   background: rgba(148, 163, 184, 0.16);
   color: #dbe3ee;
 }
@@ -2027,6 +2051,8 @@ select.field {
 .cinema-stage-conversation .speaker-focus-shell {
   grid-column: 1;
   grid-row: 1;
+  min-height: 0;
+  padding-top: clamp(1.25rem, 6vh, 4.75rem);
 }
 
 .speaker-focus-content {
@@ -2395,8 +2421,10 @@ select.field {
 }
 
 .cinema-stage-conversation .speaker-playbar-shell {
-  grid-column: 1 / -1;
+  grid-column: 1;
   grid-row: 2;
+  min-width: 0;
+  margin-top: 0;
 }
 
 .timeline-button-group {
@@ -2685,7 +2713,7 @@ select.field {
 .transcript-sheet-actions.transcript-sheet-actions-top {
   position: absolute;
   top: 1rem;
-  right: 1rem;
+  right: 1.85rem;
   z-index: 2;
   width: auto;
 }
@@ -2774,7 +2802,8 @@ select.field {
 }
 
 .transcript-sheet-body-with-top-actions {
-  padding-top: 4.6rem;
+  padding-top: 1.3rem;
+  padding-right: 5rem;
 }
 
 .transcript-sheet-footer {
@@ -3013,6 +3042,12 @@ select.field {
   }
 }
 
+@media (min-width: 1400px) {
+  .hero-roster-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 1180px) {
   .settings-modal-grid {
     grid-template-columns: 1fr;
@@ -3042,6 +3077,7 @@ select.field {
     grid-column: 1;
     grid-row: 1;
     width: 100%;
+    height: auto;
     max-height: 16rem;
   }
 
@@ -3056,6 +3092,7 @@ select.field {
 
   .cinema-stage-conversation .speaker-playbar-shell {
     grid-row: 3;
+    grid-column: 1;
   }
 
   .speaker-focus-stack {
@@ -3166,13 +3203,14 @@ select.field {
 
   .transcript-sheet-actions.transcript-sheet-actions-top {
     top: 0.75rem;
-    right: 0.75rem;
+    right: 1.35rem;
     width: auto;
     justify-content: flex-end;
   }
 
   .transcript-sheet-body-with-top-actions {
-    padding-top: 4.2rem;
+    padding-top: 1.3rem;
+    padding-right: 4.5rem;
   }
 
   .transcript-sheet-actions {
@@ -3204,6 +3242,7 @@ select.field {
     right: auto;
     bottom: auto;
     width: 100%;
+    height: auto;
     max-height: 14rem;
   }
 

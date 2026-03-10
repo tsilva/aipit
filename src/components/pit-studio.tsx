@@ -13,8 +13,8 @@ import {
 } from "react";
 import ReactMarkdown from "react-markdown";
 import {
-  DEFAULT_PRESET_MODEL,
   MODEL_SUGGESTIONS,
+  PIT_RUN_DEFAULTS,
   addUsage,
   createRosterSnapshot,
   createDefaultInput,
@@ -37,7 +37,7 @@ import { filterParticipantPersonaPresets, type ParticipantPersonaPreset } from "
 
 const OPENROUTER_KEY_STORAGE = "llmpit.openrouter.key";
 const PIT_LINEUP_STORAGE = "llmpit.lineup";
-type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid";
+type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -131,6 +131,10 @@ function readStoredApiKey(): string {
 
 function emptyApiKeyStatusMessage(): string {
   return missingOpenRouterKeyMessage();
+}
+
+function unresolvedApiKeyStatusMessage(): string {
+  return "API key changed. Confirm it to validate before starting.";
 }
 
 type InitialStudioState = {
@@ -273,7 +277,7 @@ type QueueEntry = {
   model: string;
   chapterLabel: string;
   participant: ParticipantConfig | null;
-  state: "active" | "done" | "ready" | "thinking";
+  state: "speaking" | "ready" | "thinking" | "waiting";
   frameIndex: number | null;
 };
 
@@ -501,13 +505,13 @@ function buildQueueEntries({
     const actualFrame = actualTurn?.frame ?? null;
     const speakerId = actualFrame?.speakerId ?? plannedTurn.speakerId;
     const state =
-      actualFrame !== null
-        ? actualFrame.turnId === currentTurnId
-          ? ("active" as const)
-          : ("done" as const)
+      actualFrame?.turnId === currentTurnId
+        ? ("speaking" as const)
         : (isRunning || isAwaitingTurnResponse) && index === actualTurnStarts.length
           ? ("thinking" as const)
-          : ("ready" as const);
+          : actualFrame !== null
+            ? ("ready" as const)
+            : ("waiting" as const);
 
     return {
       id: actualFrame?.turnId ?? plannedTurn.id,
@@ -524,15 +528,15 @@ function buildQueueEntries({
 
 function queueStateLabel(state: QueueEntry["state"]): string {
   switch (state) {
-    case "active":
-      return "active";
-    case "done":
-      return "done";
+    case "speaking":
+      return "Speaking";
     case "thinking":
-      return "thinking";
+      return "Thinking";
     case "ready":
+      return "Ready";
+    case "waiting":
     default:
-      return "ready";
+      return "Waiting";
   }
 }
 
@@ -782,7 +786,7 @@ function buildPresetParticipant(preset: ParticipantPersonaPreset, index: number)
   return {
     ...createMember(index),
     name: preset.name,
-    model: DEFAULT_PRESET_MODEL,
+    model: preset.recommendedModel,
     presetId: preset.id,
     personaProfile: { ...preset.personaProfile },
     avatarUrl: preset.avatarUrl,
@@ -912,7 +916,6 @@ function StudioHero({
   isRunning,
   onDraftApiKeyChange,
   onSaveApiKey,
-  onOpenSettings,
   onPromptChange,
   onAddMember,
   onSelectModerator,
@@ -930,7 +933,6 @@ function StudioHero({
   isRunning: boolean;
   onDraftApiKeyChange: (value: string) => void;
   onSaveApiKey: () => Promise<boolean>;
-  onOpenSettings: () => void;
   onPromptChange: (value: string) => void;
   onAddMember: () => void;
   onSelectModerator: (id: string) => void;
@@ -940,9 +942,18 @@ function StudioHero({
   const [isEditingApiKey, setIsEditingApiKey] = useState(false);
   const apiKeyInputRef = useRef<HTMLInputElement | null>(null);
   const isApiKeyEditorVisible = isEditingApiKey || (hasLoadedKey && !hasApiKey);
+  const hasPendingApiKeyChanges = draftApiKey.trim() !== apiKey.trim();
   const apiKeyFieldValue = isApiKeyEditorVisible ? draftApiKey : apiKeyLabel;
+  const displayedApiKeyStatus = hasPendingApiKeyChanges ? "unresolved" : apiKeyStatus;
+  const displayedApiKeyStatusMessage = hasPendingApiKeyChanges ? unresolvedApiKeyStatusMessage() : apiKeyStatusMessage;
   const statusTone =
-    apiKeyStatus === "valid" ? "success" : apiKeyStatus === "invalid" ? "error" : apiKeyStatus === "checking" ? "info" : "warning";
+    displayedApiKeyStatus === "valid"
+      ? "success"
+      : displayedApiKeyStatus === "invalid"
+        ? "error"
+        : displayedApiKeyStatus === "checking"
+          ? "info"
+          : "warning";
 
   useEffect(() => {
     if (!isApiKeyEditorVisible) {
@@ -966,7 +977,7 @@ function StudioHero({
 
     event.preventDefault();
 
-    if (!isApiKeyEditorVisible || apiKeyStatus === "checking") {
+    if (!isApiKeyEditorVisible || displayedApiKeyStatus === "checking") {
       return;
     }
 
@@ -1026,20 +1037,6 @@ function StudioHero({
           <div>
             <p className="hero-kicker">Debate Topic</p>
             <h2 className="hero-panel-title">What is the debate topic about?</h2>
-          </div>
-
-          <div className="hero-selector-actions">
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="action-button hero-icon-button"
-              aria-label="Run settings"
-              title="Run settings"
-            >
-              <span className="action-button-icon">
-                <SettingsGlyph />
-              </span>
-            </button>
           </div>
         </div>
 
@@ -1104,7 +1101,7 @@ function StudioHero({
             <div className="hero-api-input-actions">
               <button
                 type="button"
-                disabled={apiKeyStatus === "checking"}
+                disabled={displayedApiKeyStatus === "checking"}
                 onClick={
                   isApiKeyEditorVisible
                     ? () => {
@@ -1119,17 +1116,17 @@ function StudioHero({
                 aria-label={isApiKeyEditorVisible ? "Confirm API key" : "Edit API key"}
                 title={isApiKeyEditorVisible ? "Confirm API key" : "Edit API key"}
               >
-                {isApiKeyEditorVisible ? (apiKeyStatus === "checking" ? "Testing..." : "Confirm") : <PencilGlyph />}
+                {isApiKeyEditorVisible ? (displayedApiKeyStatus === "checking" ? "Testing..." : "Confirm") : <PencilGlyph />}
               </button>
             </div>
           </div>
           <div className={`hero-api-status hero-api-status-${statusTone}`} role="status" aria-live="polite">
-            {apiKeyStatus === "valid" ? (
+            {displayedApiKeyStatus === "valid" ? (
               <span className="hero-api-status-icon" aria-hidden="true">
                 <CheckGlyph />
               </span>
             ) : null}
-            <span>{apiKeyStatusMessage}</span>
+            <span>{displayedApiKeyStatusMessage}</span>
           </div>
         </div>
       </section>
@@ -1647,20 +1644,27 @@ function transcriptTurnBody(turn: PitTurn): string {
 }
 
 function formatTokenCount(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) {
+    return "0";
+  }
+
+  if (value >= 1000) {
+    const compactValue = value / 1000;
+    return `${compactValue.toFixed(1)}k`;
+  }
+
   return value.toLocaleString("en-US");
 }
 
 function formatUsageCost(value: number): string {
-  if (value > 0 && value < 0.0001) {
-    return "<$0.0001";
-  }
+  const normalizedValue = Number.isFinite(value) ? Math.max(0, value) : 0;
 
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    minimumFractionDigits: value < 1 ? 4 : 2,
-    maximumFractionDigits: value < 1 ? 4 : 2,
-  }).format(value);
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(normalizedValue);
 }
 
 function buildTranscriptMarkdown({
@@ -1721,93 +1725,6 @@ async function copyTextToClipboard(text: string): Promise<void> {
   if (!didCopy) {
     throw new Error("Clipboard copy failed.");
   }
-}
-
-function StudioSettingsModal({
-  config,
-  onClose,
-  onConfigChange,
-}: {
-  config: RunInput;
-  onClose: () => void;
-  onConfigChange: (patch: Partial<RunInput>) => void;
-}) {
-  return (
-    <div className="settings-modal-backdrop">
-      <button type="button" className="settings-modal-dismiss" aria-label="Close settings" onClick={onClose} />
-
-      <section className="settings-sheet settings-modal-panel w-full max-w-3xl p-6 sm:p-7">
-        <div className="settings-modal-header">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted)]">Pit Settings</p>
-            <h2 className="mt-2 text-2xl font-semibold text-[color:var(--foreground)]">Room controls and run options</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[color:var(--ink-soft)]">
-              Adjust the debate-wide run settings from one place.
-            </p>
-          </div>
-
-          <button type="button" onClick={onClose} className="action-button">
-            Close
-          </button>
-        </div>
-
-        <div className="settings-modal-grid">
-          <div className="settings-modal-stack">
-            <FieldShell
-              label="Shared Directive"
-              hint="Prepended for every participant before their individual persona."
-            >
-              <textarea
-                className="field min-h-32 resize-y"
-                value={config.sharedDirective}
-                onChange={(event) => onConfigChange({ sharedDirective: event.target.value })}
-              />
-            </FieldShell>
-
-            <div className="settings-number-grid">
-              <FieldShell
-                label="Rounds"
-                hint="Each round gives every member one turn."
-              >
-                <input
-                  className="field"
-                  type="number"
-                  min={1}
-                  max={6}
-                  value={config.rounds}
-                  onChange={(event) => onConfigChange({ rounds: Number(event.target.value) || 1 })}
-                />
-              </FieldShell>
-
-              <FieldShell label="Temperature">
-                <input
-                  className="field"
-                  type="number"
-                  min={0}
-                  max={2}
-                  step={0.1}
-                  value={config.temperature}
-                  onChange={(event) => onConfigChange({ temperature: Number(event.target.value) || 0 })}
-                />
-              </FieldShell>
-
-              <FieldShell label="Max Completion Tokens">
-                <input
-                  className="field"
-                  type="number"
-                  min={200}
-                  max={4000}
-                  step={50}
-                  value={config.maxCompletionTokens}
-                  onChange={(event) => onConfigChange({ maxCompletionTokens: Number(event.target.value) || 200 })}
-                />
-              </FieldShell>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
 }
 
 function TranscriptPanel({
@@ -2083,9 +2000,9 @@ function ChamberStage({
     isAwaitingTurnResponse,
     isRunning,
   });
-  const activeEntry = queueEntries.find((entry) => entry.state === "active") ?? null;
+  const activeEntry = queueEntries.find((entry) => entry.state === "speaking") ?? null;
   const thinkingEntry = queueEntries.find((entry) => entry.state === "thinking") ?? null;
-  const queuedFocusEntry = activeEntry ?? thinkingEntry ?? queueEntries.find((entry) => entry.state !== "done") ?? null;
+  const queuedFocusEntry = activeEntry ?? thinkingEntry ?? queueEntries.find((entry) => entry.state !== "waiting") ?? null;
   const queueScrollTargetId = activeEntry?.id ?? thinkingEntry?.id ?? null;
   const focusSpeaker =
     (currentFrame ? roster.find((participant) => participant.id === currentFrame.speakerId) : null) ??
@@ -2133,11 +2050,11 @@ function ChamberStage({
               <span>Back</span>
             </button>
             {hasPlaybackStarted ? (
-              <div className="chamber-panel-tools">
-                <div className="mode-toggle mode-toggle-compact stage-panel-toggle" aria-label="Stage panel mode">
-                  {(["conversation", "transcript"] as const).map((nextPanelMode) => (
-                    <button
-                      key={nextPanelMode}
+                <div className="chamber-panel-tools">
+                  <div className="mode-toggle mode-toggle-compact stage-panel-toggle" aria-label="Stage panel mode">
+                    {(["conversation", "transcript"] as const).map((nextPanelMode) => (
+                      <button
+                        key={nextPanelMode}
                       type="button"
                       onClick={() => onPanelModeChange(nextPanelMode)}
                       className={`mode-toggle-button mode-toggle-button-compact ${panelMode === nextPanelMode ? "is-selected" : ""}`}
@@ -2146,13 +2063,6 @@ function ChamberStage({
                     </button>
                   ))}
                 </div>
-                <p className="chamber-usage-meta mono" aria-label="Usage so far">
-                  <span>{formatTokenCount(usage.totalTokens)} tokens</span>
-                  <span className="chamber-usage-meta-separator" aria-hidden="true">
-                    ·
-                  </span>
-                  <span>{formatUsageCost(usage.cost)} so far</span>
-                </p>
               </div>
             ) : null}
           </div>
@@ -2168,17 +2078,25 @@ function ChamberStage({
                   <div className="cinema-vignette" />
                   <div className="pit-floor-glow" />
                   <aside className="speaker-queue-shell" aria-label="Speaker queue">
-                    <p className="speaker-queue-kicker">Queue</p>
+                    <div className="speaker-queue-header">
+                      <p className="speaker-queue-kicker">Queue</p>
+                      <p className="chamber-usage-meta mono speaker-queue-usage" aria-label="Usage">
+                        <span>{formatTokenCount(usage.totalTokens)} tokens</span>
+                        <span className="chamber-usage-meta-separator" aria-hidden="true">
+                          ·
+                        </span>
+                        <span>{formatUsageCost(usage.cost)}</span>
+                      </p>
+                    </div>
                     <div className="speaker-queue-list">
                       {queueEntries.length > 0 ? (
-                        queueEntries.map(({ id, participant, state, speakerName, model, chapterLabel }, index) => (
+                        queueEntries.map(({ id, participant, state, speakerName, model }) => (
                           <div
                             key={id}
                             ref={id === queueScrollTargetId ? activeQueueItemRef : undefined}
                             className={`speaker-queue-item is-${state}`}
-                            aria-current={state === "active" ? "true" : undefined}
+                            aria-current={state === "speaking" ? "true" : undefined}
                           >
-                            <span className="speaker-queue-rank mono">{String(index + 1).padStart(2, "0")}</span>
                             <ParticipantAvatar
                               name={speakerName}
                               avatarUrl={participant?.avatarUrl}
@@ -2187,9 +2105,7 @@ function ChamberStage({
                             />
                             <span className="speaker-queue-copy">
                               <span className="speaker-queue-name">{speakerName}</span>
-                              <span className="speaker-queue-model mono">
-                                {chapterLabel} · {participant?.model ?? model}
-                              </span>
+                              <span className="speaker-queue-model mono">{participant?.model ?? model}</span>
                             </span>
                             <span className={`speaker-queue-state speaker-queue-state-${state}`}>
                               {queueStateLabel(state)}
@@ -2393,7 +2309,6 @@ export function PitStudio() {
   const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>(initialStudioState.apiKeyStatus);
   const [apiKeyStatusMessage, setApiKeyStatusMessage] = useState(initialStudioState.apiKeyStatusMessage);
   const [draftApiKey, setDraftApiKey] = useState(initialStudioState.draftApiKey);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showPersonaSelectorModal, setShowPersonaSelectorModal] = useState(false);
   const [studioView, setStudioView] = useState<StudioView>("setup");
   const [panelMode, setPanelMode] = useState<StagePanelMode>("conversation");
@@ -2415,7 +2330,8 @@ export function PitStudio() {
   const roster = [config.coordinator, ...config.members];
   const orderedRoster = orderParticipants(roster, lineupOrder);
   const hasApiKey = apiKey.trim().length > 0;
-  const hasValidatedApiKey = apiKeyStatus === "valid";
+  const hasPendingApiKeyChanges = draftApiKey.trim() !== apiKey.trim();
+  const hasValidatedApiKey = apiKeyStatus === "valid" && !hasPendingApiKeyChanges;
   const hasPrompt = config.prompt.trim().length > 0;
   const transcriptTurns = flattenTurns(result);
   const transcriptPrompt = result?.prompt ?? config.prompt;
@@ -2641,7 +2557,6 @@ export function PitStudio() {
         setApiKeyStatus,
         setApiKeyStatusMessage,
       });
-      setShowSettingsModal(false);
       setError(null);
       return true;
     }
@@ -2656,7 +2571,6 @@ export function PitStudio() {
       setApiKeyStatus,
       setApiKeyStatusMessage,
     });
-    setShowSettingsModal(false);
     setError(null);
     return true;
   }
@@ -2766,6 +2680,7 @@ export function PitStudio() {
     setIsAwaitingTurnResponse(true);
     const payload: RunInput = {
       ...config,
+      ...PIT_RUN_DEFAULTS,
       mode: "debate",
       coordinator: config.coordinator,
       members: shuffleParticipants(config.members),
@@ -2972,7 +2887,6 @@ export function PitStudio() {
             isRunning={isRunning}
             onDraftApiKeyChange={setDraftApiKey}
             onSaveApiKey={saveApiKey}
-            onOpenSettings={() => setShowSettingsModal(true)}
             onPromptChange={(prompt) => setConfig((current) => ({ ...current, prompt }))}
             onAddMember={() => setShowPersonaSelectorModal(true)}
             onSelectModerator={selectModerator}
@@ -2981,7 +2895,7 @@ export function PitStudio() {
         ) : (
           <ChamberStage
             roster={result?.roster ?? roster}
-            plannedRounds={config.rounds}
+            plannedRounds={PIT_RUN_DEFAULTS.rounds}
             usage={result?.usage ?? emptyUsage()}
             currentFrame={currentFrame}
             displayedBubbleContent={displayedBubbleContent}
@@ -3014,16 +2928,6 @@ export function PitStudio() {
           />
         )}
       </form>
-
-      {hasLoadedKey && showSettingsModal ? (
-        <StudioSettingsModal
-          config={config}
-          onClose={() => {
-            setShowSettingsModal(false);
-          }}
-          onConfigChange={(patch) => setConfig((current) => ({ ...current, ...patch }))}
-        />
-      ) : null}
 
       {showPersonaSelectorModal ? (
         <PersonaSelectorModal
