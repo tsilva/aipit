@@ -20,6 +20,11 @@ const monoFont = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
+  icons: {
+    icon: [],
+    shortcut: [],
+    apple: [],
+  },
   keywords: [
     "AI debate",
     "persona simulation",

@@ -895,17 +895,16 @@ select.field {
   display: grid;
   gap: 0.55rem;
   margin-top: 1.35rem;
-  position: relative;
-  padding-top: 3.2rem;
 }
 
 .hero-prompt-input-shell {
   display: grid;
+  position: relative;
 }
 
 .hero-prompt-input {
   min-height: calc(2em + 2.4rem);
-  padding: 1.2rem 1.15rem;
+  padding: 1.2rem 4.2rem 1.2rem 1.15rem;
   font-size: 1.04rem;
   line-height: 1.4;
   resize: none;
@@ -914,8 +913,8 @@ select.field {
 
 .hero-prompt-wand-button {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 0.8rem;
+  right: 0.8rem;
   z-index: 1;
 }
 
@@ -2236,7 +2235,7 @@ select.field {
   width: 1.12rem;
   height: 1.3rem;
   background: var(--focus-bubble-tail-border);
-  clip-path: polygon(100% 50%, 0 0, 0 100%);
+  clip-path: polygon(0 50%, 100% 0, 100% 100%);
   z-index: 1;
   animation: bubble-tail-in 340ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
 }
@@ -2249,7 +2248,7 @@ select.field {
   width: 0.94rem;
   height: 1.08rem;
   background: var(--focus-bubble-tail-fill);
-  clip-path: polygon(100% 50%, 0 0, 0 100%);
+  clip-path: polygon(0 50%, 100% 0, 100% 100%);
   z-index: 2;
   animation: bubble-tail-in 340ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
 }

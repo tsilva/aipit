@@ -31,6 +31,8 @@
 3. **Rounds** — Each debater argues in sequence for N rounds. The moderator intervenes between rounds to sharpen the discussion.
 4. **Consensus** — The moderator closes with a balanced wrap-up synthesizing the key arguments.
 
+You can deep-link a starter bundle with `?id=<bundle-id>`, for example `http://localhost:3000/?id=ai-liability-meltdown`. That URL loads the requested bundle on first render without overwriting the lineup and prompt already saved in the browser unless the user then edits the loaded setup.
+
 The orchestration engine lives in [`pit-engine.ts`](src/lib/pit-engine.ts) and the full UI in [`pit-studio.tsx`](src/components/pit-studio.tsx).
 
 ## 🚀 Getting Started

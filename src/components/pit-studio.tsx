@@ -18,11 +18,13 @@ import {
   MODEL_SUGGESTIONS,
   PIT_RUN_DEFAULTS,
   addUsage,
+  createInputFromStarterBundle,
   createRosterSnapshot,
   createDefaultInput,
   createRandomStarterInput,
   createMember,
   emptyUsage,
+  getStarterBundle,
   type PitTurn,
   type ParticipantConfig,
   type RunInput,
@@ -164,6 +166,7 @@ type InitialStudioState = {
   config: RunInput;
   lineupOrder: string[];
   starterBundleId?: string;
+  transientSetupSnapshot: string | null;
   apiKey: string;
   apiKeyStatus: ApiKeyStatus;
   apiKeyStatusMessage: string;
@@ -171,6 +174,35 @@ type InitialStudioState = {
   hasLoadedKey: boolean;
   hasLoadedLineup: boolean;
 };
+
+function buildStoredSetupSnapshot({
+  config,
+  lineupOrder,
+  starterBundleId,
+}: {
+  config: RunInput;
+  lineupOrder: string[];
+  starterBundleId?: string;
+}): string {
+  return JSON.stringify({
+    prompt: config.prompt,
+    coordinator: config.coordinator,
+    members: config.members,
+    order: lineupOrder,
+    starterBundleId,
+  });
+}
+
+function readStarterBundleFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const bundleId = params.get("id")?.trim();
+
+  if (!bundleId) {
+    return null;
+  }
+
+  return getStarterBundle(bundleId) ?? null;
+}
 
 function buildInitialStudioState(): InitialStudioState {
   const defaultStarter = createRandomStarterInput();
@@ -181,6 +213,7 @@ function buildInitialStudioState(): InitialStudioState {
       config: defaultInput,
       lineupOrder: [],
       starterBundleId: defaultStarter.bundle.id,
+      transientSetupSnapshot: null,
       apiKey: "",
       apiKeyStatus: "empty",
       apiKeyStatusMessage: emptyApiKeyStatusMessage(),
@@ -192,18 +225,37 @@ function buildInitialStudioState(): InitialStudioState {
 
   const storedSetup = readStoredSetup();
   const storedApiKey = readStoredApiKey();
-
-  return {
-    config: storedSetup
+  const queryStarterBundle = readStarterBundleFromQuery();
+  const queryBundleInput = queryStarterBundle ? createInputFromStarterBundle(queryStarterBundle) : null;
+  const queryBundleLineupOrder = queryBundleInput
+    ? syncLineupOrder([], [queryBundleInput.coordinator, ...queryBundleInput.members])
+    : [];
+  const config = queryBundleInput
+    ? queryBundleInput
+    : storedSetup
       ? {
           ...defaultInput,
           prompt: storedSetup.prompt,
           coordinator: storedSetup.coordinator,
           members: storedSetup.members,
         }
-      : defaultInput,
-    lineupOrder: storedSetup?.order ?? [],
-    starterBundleId: storedSetup?.starterBundleId ?? (!storedSetup ? defaultStarter.bundle.id : undefined),
+      : defaultInput;
+  const lineupOrder = queryBundleInput ? queryBundleLineupOrder : (storedSetup?.order ?? []);
+  const starterBundleId = queryStarterBundle
+    ? queryStarterBundle.id
+    : storedSetup?.starterBundleId ?? (!storedSetup ? defaultStarter.bundle.id : undefined);
+
+  return {
+    config,
+    lineupOrder,
+    starterBundleId,
+    transientSetupSnapshot: queryBundleInput
+      ? buildStoredSetupSnapshot({
+          config,
+          lineupOrder,
+          starterBundleId,
+        })
+      : null,
     apiKey: storedApiKey,
     apiKeyStatus: "checking",
     apiKeyStatusMessage: storedApiKey
@@ -2530,17 +2582,27 @@ export function PitStudio() {
       return;
     }
 
+    const nextSnapshot = buildStoredSetupSnapshot({
+      config,
+      lineupOrder,
+      starterBundleId,
+    });
+
+    if (initialStudioState.transientSetupSnapshot === nextSnapshot) {
+      return;
+    }
+
     window.localStorage.setItem(
       PIT_LINEUP_STORAGE,
-      JSON.stringify({
-        prompt: config.prompt,
-        coordinator: config.coordinator,
-        members: config.members,
-        order: lineupOrder,
-        starterBundleId,
-      }),
+      nextSnapshot,
     );
-  }, [config.coordinator, config.members, config.prompt, hasLoadedLineup, lineupOrder, starterBundleId]);
+  }, [
+    config,
+    hasLoadedLineup,
+    initialStudioState.transientSetupSnapshot,
+    lineupOrder,
+    starterBundleId,
+  ]);
 
   useEffect(() => {
     if (activeEditorId && !editableParticipant) {
