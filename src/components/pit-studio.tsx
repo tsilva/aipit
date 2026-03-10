@@ -1140,38 +1140,6 @@ function StudioHero({
         </div>
       </section>
 
-      <section className="hero-panel hero-roster-shell">
-        <div className="hero-roster-header">
-          <div>
-            <p className="hero-kicker">Pit Lineup</p>
-            <h2 className="hero-panel-title">Select the moderator and debaters</h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={onAddMember}
-            className="chamber-add-button"
-            aria-label="Add debater"
-            title="Add debater"
-          >
-            <PlusGlyph />
-          </button>
-        </div>
-
-        <div className="hero-roster-grid">
-          {roster.map((participant) => (
-            <SetupParticipantCard
-              key={participant.id}
-              participant={participant}
-              isModerator={participant.id === config.coordinator.id}
-              roleLabel={participant.id === config.coordinator.id ? "Moderator" : "Debater"}
-              onSelectModerator={() => onSelectModerator(participant.id)}
-              onEdit={() => onOpenParticipant(participant.id)}
-            />
-          ))}
-        </div>
-      </section>
-
       <section className="hero-panel hero-prompt-shell">
         <div className="hero-prompt-header">
           <div>
@@ -1202,6 +1170,38 @@ function StudioHero({
             />
           </div>
         </label>
+      </section>
+
+      <section className="hero-panel hero-roster-shell">
+        <div className="hero-roster-header">
+          <div>
+            <p className="hero-kicker">Pit Lineup</p>
+            <h2 className="hero-panel-title">Select the moderator and debaters</h2>
+          </div>
+
+          <button
+            type="button"
+            onClick={onAddMember}
+            className="chamber-add-button"
+            aria-label="Add debater"
+            title="Add debater"
+          >
+            <PlusGlyph />
+          </button>
+        </div>
+
+        <div className="hero-roster-grid">
+          {roster.map((participant) => (
+            <SetupParticipantCard
+              key={participant.id}
+              participant={participant}
+              isModerator={participant.id === config.coordinator.id}
+              roleLabel={participant.id === config.coordinator.id ? "Moderator" : "Debater"}
+              onSelectModerator={() => onSelectModerator(participant.id)}
+              onEdit={() => onOpenParticipant(participant.id)}
+            />
+          ))}
+        </div>
       </section>
 
       <section className="hero-panel hero-api-shell">
