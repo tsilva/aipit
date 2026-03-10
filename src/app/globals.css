@@ -3065,7 +3065,7 @@ select.field {
 
   .cinema-stage-conversation {
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
     row-gap: 0.9rem;
   }
 
@@ -3075,7 +3075,7 @@ select.field {
 
   .cinema-stage-conversation .speaker-queue-shell {
     grid-column: 1;
-    grid-row: 1;
+    grid-row: 3;
     width: 100%;
     height: auto;
     max-height: 16rem;
@@ -3087,11 +3087,11 @@ select.field {
   }
 
   .cinema-stage-conversation .speaker-focus-shell {
-    grid-row: 2;
+    grid-row: 1;
   }
 
   .cinema-stage-conversation .speaker-playbar-shell {
-    grid-row: 3;
+    grid-row: 2;
     grid-column: 1;
   }
 
@@ -3135,6 +3135,25 @@ select.field {
 }
 
 @media (max-width: 640px) {
+  .studio-form-simulation {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .studio-form-simulation .chamber-shell,
+  .studio-form-simulation .stage-frame,
+  .studio-form-simulation .cinema-stage,
+  .studio-form-simulation .cinema-stage-conversation {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .studio-form-simulation .chamber-shell {
+    flex: 0 0 auto;
+  }
+
   .hero-copy-panel,
   .hero-api-shell,
   .hero-prompt-shell,
@@ -3219,6 +3238,10 @@ select.field {
   }
 
   .timeline-shell {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    gap: 0.7rem 0.75rem;
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
@@ -3243,7 +3266,7 @@ select.field {
     bottom: auto;
     width: 100%;
     height: auto;
-    max-height: 14rem;
+    max-height: min(14rem, 34vh);
   }
 
   .speaker-queue-item {
@@ -3264,8 +3287,8 @@ select.field {
   }
 
   .speaker-focus-shell {
-    min-height: 21rem;
-    padding: 5.5rem 0.9rem 1rem;
+    min-height: 0;
+    padding: 1rem 0.9rem 1rem;
   }
 
   .speaker-focus-stack {
@@ -3274,11 +3297,12 @@ select.field {
   }
 
   .speaker-focus-figure {
-    transform: translateX(0.25rem);
+    transform: none;
   }
 
   .speaker-focus-content {
     gap: 0.85rem;
+    width: 100%;
   }
 
   .speaker-focus-shell-transcript {
@@ -3359,8 +3383,16 @@ select.field {
     width: 100%;
   }
 
-  .timeline-button-group {
+  .timeline-track-shell {
+    grid-column: 1 / -1;
+    order: 3;
     width: 100%;
+  }
+
+  .timeline-button-group {
+    width: auto;
+    justify-self: end;
+    justify-content: flex-end;
   }
 
   .settings-stat-grid,
@@ -3370,5 +3402,66 @@ select.field {
 
   .settings-sheet {
     max-width: 100%;
+  }
+
+  .settings-modal-backdrop,
+  .participant-modal-backdrop {
+    align-items: flex-start;
+    overflow-y: auto;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .settings-modal-panel,
+  .persona-selector-modal-panel,
+  .participant-modal-panel,
+  .raw-prompt-modal-panel {
+    max-height: calc(100dvh - 1.5rem);
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 900px) and (max-height: 760px) {
+  .cinema-stage-conversation {
+    grid-template-rows: auto auto auto;
+  }
+
+  .speaker-queue-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-height: 0;
+    padding-right: 0;
+  }
+
+  .speaker-queue-usage {
+    position: static;
+  }
+
+  .speaker-focus-shell {
+    min-height: 0;
+    padding-top: 1rem;
+  }
+
+  .cinema-stage-conversation .speaker-focus-shell {
+    padding-top: 0.25rem;
+  }
+
+  .speaker-focus-bubble-card {
+    min-height: 0;
+  }
+
+  .settings-modal-backdrop,
+  .participant-modal-backdrop {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .settings-modal-panel,
+  .persona-selector-modal-panel,
+  .participant-modal-panel,
+  .raw-prompt-modal-panel {
+    max-height: calc(100dvh - 2rem);
   }
 }
