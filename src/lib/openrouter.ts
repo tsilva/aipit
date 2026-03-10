@@ -15,7 +15,7 @@ export function invalidOpenRouterKeyMessage(): string {
 }
 
 function resolveAppName(): string {
-  return process.env.NEXT_PUBLIC_OPENROUTER_APP_NAME || "LLM Council";
+  return process.env.NEXT_PUBLIC_OPENROUTER_APP_NAME || "The AI Pit";
 }
 
 export function buildOpenRouterHeaders({

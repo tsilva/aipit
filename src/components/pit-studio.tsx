@@ -775,7 +775,7 @@ function GitHubGlyph() {
 }
 
 function promptPlaceholder(): string {
-  return "What should these personas fight out in LLM Council?";
+  return "What should these personas fight out in The AI Pit?";
 }
 
 function isAbortError(error: unknown): boolean {
@@ -2150,7 +2150,7 @@ function ChamberStage({
                         >
                           <span className="speaker-focus-avatar-ring" />
                           <ParticipantAvatar
-                            name={focusSpeaker?.name ?? "LLM Council"}
+                            name={focusSpeaker?.name ?? "The AI Pit"}
                             avatarUrl={focusSpeaker?.avatarUrl}
                             className="speaker-focus-avatar-core"
                             fallbackClassName="speaker-focus-avatar-fallback"
@@ -2158,7 +2158,7 @@ function ChamberStage({
                         </div>
 
                         <div className="speaker-focus-meta">
-                          <span className="speaker-focus-name">{focusSpeaker?.name ?? "LLM Council"}</span>
+                          <span className="speaker-focus-name">{focusSpeaker?.name ?? "The AI Pit"}</span>
                           <span className="speaker-focus-model mono">
                             {focusSpeaker?.model ?? (isRunning ? "thinking" : "ready")}
                           </span>
@@ -2653,12 +2653,12 @@ export function PitStudio() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!hasPrompt) {
-      setError("Enter a prompt before starting LLM Council.");
+      setError("Enter a prompt before starting The AI Pit.");
       return;
     }
 
     if (!hasValidatedApiKey) {
-      setError("Add and validate an OpenRouter API key before starting LLM Council.");
+      setError("Add and validate an OpenRouter API key before starting The AI Pit.");
       return;
     }
 
@@ -2717,7 +2717,7 @@ export function PitStudio() {
         return;
       }
 
-      setError(submissionError instanceof Error ? submissionError.message : "LLM Council run failed.");
+      setError(submissionError instanceof Error ? submissionError.message : "The AI Pit run failed.");
     } finally {
       if (activeRunIdRef.current === runId) {
         runAbortControllerRef.current = null;
