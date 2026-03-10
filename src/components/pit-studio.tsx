@@ -1975,8 +1975,9 @@ function ChamberStage({
   const activeEntry = queueEntries.find((entry) => entry.state === "speaking") ?? null;
   const thinkingEntry = queueEntries.find((entry) => entry.state === "thinking") ?? null;
   const queuedFocusEntry = activeEntry ?? thinkingEntry ?? queueEntries.find((entry) => entry.state !== "waiting") ?? null;
-  const isShowingPendingTurn = isAwaitingTurnResponse && pendingTurn !== null;
-  const maxNavigableFrameIndex = isShowingPendingTurn ? frames.length : Math.max(frames.length - 1, 0);
+  const hasPendingFrame = isAwaitingTurnResponse && pendingTurn !== null;
+  const isShowingPendingTurn = hasPendingFrame && !currentFrame;
+  const maxNavigableFrameIndex = hasPendingFrame ? frames.length : Math.max(frames.length - 1, 0);
   const queueScrollTargetId = (isShowingPendingTurn ? thinkingEntry?.id : activeEntry?.id) ?? thinkingEntry?.id ?? null;
   const pendingParticipant =
     pendingTurn ? roster.find((participant) => participant.id === pendingTurn.speakerId) ?? null : null;
