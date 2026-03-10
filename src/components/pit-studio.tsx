@@ -1193,6 +1193,16 @@ function StudioHero({
       </section>
 
       <section className="hero-panel hero-prompt-shell">
+        <button
+          type="button"
+          onClick={onRerollStarterBundle}
+          className="icon-circle-button hero-prompt-wand-button"
+          aria-label="Load another starter debate"
+          title="Load another starter debate"
+        >
+          <WandGlyph />
+        </button>
+
         <div className="hero-prompt-header">
           <div>
             <p className="hero-kicker">Debate Topic</p>
@@ -1202,16 +1212,6 @@ function StudioHero({
 
         <label className="hero-prompt-panel" htmlFor="hero-pit-prompt">
           <div className="hero-prompt-input-shell">
-            <button
-              type="button"
-              onClick={onRerollStarterBundle}
-              className="icon-circle-button hero-prompt-wand-button"
-              aria-label="Load another starter debate"
-              title="Load another starter debate"
-            >
-              <WandGlyph />
-            </button>
-
             <AutoSizeTextarea
               id="hero-pit-prompt"
               className="field hero-prompt-input"

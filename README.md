@@ -13,7 +13,7 @@
 
 - 🎭 **Rich persona profiles** — 12-field character sheets (role, personality, perspective, temperament, debate style, speech style, guardrails, language, gender, nationality, birth date, prompt notes)
 - 👥 **15 built-in debater presets** — Portuguese political figures (Montenegro, Mortágua, Ventura, Marques Mendes, Gouveia e Melo, Cotrim de Figueiredo, Seguro) + international media & pop-culture voices (Alex Jones, Lex Fridman, Joe Rogan, Donald Trump, Elon Musk, Homer Simpson, Rick Sanchez, The Knight Who Says "Ni")
-- 🎬 **7 curated starter bundles** — cold-start debates seed a moderator, three debaters, and a high-friction topic in one click
+- 🎬 **8 curated starter bundles** — cold-start debates seed a moderator, three debaters, and a high-friction topic in one click
 - 🏟️ **Structured debate flow** — opening → rounds → interventions → consensus
 - 🔗 **Persona relationships** — pairwise awareness so debaters know how to engage each other
 - 🤖 **Multi-model support via OpenRouter** — Claude, DeepSeek, Grok, Gemini, Mistral, and more

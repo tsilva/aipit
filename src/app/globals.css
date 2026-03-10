@@ -626,6 +626,10 @@ select.field {
   padding: 1.35rem;
 }
 
+.hero-prompt-shell {
+  padding-right: 5rem;
+}
+
 .hero-copy-panel {
   display: grid;
   gap: 1rem;
@@ -899,12 +903,11 @@ select.field {
 
 .hero-prompt-input-shell {
   display: grid;
-  position: relative;
 }
 
 .hero-prompt-input {
   min-height: calc(2em + 2.4rem);
-  padding: 1.2rem 4.2rem 1.2rem 1.15rem;
+  padding: 1.2rem 1.15rem;
   font-size: 1.04rem;
   line-height: 1.4;
   resize: none;
@@ -913,8 +916,8 @@ select.field {
 
 .hero-prompt-wand-button {
   position: absolute;
-  top: 0.8rem;
-  right: 0.8rem;
+  top: 1.35rem;
+  right: 1.35rem;
   z-index: 1;
 }
 
@@ -3254,7 +3257,16 @@ select.field {
     padding-right: 4.6rem;
   }
 
+  .hero-prompt-shell {
+    padding-right: 4.6rem;
+  }
+
   .hero-copy-actions {
+    top: 1rem;
+    right: 1rem;
+  }
+
+  .hero-prompt-wand-button {
     top: 1rem;
     right: 1rem;
   }

@@ -191,6 +191,13 @@ export const STARTER_BUNDLES: StarterBundle[] = [
     memberPresetIds: ["henrique-gouveia-e-melo", "andre-ventura", "mariana-mortagua"],
   },
   {
+    id: "gender-identity-flashpoint",
+    name: "Gender Identity Flashpoint",
+    prompt: "Can men get pregnant?",
+    moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["mariana-mortagua", "andre-ventura", "luis-montenegro"],
+  },
+  {
     id: "podcaster-free-speech-war",
     name: "Podcaster Free Speech War",
     prompt: "Should online anonymity be abolished for accounts with more than a million followers?",
