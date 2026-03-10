@@ -225,6 +225,13 @@ export const STARTER_BUNDLES: StarterBundle[] = [
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["homer-simpson", "rick-sanchez", "knight-who-says-ni"],
   },
+  {
+    id: "ocean-democracy-meltdown",
+    name: "Ocean Democracy Meltdown",
+    prompt: "Should dolphins get voting rights in coastal cities if they can consistently recognize corrupt politicians?",
+    moderatorPresetId: US_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["rick-sanchez", "homer-simpson", "knight-who-says-ni"],
+  },
 ];
 
 const STARTER_BUNDLE_MAP = new Map(STARTER_BUNDLES.map((bundle) => [bundle.id, bundle] as const));
