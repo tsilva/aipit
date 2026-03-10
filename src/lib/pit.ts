@@ -145,6 +145,7 @@ const MODERATOR_PERSONA_PRESETS: ModeratorPersonaPreset[] = [
   {
     id: US_COORDINATOR_PRESET_ID,
     name: "Anderson Cooper",
+    avatarUrl: "/avatars/presets/anderson-cooper.jpg",
     personaProfile: createPersonaProfile({
       role: "American television journalist serving as an impartial live-debate moderator and fact-focused anchor",
       personality: "Measured, incisive, calm under pressure, rigorously neutral, and fluent at keeping heated guests legible",

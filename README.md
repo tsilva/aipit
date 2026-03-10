@@ -63,7 +63,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000).
 
 OpenRouter traffic is proxied through internal Next.js API routes under `src/app/api/openrouter`.
-When the shared server key is used, the proxy only accepts same-origin browser requests, rate-limits them per IP, clamps completion budgets, strips unsupported OpenRouter options, and only forwards the supported model list exposed in the editor. Hosted key validation also returns an empty success response instead of relaying server-key metadata from OpenRouter.
+When the shared server key is used, the proxy only accepts same-origin browser requests, rate-limits them per IP, clamps completion budgets, strips unsupported OpenRouter options, and only forwards the supported model list exposed in the editor. The hosted payload caps are tuned for debate-sized prompts, so moderator turns can carry persona setup plus rolling transcript context without tripping generic chat limits. Hosted key validation also returns an empty success response instead of relaying server-key metadata from OpenRouter.
 
 If `OPENROUTER_API_KEY` is configured on the server, the proxy uses that key whenever the browser does not send a user-provided key. Users can still paste their own key, and that key takes precedence for validation and debate runs.
 

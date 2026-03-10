@@ -1136,7 +1136,7 @@ function StudioHero({
 
         <div className="hero-copy-stack">
           <h1 className="hero-title">The AI Pit</h1>
-          <p className="hero-body">Select debaters, choose a topic, hit start, get some popcorn 🍿.</p>
+          <p className="hero-body">Choose a topic, select debaters, hit start, get some popcorn 🍿.</p>
         </div>
       </section>
 
@@ -1208,14 +1208,12 @@ function StudioHero({
         <div className="hero-api-header">
           <div>
             <p className="hero-kicker">OpenRouter Access</p>
-            <h2 className="hero-panel-title">API key</h2>
             <p className="hero-panel-copy">
-              OpenRouter is used as the LLM provider. Paste your own API key here, or leave it empty and use a
-              server-side key when one is configured. Start in{" "}
+              Use your OpenRouter key here, or leave it blank to use a configured server key. Get one from{" "}
               <a href="https://openrouter.ai/" target="_blank" rel="noreferrer" className="hero-api-link">
                 OpenRouter
               </a>{" "}
-              and manage it in{" "}
+              or manage it in{" "}
               <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer" className="hero-api-link">
                 key settings
               </a>
