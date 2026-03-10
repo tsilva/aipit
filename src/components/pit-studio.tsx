@@ -12,7 +12,6 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type CSSProperties,
   type ComponentPropsWithoutRef,
 } from "react";
 import {
@@ -342,10 +341,6 @@ function bubbleRevealIncrement(content: string): number {
 function bubbleHoldDuration(content: string): number {
   const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
   return Math.min(9000, Math.max(3200, wordCount * 280));
-}
-
-function formatBubbleDismissCountdown(remainingMs: number): string {
-  return `${Math.max(0, remainingMs) / 1000 < 10 ? (Math.max(0, remainingMs) / 1000).toFixed(1) : Math.ceil(Math.max(0, remainingMs) / 1000)}s`;
 }
 
 function flattenTurns(result: RunResult | null): PitTurn[] {
@@ -2056,9 +2051,6 @@ function ChamberStage({
   transcriptMarkdown,
   isPlaybackPlaying,
   isAwaitingTurnResponse,
-  showManualDismissCountdown,
-  manualDismissCountdownLabel,
-  manualDismissCountdownProgress,
   onPanelModeChange,
   onOpenParticipant,
   onExit,
@@ -2088,9 +2080,6 @@ function ChamberStage({
   transcriptMarkdown: string;
   isPlaybackPlaying: boolean;
   isAwaitingTurnResponse: boolean;
-  showManualDismissCountdown: boolean;
-  manualDismissCountdownLabel: string | null;
-  manualDismissCountdownProgress: number;
   onPanelModeChange: (mode: StagePanelMode) => void;
   onOpenParticipant: (id: string) => void;
   onExit: () => void;
@@ -2131,10 +2120,6 @@ function ChamberStage({
   const [debugFrame, setDebugFrame] = useState<PlaybackFrame | null>(null);
   const showBubbleDebugButton = useSyncExternalStore(subscribeToRuntime, isLocalRuntime, () => false);
   const activeQueueItemRef = useRef<HTMLDivElement | null>(null);
-  const manualDismissTimerStyle =
-    {
-      "--bubble-dismiss-progress": String(manualDismissCountdownProgress),
-    } as CSSProperties;
 
   function openRawPrompt(frame: PlaybackFrame) {
     onPausePlayback();
@@ -2275,12 +2260,6 @@ function ChamberStage({
                           />
                         </div>
 
-                        <div className="speaker-focus-meta">
-                          <span className="speaker-focus-name">{focusSpeaker?.name ?? "The AI Pit"}</span>
-                          <span className="speaker-focus-model mono">
-                            {focusSpeaker?.model ?? (isRunning ? "thinking" : "ready")}
-                          </span>
-                        </div>
                       </div>
 
                       <div className={`speaker-focus-bubble ${!currentFrame && !queuedFocusEntry ? "is-idle" : ""}`}>
@@ -2302,17 +2281,6 @@ function ChamberStage({
                             ) : null}
                             <p className="stage-bubble-speaker">
                               <span>{currentFrame.speakerName}</span>
-                              {showManualDismissCountdown && manualDismissCountdownLabel ? (
-                                <span
-                                  className="stage-bubble-dismiss-timer mono"
-                                  style={manualDismissTimerStyle}
-                                  aria-label={`${manualDismissCountdownLabel} until bubble dismissal cue`}
-                                  title={`${manualDismissCountdownLabel} until bubble dismissal cue`}
-                                >
-                                  <span className="stage-bubble-dismiss-spinner" aria-hidden="true" />
-                                  <span>{manualDismissCountdownLabel}</span>
-                                </span>
-                              ) : null}
                             </p>
                             <p className={`stage-bubble-copy ${isBubbleStreaming ? "is-streaming" : ""}`}>
                               {displayedBubbleContent || "\u00a0"}
@@ -2443,7 +2411,6 @@ export function PitStudio() {
   const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(true);
   const [frameCompletedAt, setFrameCompletedAt] = useState<number | null>(null);
   const [isAwaitingTurnResponse, setIsAwaitingTurnResponse] = useState(false);
-  const [dismissCountdownNow, setDismissCountdownNow] = useState(() => Date.now());
   const keyValidationRequestIdRef = useRef(0);
   const runAbortControllerRef = useRef<AbortController | null>(null);
   const activeRunIdRef = useRef(0);
@@ -2475,19 +2442,6 @@ export function PitStudio() {
   const isPlaybackActive = panelMode === "transcript" ? true : isPlaybackPlaying;
   const isBubbleStreaming =
     Boolean(currentFrame) && revealedBubbleChars < (currentFrame?.bubbleContent.length ?? 0);
-  const currentBubbleHoldDurationMs = currentFrame ? bubbleHoldDuration(currentFrame.bubbleContent) : 0;
-  const isManualDismissCountdownVisible =
-    panelMode === "conversation" && Boolean(currentFrame) && !isPlaybackPlaying && frameCompletedAt !== null;
-  const manualDismissCountdownMsRemaining =
-    isManualDismissCountdownVisible && frameCompletedAt !== null
-      ? Math.max(0, frameCompletedAt + currentBubbleHoldDurationMs - dismissCountdownNow)
-      : null;
-  const manualDismissCountdownProgress =
-    isManualDismissCountdownVisible && currentBubbleHoldDurationMs > 0 && manualDismissCountdownMsRemaining !== null
-      ? Math.min(1, Math.max(0, 1 - manualDismissCountdownMsRemaining / currentBubbleHoldDurationMs))
-      : 0;
-  const manualDismissCountdownLabel =
-    manualDismissCountdownMsRemaining === null ? null : formatBubbleDismissCountdown(manualDismissCountdownMsRemaining);
   const displayedBubbleContent = currentFrame
     ? currentFrame.bubbleContent.slice(0, Math.min(revealedBubbleChars, currentFrame.bubbleContent.length))
     : "";
@@ -2623,19 +2577,6 @@ export function PitStudio() {
     revealedBubbleId,
     revealedBubbleChars,
   ]);
-
-  useEffect(() => {
-    if (!isManualDismissCountdownVisible) {
-      return;
-    }
-
-    setDismissCountdownNow(Date.now());
-    const intervalId = window.setInterval(() => {
-      setDismissCountdownNow(Date.now());
-    }, 100);
-
-    return () => window.clearInterval(intervalId);
-  }, [currentBubbleHoldDurationMs, currentFrame?.id, frameCompletedAt, isManualDismissCountdownVisible]);
 
   function updateCoordinator(patch: Partial<ParticipantConfig>) {
     setConfig((current) => ({
@@ -3037,9 +2978,6 @@ export function PitStudio() {
             transcriptMarkdown={transcriptMarkdown}
             isPlaybackPlaying={isPlaybackPlaying}
             isAwaitingTurnResponse={isAwaitingTurnResponse}
-            showManualDismissCountdown={isManualDismissCountdownVisible}
-            manualDismissCountdownLabel={manualDismissCountdownLabel}
-            manualDismissCountdownProgress={manualDismissCountdownProgress}
             onPanelModeChange={setPanelMode}
             onOpenParticipant={openParticipantEditor}
             onExit={exitSimulation}

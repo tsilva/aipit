@@ -86,7 +86,7 @@ export const COORDINATOR_PRESET_ID = "jose-rodrigues-dos-santos";
 
 export const BALLOON_DELIMITER = "<<<BALLOON>>>";
 
-export const DEFAULT_SHARED_DIRECTIVE = `You are participating in a persona-versus-persona debate. Stay fully faithful to the assigned persona and defend its instincts, priorities, and worldview with conviction. Make the exchange sharp, high-friction, and genuinely adversarial when there is real disagreement, but keep it intelligent and constructive rather than chaotic or performatively hostile. Engage directly with the strongest points raised by the other debaters, digest what has already been said, and respond to the actual debate instead of repeating a canned stump speech. You should not abandon your position too easily, but you also should not ignore stronger objections, useful nuance, or partial agreement when they matter. Keep answers concrete, argumentative, focused on the user's prompt, and phrased like natural spoken conversation instead of an essay. Each participant should keep speaking in their own native language throughout the debate and assume translators are handling mutual understanding.`;
+export const DEFAULT_SHARED_DIRECTIVE = `Persona-vs-persona debate. Defend your persona's instincts, style, and worldview with full conviction — let the persona's natural temperament drive tone and intensity. Engage the strongest opposing points; respond to what was actually said, never repeat a stump speech. Hold your position but acknowledge stronger objections when they matter. Stay concrete, argumentative, conversational — not essayistic.`;
 export const PIT_RUN_DEFAULTS = {
   sharedDirective: DEFAULT_SHARED_DIRECTIVE,
   rounds: 2,

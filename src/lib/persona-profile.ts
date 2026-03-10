@@ -246,6 +246,31 @@ export function buildPersonaProfilePrompt(profile: ParticipantPersonaProfile): s
   return lines.join("\n");
 }
 
+export function buildCompactPersonaPrompt(profile: ParticipantPersonaProfile): string {
+  const characterParts = [profile.personality, profile.temperament].filter(Boolean);
+  const styleParts = [profile.debateStyle, profile.speechStyle].filter(Boolean);
+  const populatedFields = [
+    profile.role,
+    profile.personality,
+    profile.perspective,
+    profile.temperament,
+    profile.debateStyle,
+    profile.speechStyle,
+    profile.guardrails,
+  ].filter(Boolean).length;
+
+  const lines = [
+    profile.role ? `Role: ${profile.role}` : "",
+    characterParts.length > 0 ? `Character: ${characterParts.join("; ")}` : "",
+    profile.perspective ? `Perspective: ${profile.perspective}` : "",
+    styleParts.length > 0 ? `Style: ${styleParts.join("; ")}` : "",
+    profile.guardrails ? `Guardrails: ${profile.guardrails}` : "",
+    profile.promptNotes && populatedFields < 3 ? `Additional guidance: ${profile.promptNotes}` : "",
+  ].filter(Boolean);
+
+  return lines.join("\n");
+}
+
 export function buildPersonaLanguageDirective(profile: ParticipantPersonaProfile): string {
   const language = resolvePersonaLanguage(profile);
 
@@ -253,7 +278,7 @@ export function buildPersonaLanguageDirective(profile: ParticipantPersonaProfile
     return "";
   }
 
-  return `Native speaking language: ${language}. Always speak only in this language, regardless of the user's language, the other participants' languages, or the surrounding context. Assume the conversation is happening through translators, so everyone can understand you without switching languages.`;
+  return `Speak only in ${language}. Translators handle mutual understanding; never switch languages.`;
 }
 
 export function buildPersonaProfileSummary(profile: ParticipantPersonaProfile): string {

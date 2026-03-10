@@ -12,7 +12,7 @@ import {
   type TurnKind,
   type UsageSummary,
 } from "@/lib/pit";
-import { PARTICIPANT_PERSONA_PRESET_MAP } from "@/lib/persona-presets";
+import { PARTICIPANT_PERSONA_PRESET_MAP, PARTICIPANT_PERSONA_RELATIONSHIPS } from "@/lib/persona-presets";
 import {
   OPENROUTER_CHAT_COMPLETIONS_URL,
   buildOpenRouterHeaders,
@@ -20,8 +20,8 @@ import {
   resolveOpenRouterModel,
 } from "@/lib/openrouter";
 import {
+  buildCompactPersonaPrompt,
   buildPersonaLanguageDirective,
-  buildPersonaProfilePrompt,
   buildPersonaProfileSummary,
 } from "@/lib/persona-profile";
 
@@ -86,13 +86,6 @@ const OPENROUTER_RETRY_DELAY_MS = 350;
 interface PromptFrame {
   objective: string;
   transcript: PitTurn[];
-  nextInQueue: PromptQueueEntry[];
-}
-
-interface PromptQueueEntry {
-  id: string;
-  speakerName: string;
-  label: string;
 }
 
 function buildCompactProfile(participant: ParticipantConfig): string {
@@ -117,82 +110,16 @@ function formatParticipantProfiles(input: RunInput, currentSpeaker: ParticipantC
   return participants
     .map((participant) => {
       if (participant.id === currentSpeaker.id) {
-        return `- You (${participant.name}): ${buildCompactProfile(participant)}`;
+        return `- ${participant.name} (you): ${buildCompactProfile(participant)}`;
       }
 
       if (participant.id === input.coordinator.id) {
-        return `- Moderator (${participant.name}): ${buildCompactProfile(participant)}`;
+        return `- ${participant.name} (moderator): ${buildCompactProfile(participant)}`;
       }
 
       return `- ${participant.name}: ${buildCompactProfile(participant)}`;
     })
     .join("\n");
-}
-
-function buildPromptQueueEntryId(kind: TurnKind, speakerId?: string, round?: number): string {
-  if (kind === "opening" || kind === "consensus") {
-    return kind;
-  }
-
-  if (kind === "intervention") {
-    return `intervention-${round ?? 0}`;
-  }
-
-  return `member-${round ?? 0}-${speakerId ?? "unknown"}`;
-}
-
-function buildDebateQueue(input: RunInput, speakingOrder: ParticipantConfig[]): PromptQueueEntry[] {
-  const queue: PromptQueueEntry[] = [
-    {
-      id: buildPromptQueueEntryId("opening"),
-      speakerName: input.coordinator.name,
-      label: "Opening",
-    },
-  ];
-
-  for (let round = 1; round <= input.rounds; round += 1) {
-    for (const member of speakingOrder) {
-      queue.push({
-        id: buildPromptQueueEntryId("member_turn", member.id, round),
-        speakerName: member.name,
-        label: `Round ${round}`,
-      });
-    }
-
-    if (round < input.rounds) {
-      queue.push({
-        id: buildPromptQueueEntryId("intervention", input.coordinator.id, round),
-        speakerName: input.coordinator.name,
-        label: `Intervention after round ${round}`,
-      });
-    }
-  }
-
-  queue.push({
-    id: buildPromptQueueEntryId("consensus"),
-    speakerName: input.coordinator.name,
-    label: "Consensus",
-  });
-
-  return queue;
-}
-
-function buildQueueAfterTurn(queue: PromptQueueEntry[], currentTurnId: string): PromptQueueEntry[] {
-  const currentIndex = queue.findIndex((entry) => entry.id === currentTurnId);
-
-  if (currentIndex === -1) {
-    return [...queue];
-  }
-
-  return queue.slice(currentIndex + 1);
-}
-
-function formatNextInQueue(entries: PromptQueueEntry[]): string {
-  if (entries.length === 0) {
-    return "- Nobody. You are at the end of the current queue.";
-  }
-
-  return entries.map((entry, index) => `- ${index + 1}. ${entry.speakerName} (${entry.label})`).join("\n");
 }
 
 function formatTurns(turns: PitTurn[]): string {
