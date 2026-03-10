@@ -899,19 +899,29 @@ select.field {
   display: grid;
   gap: 0.55rem;
   margin-top: 1.35rem;
+  width: 100%;
 }
 
 .hero-prompt-input-shell {
   display: grid;
+  width: 100%;
 }
 
 .hero-prompt-input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
   min-height: calc(2em + 2.4rem);
   padding: 1.2rem 1.15rem;
   font-size: 1.04rem;
   line-height: 1.4;
   resize: none;
   overflow: hidden;
+  scrollbar-width: none;
+}
+
+.hero-prompt-input::-webkit-scrollbar {
+  display: none;
 }
 
 .hero-prompt-wand-button {

@@ -1,5 +1,24 @@
 "use client";
 
+import {
+  ArrowLeft as BackGlyph,
+  CircleCheck as CheckGlyph,
+  Copy as CopyGlyph,
+  FileText as PromptGlyph,
+  Github as GitHubGlyph,
+  Pause as PauseGlyph,
+  Pencil as PencilGlyph,
+  Play as PlayGlyph,
+  Plus as PlusGlyph,
+  Save as SaveGlyph,
+  Settings as SettingsGlyph,
+  SkipBack as PreviousGlyph,
+  SkipForward as NextGlyph,
+  Trash2 as TrashGlyph,
+  TriangleAlert as WarningGlyph,
+  WandSparkles as WandGlyph,
+  X as CloseGlyph,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import {
@@ -354,6 +373,8 @@ type QueueEntry = {
   frameIndex: number | null;
 };
 
+type PendingTurnPreview = Extract<RunProgressEvent, { type: "thinking" }>;
+
 type StagePanelMode = "conversation" | "transcript";
 type StudioView = "setup" | "simulation";
 
@@ -556,6 +577,7 @@ function buildQueueEntries({
   hasPlaybackStarted,
   isAwaitingTurnResponse,
   isRunning,
+  pendingTurn,
 }: {
   frames: PlaybackFrame[];
   roster: ParticipantConfig[];
@@ -564,6 +586,7 @@ function buildQueueEntries({
   hasPlaybackStarted: boolean;
   isAwaitingTurnResponse: boolean;
   isRunning: boolean;
+  pendingTurn: PendingTurnPreview | null;
 }): QueueEntry[] {
   const participantById = new Map(roster.map((participant) => [participant.id, participant]));
   const actualTurnStarts = frames.reduce<Array<{ frame: PlaybackFrame; frameIndex: number }>>((entries, frame, frameIndex) => {
@@ -584,10 +607,16 @@ function buildQueueEntries({
     const actualTurn = actualTurnStarts[index] ?? null;
     const actualFrame = actualTurn?.frame ?? null;
     const speakerId = actualFrame?.speakerId ?? plannedTurn.speakerId;
+    const isPendingTurn =
+      pendingTurn !== null &&
+      pendingTurn.speakerId === plannedTurn.speakerId &&
+      pendingTurn.kind === plannedTurn.kind &&
+      pendingTurn.round === plannedTurn.round &&
+      index >= actualTurnStarts.length;
     const state =
       actualFrame?.turnId === currentTurnId
         ? ("speaking" as const)
-        : (isRunning || isAwaitingTurnResponse) && index === actualTurnStarts.length
+        : (isRunning || isAwaitingTurnResponse) && isPendingTurn
           ? ("thinking" as const)
           : actualFrame !== null
             ? ("ready" as const)
@@ -743,7 +772,8 @@ function FieldShell({
 }
 
 function resizeTextarea(textarea: HTMLTextAreaElement) {
-  textarea.style.height = "auto";
+  textarea.style.height = "0px";
+  textarea.style.overflowY = "hidden";
   textarea.style.height = `${textarea.scrollHeight}px`;
 }
 
@@ -753,12 +783,34 @@ function AutoSizeTextarea({
   ...props
 }: ComponentPropsWithoutRef<"textarea">) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-
-  useLayoutEffect(() => {
+  const syncTextareaHeight = useEffectEvent(() => {
     if (textareaRef.current) {
       resizeTextarea(textareaRef.current);
     }
+  });
+
+  useLayoutEffect(() => {
+    syncTextareaHeight();
   }, [props.value]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    const container = textarea?.parentElement;
+
+    if (!textarea || !container || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      resizeTextarea(textarea);
+    });
+
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   return (
     <textarea
@@ -770,170 +822,6 @@ function AutoSizeTextarea({
         onChange?.(event);
       }}
     />
-  );
-}
-
-function SettingsGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10.5 3.4h3l.5 2.2a7.8 7.8 0 0 1 1.6.9l2.1-.9 2.1 2.1-.9 2.1c.35.5.65 1.03.9 1.6l2.2.5v3l-2.2.5a7.8 7.8 0 0 1-.9 1.6l.9 2.1-2.1 2.1-2.1-.9c-.5.35-1.03.65-1.6.9l-.5 2.2h-3l-.5-2.2a7.8 7.8 0 0 1-1.6-.9l-2.1.9-2.1-2.1.9-2.1a7.8 7.8 0 0 1-.9-1.6l-2.2-.5v-3l2.2-.5c.24-.57.54-1.1.9-1.6l-.9-2.1 2.1-2.1 2.1.9a7.8 7.8 0 0 1 1.6-.9l.5-2.2Z"
-      />
-      <circle cx="12" cy="12" r="3.1" />
-    </svg>
-  );
-}
-
-function CloseGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7l10 10M17 7 7 17" />
-    </svg>
-  );
-}
-
-function TrashGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 7h14" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5.8c0-.72.58-1.3 1.3-1.3h3.4c.72 0 1.3.58 1.3 1.3V7" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.2 7l.6 10.1c.04.78.69 1.39 1.47 1.39h3.5c.78 0 1.43-.61 1.47-1.39L15.8 7" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 10.2v4.6M13.5 10.2v4.6" />
-    </svg>
-  );
-}
-
-function PlusGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
-
-function PlayGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M8.5 6.2a1 1 0 0 1 1.5-.86l8.17 5.3a1.6 1.6 0 0 1 0 2.72L10 18.66a1 1 0 0 1-1.5-.86V6.2Z" />
-    </svg>
-  );
-}
-
-function WarningGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 4.25 20 18a1.4 1.4 0 0 1-1.21 2.1H5.2A1.4 1.4 0 0 1 4 18L12 4.25Z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4.9" />
-      <circle cx="12" cy="17.2" r="0.9" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function PauseGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M7.5 5.8A1.3 1.3 0 0 1 8.8 4.5h1.4a1.3 1.3 0 0 1 1.3 1.3v12.4a1.3 1.3 0 0 1-1.3 1.3H8.8a1.3 1.3 0 0 1-1.3-1.3V5.8Zm5 0a1.3 1.3 0 0 1 1.3-1.3h1.4a1.3 1.3 0 0 1 1.3 1.3v12.4a1.3 1.3 0 0 1-1.3 1.3h-1.4a1.3 1.3 0 0 1-1.3-1.3V5.8Z" />
-    </svg>
-  );
-}
-
-function PreviousGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M6.8 5.3a1 1 0 0 1 1 1v11.4a1 1 0 1 1-2 0V6.3a1 1 0 0 1 1-1Zm10.34.04a1 1 0 0 1 .03 1.42L11.9 12l5.27 5.24a1 1 0 1 1-1.41 1.42l-5.98-5.95a1 1 0 0 1 0-1.42l5.95-5.95a1 1 0 0 1 1.41 0Z" />
-    </svg>
-  );
-}
-
-function BackGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6 4 12l6 6" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h15" />
-    </svg>
-  );
-}
-
-function NextGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M17.2 5.3a1 1 0 0 1 1 1v11.4a1 1 0 1 1-2 0V6.3a1 1 0 0 1 1-1Zm-10.37.04a1 1 0 0 1 1.41 0l5.98 5.95a1 1 0 0 1 0 1.42l-5.98 5.95a1 1 0 1 1-1.41-1.42L12.1 12 6.83 6.76a1 1 0 0 1 0-1.42Z" />
-    </svg>
-  );
-}
-
-function PencilGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 20h4.2l9.9-9.9a1.8 1.8 0 0 0 0-2.55l-1.65-1.65a1.8 1.8 0 0 0-2.55 0L4 15.8V20Z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="m12.8 6.2 5 5" />
-    </svg>
-  );
-}
-
-function SaveGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M5 4.8A1.8 1.8 0 0 1 6.8 3h9.52c.48 0 .94.19 1.28.53l2.87 2.87c.34.34.53.8.53 1.28V19.2A1.8 1.8 0 0 1 19.2 21H6.8A1.8 1.8 0 0 1 5 19.2V4.8Z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 3.5V9h7V4" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.2 20v-5.1a1 1 0 0 1 1-1h5.6a1 1 0 0 1 1 1V20" />
-    </svg>
-  );
-}
-
-function CheckGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="m8.7 12.2 2.1 2.1 4.5-4.8" />
-    </svg>
-  );
-}
-
-function WandGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 19.5 10-10" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="m12.8 5.2 1.1-2.7 1.1 2.7 2.7 1.1-2.7 1.1-1.1 2.7-1.1-2.7-2.7-1.1 2.7-1.1Z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="m17.8 13.2.7-1.7.7 1.7 1.7.7-1.7.7-.7 1.7-.7-1.7-1.7-.7 1.7-.7Z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="m8.2 16.8.6-1.4.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6Z" />
-    </svg>
-  );
-}
-
-function PromptGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8M6 12h12M9 17h6" />
-      <rect x="3.8" y="4" width="16.4" height="16" rx="3.2" />
-    </svg>
-  );
-}
-
-function CopyGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <rect x="9" y="9" width="10" height="10" rx="2.2" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 9V7.4A2.4 2.4 0 0 0 12.6 5H7.4A2.4 2.4 0 0 0 5 7.4v5.2A2.4 2.4 0 0 0 7.4 15H9" />
-    </svg>
-  );
-}
-
-function GitHubGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12 .5C5.65.5.5 5.65.5 12A11.5 11.5 0 0 0 8.36 22.9c.58.1.79-.25.79-.56v-2.18c-3.2.7-3.88-1.35-3.88-1.35-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.76 2.7 1.25 3.36.95.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.27 1.19-3.07-.12-.3-.52-1.5.11-3.12 0 0 .97-.31 3.18 1.18a10.9 10.9 0 0 1 5.8 0c2.2-1.5 3.17-1.18 3.17-1.18.63 1.62.23 2.82.11 3.12.74.8 1.19 1.82 1.19 3.07 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.08.78 2.17v3.22c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
-    </svg>
   );
 }
 
@@ -2163,6 +2051,7 @@ function ChamberStage({
   transcriptMarkdown,
   isPlaybackPlaying,
   isAwaitingTurnResponse,
+  pendingTurn,
   onPanelModeChange,
   onOpenParticipant,
   onExit,
@@ -2192,6 +2081,7 @@ function ChamberStage({
   transcriptMarkdown: string;
   isPlaybackPlaying: boolean;
   isAwaitingTurnResponse: boolean;
+  pendingTurn: PendingTurnPreview | null;
   onPanelModeChange: (mode: StagePanelMode) => void;
   onOpenParticipant: (id: string) => void;
   onExit: () => void;
@@ -2215,15 +2105,21 @@ function ChamberStage({
     hasPlaybackStarted,
     isAwaitingTurnResponse,
     isRunning,
+    pendingTurn,
   });
   const activeEntry = queueEntries.find((entry) => entry.state === "speaking") ?? null;
   const thinkingEntry = queueEntries.find((entry) => entry.state === "thinking") ?? null;
   const queuedFocusEntry = activeEntry ?? thinkingEntry ?? queueEntries.find((entry) => entry.state !== "waiting") ?? null;
-  const queueScrollTargetId = activeEntry?.id ?? thinkingEntry?.id ?? null;
+  const isShowingPendingTurn = isAwaitingTurnResponse && pendingTurn !== null;
+  const queueScrollTargetId = (isShowingPendingTurn ? thinkingEntry?.id : activeEntry?.id) ?? thinkingEntry?.id ?? null;
+  const pendingParticipant =
+    pendingTurn ? roster.find((participant) => participant.id === pendingTurn.speakerId) ?? null : null;
   const focusSpeaker =
+    (isShowingPendingTurn ? pendingParticipant : null) ??
     (currentFrame ? roster.find((participant) => participant.id === currentFrame.speakerId) : null) ??
     queuedFocusEntry?.participant ??
     null;
+  const visibleQueuedEntry = isShowingPendingTurn ? (thinkingEntry ?? queuedFocusEntry) : queuedFocusEntry;
 
   const canConfigureActiveSpeaker = false;
   const canGoPrevious = activeFrameIndex > 0;
@@ -2359,7 +2255,7 @@ function ChamberStage({
                         ) : null}
 
                         <div
-                          className={`speaker-focus-avatar ${currentFrame || queuedFocusEntry ? "is-speaking" : "is-idle"}`}
+                          className={`speaker-focus-avatar ${currentFrame || visibleQueuedEntry ? "is-speaking" : "is-idle"}`}
                           aria-hidden="true"
                         >
                           <span className="speaker-focus-avatar-ring" />
@@ -2375,10 +2271,14 @@ function ChamberStage({
                       </div>
 
                       <div
-                        key={currentFrame?.id ?? queuedFocusEntry?.id ?? "speaker-focus-idle"}
-                        className={`speaker-focus-bubble ${!currentFrame && !queuedFocusEntry ? "is-idle" : ""}`}
+                        key={
+                          isShowingPendingTurn
+                            ? `thinking-${pendingTurn?.speakerId ?? "unknown"}-${pendingTurn?.kind ?? "turn"}-${pendingTurn?.round ?? 0}`
+                            : (currentFrame?.id ?? visibleQueuedEntry?.id ?? "speaker-focus-idle")
+                        }
+                        className={`speaker-focus-bubble ${!currentFrame && !visibleQueuedEntry ? "is-idle" : ""}`}
                       >
-                        {currentFrame ? (
+                        {currentFrame && !isShowingPendingTurn ? (
                           <article
                             key={currentFrame.id}
                             className={`speaker-focus-bubble-card ${showBubbleDebugButton ? "has-debug-action" : ""}`}
@@ -2403,9 +2303,9 @@ function ChamberStage({
                               {displayedBubbleContent || "\u00a0"}
                             </p>
                           </article>
-                        ) : queuedFocusEntry ? (
+                        ) : visibleQueuedEntry ? (
                           <article className="speaker-focus-bubble-card speaker-focus-bubble-card-muted">
-                            <p className="stage-bubble-speaker">{queuedFocusEntry.speakerName}</p>
+                            <p className="stage-bubble-speaker">{visibleQueuedEntry.speakerName}</p>
                             <p className="stage-bubble-copy stage-bubble-copy-thinking">Thinking...</p>
                           </article>
                         ) : null}
@@ -2529,6 +2429,7 @@ export function PitStudio() {
   const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(true);
   const [frameCompletedAt, setFrameCompletedAt] = useState<number | null>(null);
   const [isAwaitingTurnResponse, setIsAwaitingTurnResponse] = useState(false);
+  const [pendingTurn, setPendingTurn] = useState<PendingTurnPreview | null>(null);
   const keyValidationRequestIdRef = useRef(0);
   const runAbortControllerRef = useRef<AbortController | null>(null);
   const activeRunIdRef = useRef(0);
@@ -2844,6 +2745,7 @@ export function PitStudio() {
     setRevealedBubbleChars(0);
     setFrameCompletedAt(null);
     setIsAwaitingTurnResponse(false);
+    setPendingTurn(null);
   }, []);
 
   const exitSimulation = useCallback(() => {
@@ -2881,6 +2783,7 @@ export function PitStudio() {
     setRevealedBubbleChars(0);
     setFrameCompletedAt(null);
     setIsAwaitingTurnResponse(true);
+    setPendingTurn(null);
     const payload: RunInput = {
       ...config,
       ...PIT_RUN_DEFAULTS,
@@ -2926,6 +2829,7 @@ export function PitStudio() {
         runAbortControllerRef.current = null;
         setIsRunning(false);
         setIsAwaitingTurnResponse(false);
+        setPendingTurn(null);
       }
     }
   }
@@ -2995,6 +2899,7 @@ export function PitStudio() {
   function applyProgressEvent(event: RunProgressEvent) {
     if (event.type === "thinking") {
       setIsAwaitingTurnResponse(true);
+      setPendingTurn(event);
       return;
     }
 
@@ -3015,6 +2920,7 @@ export function PitStudio() {
     }
 
     setIsAwaitingTurnResponse(false);
+    setPendingTurn(null);
 
     setResult((current) => {
       if (!current) {
@@ -3118,6 +3024,7 @@ export function PitStudio() {
             transcriptMarkdown={transcriptMarkdown}
             isPlaybackPlaying={isPlaybackPlaying}
             isAwaitingTurnResponse={isAwaitingTurnResponse}
+            pendingTurn={pendingTurn}
             onPanelModeChange={setPanelMode}
             onOpenParticipant={openParticipantEditor}
             onExit={exitSimulation}
