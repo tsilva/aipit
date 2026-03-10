@@ -35,8 +35,8 @@ import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
 import { buildPersonaProfilePreview } from "@/lib/persona-profile";
 import { filterParticipantPersonaPresets, type ParticipantPersonaPreset } from "@/lib/persona-presets";
 
-const OPENROUTER_KEY_STORAGE = "llmpit.openrouter.key";
-const PIT_LINEUP_STORAGE = "llmpit.lineup";
+const OPENROUTER_KEY_STORAGE = "aipit.openrouter.key";
+const PIT_LINEUP_STORAGE = "aipit.lineup";
 type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -989,19 +989,19 @@ function StudioHero({
       <section className="hero-panel hero-copy-panel">
         <div className="hero-copy-actions">
           <a
-            href="https://github.com/llmcouncil"
+            href="https://github.com/aipit"
             target="_blank"
             rel="noreferrer"
             className="hero-github-link"
-            aria-label="Open llmcouncil on GitHub"
-            title="Open llmcouncil on GitHub"
+            aria-label="Open aipit on GitHub"
+            title="Open aipit on GitHub"
           >
             <GitHubGlyph />
           </a>
         </div>
 
         <div className="hero-copy-stack">
-          <h1 className="hero-title">LLM Pit</h1>
+          <h1 className="hero-title">The AI Pit</h1>
           <p className="hero-body">Select debaters, choose a topic, hit start, get some popcorn.</p>
         </div>
       </section>

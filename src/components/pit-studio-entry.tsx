@@ -9,7 +9,7 @@ function PitStudioLoadingFallback() {
         <section className="hero-shell" aria-busy="true">
           <section className="hero-panel hero-copy-panel">
             <div className="hero-copy-stack">
-              <h1 className="hero-title">LLM Pit</h1>
+              <h1 className="hero-title">The AI Pit</h1>
               <p className="hero-body">Select debaters, choose a topic, hit start, get some popcorn.</p>
             </div>
           </section>
