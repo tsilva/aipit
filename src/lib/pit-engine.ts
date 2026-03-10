@@ -13,9 +13,9 @@ import {
 } from "@/lib/pit";
 import { PARTICIPANT_PERSONA_PRESET_MAP, PARTICIPANT_PERSONA_RELATIONSHIPS } from "@/lib/persona-presets";
 import {
-  OPENROUTER_CHAT_COMPLETIONS_URL,
-  buildOpenRouterHeaders,
+  OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH,
   extractOpenRouterErrorMessage,
+  postOpenRouterProxyRequest,
   resolveOpenRouterModel,
 } from "@/lib/openrouter";
 import {
@@ -333,7 +333,6 @@ async function callOpenRouter(
   const resolvedModel = resolveOpenRouterModel(participant.model, apiKey);
 
   const siteUrl = execution.siteUrl || resolveSiteUrl();
-  const headers = buildOpenRouterHeaders({ apiKey, siteUrl });
   const requestMessages: ChatMessage[] = [
     {
       role: "system",
@@ -347,18 +346,18 @@ async function callOpenRouter(
   for (let attempt = 1; attempt <= OPENROUTER_MAX_RETRIES; attempt += 1) {
     throwIfAborted(execution.signal);
 
-    const response = await fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
-      method: "POST",
-      headers,
-      credentials: "omit",
+    const response = await postOpenRouterProxyRequest({
+      path: OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH,
+      apiKey,
+      siteUrl,
       signal: execution.signal,
-      body: JSON.stringify({
+      body: {
         model: resolvedModel,
         messages: requestMessages,
         temperature: input.temperature,
         max_completion_tokens: maxCompletionTokens,
         session_id: sessionId,
-      }),
+      },
     });
 
     if (!response.ok) {

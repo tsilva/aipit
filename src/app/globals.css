@@ -2212,26 +2212,46 @@ select.field {
 
 .speaker-focus-bubble {
   position: relative;
+  isolation: isolate;
+  --focus-bubble-tail-border: rgba(255, 231, 198, 0.14);
+  --focus-bubble-tail-fill:
+    linear-gradient(180deg, rgba(255, 252, 247, 0.98) 0%, rgba(246, 238, 228, 0.96) 100%);
 }
 
 .speaker-focus-bubble::before {
   content: "";
   position: absolute;
-  left: -0.7rem;
-  top: 1rem;
-  width: 1.15rem;
-  height: 1.15rem;
-  border-top: 1px solid rgba(255, 231, 198, 0.14);
-  border-right: 1px solid rgba(255, 231, 198, 0.14);
-  background: rgba(252, 248, 242, 0.98);
-  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+  left: -0.44rem;
+  top: 1.02rem;
+  width: 1.14rem;
+  height: 1.14rem;
+  border: 1px solid var(--focus-bubble-tail-border);
+  border-radius: 0.24rem;
+  background: var(--focus-bubble-tail-fill);
+  transform: rotate(45deg);
+  z-index: 0;
 }
 
-.speaker-focus-bubble.is-idle::before {
-  background: rgba(247, 238, 227, 0.95);
+.speaker-focus-bubble::after {
+  content: "";
+  position: absolute;
+  left: 0.12rem;
+  top: 0.92rem;
+  width: 0.92rem;
+  height: 1.42rem;
+  border-radius: 999px 0 0 999px;
+  background: var(--focus-bubble-tail-fill);
+  z-index: 1;
+}
+
+.speaker-focus-bubble.is-idle {
+  --focus-bubble-tail-fill:
+    linear-gradient(180deg, rgba(255, 247, 236, 0.9) 0%, rgba(239, 229, 215, 0.88) 100%);
 }
 
 .speaker-focus-bubble-card {
+  position: relative;
+  z-index: 2;
   border-radius: 1.35rem;
   padding: 1rem 1.2rem 0.95rem;
 }
@@ -3182,8 +3202,13 @@ select.field {
     transform: rotate(45deg);
   }
 
+  .speaker-focus-bubble::after {
+    display: none;
+  }
+
   .speaker-focus-bubble.is-idle::before {
-    background: rgba(247, 238, 227, 0.95);
+    background:
+      linear-gradient(180deg, rgba(255, 247, 236, 0.9) 0%, rgba(239, 229, 215, 0.88) 100%);
   }
 
   .studio-form-simulation {

@@ -21,7 +21,7 @@
 - 📊 **Token and cost tracking** — per-debate usage summary
 - 🐛 **Raw prompt debug mode** — inspect exactly what each model receives
 - 🎲 **57 built-in controversial debate topics** — random topic picker for instant pit sessions
-- 🔐 **Client-side only** — no backend server, API key stays in browser localStorage
+- 🔐 **Server-side OpenRouter proxy** — requests flow through Next.js route handlers, with optional Vercel-hosted API key
 
 ## 🏗️ How It Works
 
@@ -37,7 +37,7 @@ The orchestration engine lives in [`pit-engine.ts`](src/lib/pit-engine.ts) and t
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18+)
-- An [OpenRouter](https://openrouter.ai/) API key
+- An [OpenRouter](https://openrouter.ai/) API key if you are running in bring-your-own-key mode
 
 ### Setup
 
@@ -61,19 +61,22 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-The repo does not include an OpenRouter API key. On first load, each user must paste their own key, which the app stores in browser localStorage and validates against OpenRouter. A valid key is required before debates can run.
+OpenRouter traffic is proxied through internal Next.js API routes under `src/app/api/openrouter`.
+
+If `OPENROUTER_API_KEY` is configured on the server, the proxy can use that key for upstream requests. The current UI still defaults to bring-your-own-key mode, where each user pastes their own key and the browser forwards it to the proxy for validation and debate runs.
 
 ## ⚙️ Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_OPENROUTER_APP_NAME` | No | OpenRouter attribution title for client-side requests |
+| `OPENROUTER_API_KEY` | No | Server-side OpenRouter API key used by the internal proxy when present |
 
 ## ☁️ Deploy to Vercel
 
 This app is a standard Next.js App Router project, so Vercel can deploy it without extra adapters.
 
-No backend secret is required — each browser user must provide and validate their own OpenRouter key locally.
+To prepare a shared hosted key on Vercel, add `OPENROUTER_API_KEY` to the project environment variables. The current UI still runs in bring-your-own-key mode by default, but the proxy is now wired for a later hosted-key flow.
 
 ```bash
 # Preview deployment
@@ -106,7 +109,8 @@ src/
 └── lib/
     ├── pit-engine.ts           # Debate orchestration engine
     ├── pit.ts                  # Core types and interfaces
-    ├── openrouter.ts           # OpenRouter API client
+    ├── openrouter.ts           # OpenRouter proxy client helpers
+    ├── openrouter-server.ts    # Server-side OpenRouter proxy helpers
     ├── openrouter-models.ts    # Available model definitions
     ├── persona-presets.ts      # 15 predefined debate personas
     ├── persona-profile.ts      # Persona profile types/utilities
@@ -115,7 +119,8 @@ src/
 
 ## 📝 Notes
 
-- OpenRouter requests are made directly from the client, so browser runs require a validated user-provided OpenRouter API key.
+- OpenRouter requests are sent through internal route handlers in `src/app/api/openrouter`.
+- `OPENROUTER_API_KEY` is server-only and should not be prefixed with `NEXT_PUBLIC_`.
 - The UI is implemented in `src/components/pit-studio.tsx`.
 - The orchestration logic lives in `src/lib/pit-engine.ts`.
 

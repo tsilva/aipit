@@ -2,6 +2,8 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export const OPENROUTER_CHAT_COMPLETIONS_URL = `${OPENROUTER_BASE_URL}/chat/completions`;
 export const OPENROUTER_KEY_URL = `${OPENROUTER_BASE_URL}/key`;
 export const OPENROUTER_VALIDATION_MODEL = "google/gemini-3.1-flash-lite-preview";
+export const OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH = "/api/openrouter/chat/completions";
+export const OPENROUTER_PROXY_KEY_PATH = "/api/openrouter/key";
 
 const OPENROUTER_KEY_VALIDATION_RETRIES = 3;
 const OPENROUTER_VALIDATION_RETRY_DELAY_MS = 400;
@@ -58,6 +60,33 @@ export function extractOpenRouterErrorMessage(text: string): string {
   return detail.trim();
 }
 
+export async function postOpenRouterProxyRequest({
+  path,
+  apiKey,
+  siteUrl,
+  body,
+  signal,
+}: {
+  path: string;
+  apiKey?: string;
+  siteUrl?: string;
+  body?: unknown;
+  signal?: AbortSignal;
+}): Promise<Response> {
+  return fetch(path, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    signal,
+    body: JSON.stringify({
+      apiKey: apiKey?.trim() || undefined,
+      siteUrl,
+      body,
+    }),
+  });
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -75,14 +104,15 @@ function shouldRetryValidation(message: string, status?: number): boolean {
 }
 
 async function probeOpenRouterChat(apiKey: string, siteUrl?: string): Promise<boolean> {
-  const response = await fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
-    method: "POST",
-    headers: buildOpenRouterHeaders({ apiKey, siteUrl }),
-    body: JSON.stringify({
+  const response = await postOpenRouterProxyRequest({
+    path: OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH,
+    apiKey,
+    siteUrl,
+    body: {
       model: OPENROUTER_VALIDATION_MODEL,
       messages: [{ role: "user", content: "Reply with OK." }],
       max_completion_tokens: 8,
-    }),
+    },
   });
 
   return response.ok;
@@ -105,9 +135,10 @@ export async function validateOpenRouterKey(
   let status: number | undefined;
 
   for (let attempt = 1; attempt <= OPENROUTER_KEY_VALIDATION_RETRIES; attempt += 1) {
-    const response = await fetch(OPENROUTER_KEY_URL, {
-      method: "GET",
-      headers: buildOpenRouterHeaders({ apiKey: trimmedKey, siteUrl }),
+    const response = await postOpenRouterProxyRequest({
+      path: OPENROUTER_PROXY_KEY_PATH,
+      apiKey: trimmedKey,
+      siteUrl,
     });
 
     if (response.ok) {
