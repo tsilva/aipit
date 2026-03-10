@@ -3187,8 +3187,8 @@ select.field {
   }
 
   .speaker-focus-bubble::before {
-    left: 1.1rem;
-    top: -0.58rem;
+    left: 0.6rem;
+    top: -0.5rem;
     width: 1rem;
     height: 1rem;
     border-top: 1px solid rgba(255, 231, 198, 0.14);

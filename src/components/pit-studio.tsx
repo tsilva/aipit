@@ -999,7 +999,7 @@ function StudioHero({
       <section className="hero-panel hero-copy-panel">
         <div className="hero-copy-actions">
           <a
-            href="https://github.com/aipit"
+            href="https://github.com/tsilva/apipit"
             target="_blank"
             rel="noreferrer"
             className="hero-github-link"
