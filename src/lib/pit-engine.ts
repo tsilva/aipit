@@ -69,6 +69,7 @@ type OpenRouterResponse = {
     prompt_tokens?: number;
     completion_tokens?: number;
     total_tokens?: number;
+    cost?: number;
   };
 };
 
@@ -439,6 +440,7 @@ async function callOpenRouter(
           promptTokens: payload.usage?.prompt_tokens ?? 0,
           completionTokens: payload.usage?.completion_tokens ?? 0,
           totalTokens: payload.usage?.total_tokens ?? 0,
+          cost: payload.usage?.cost ?? 0,
         },
       };
     }

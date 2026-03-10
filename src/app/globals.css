@@ -1335,6 +1335,28 @@ select.field {
   gap: 0.55rem;
 }
 
+.chamber-panel-tools {
+  display: grid;
+  justify-items: end;
+  gap: 0.35rem;
+}
+
+.chamber-usage-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin: 0;
+  padding-right: 0.15rem;
+  color: rgba(255, 240, 221, 0.58);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.chamber-usage-meta-separator {
+  color: rgba(255, 240, 221, 0.3);
+}
+
 .chamber-back-button {
   display: inline-flex;
   align-items: center;
@@ -1492,6 +1514,14 @@ select.field {
   min-height: 28rem;
   overflow: hidden;
   padding: 1rem;
+}
+
+.cinema-stage-conversation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 23rem);
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: stretch;
+  column-gap: 1rem;
 }
 
 .cinema-stage-transcript {
@@ -1751,7 +1781,7 @@ select.field {
   position: absolute;
   top: 1rem;
   bottom: calc(1rem + var(--speaker-playbar-reserved-height));
-  left: 1rem;
+  right: 1rem;
   z-index: 5;
   display: flex;
   flex-direction: column;
@@ -1770,6 +1800,19 @@ select.field {
   -webkit-user-select: none;
 }
 
+.cinema-stage-conversation .speaker-queue-shell {
+  position: relative;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: stretch;
+  width: 100%;
+  min-height: 0;
+}
+
 .speaker-queue-kicker {
   margin: 0 0 0.6rem;
   font-size: 0.68rem;
@@ -1786,7 +1829,8 @@ select.field {
   gap: 0.45rem;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 0.12rem;
+  scrollbar-gutter: stable;
+  padding-right: 0.45rem;
 }
 
 .speaker-queue-item {
@@ -1836,6 +1880,18 @@ select.field {
     0 0.8rem 1.4rem rgba(216, 122, 59, 0.12);
 }
 
+.speaker-queue-item.is-thinking {
+  border-color: rgba(111, 149, 189, 0.3);
+  background:
+    linear-gradient(180deg, rgba(111, 149, 189, 0.18), rgba(255, 248, 237, 0.04)),
+    rgba(255, 248, 237, 0.05);
+}
+
+.speaker-queue-item.is-done {
+  border-color: rgba(148, 163, 184, 0.14);
+  background: rgba(148, 163, 184, 0.05);
+}
+
 .speaker-queue-item.is-ready {
   border-color: rgba(120, 178, 160, 0.16);
 }
@@ -1874,6 +1930,21 @@ select.field {
   background:
     radial-gradient(circle at 30% 30%, rgba(228, 255, 244, 0.78), rgba(71, 147, 127, 0.88)),
     #47937f;
+}
+
+.speaker-queue-item.is-thinking .speaker-queue-avatar {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(225, 241, 255, 0.8), rgba(94, 138, 188, 0.9)),
+    #5e8abc;
+}
+
+.speaker-queue-item.is-done .speaker-queue-avatar {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(228, 232, 239, 0.72), rgba(120, 132, 150, 0.86)),
+    #788496;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0.5rem 0.9rem rgba(2, 5, 8, 0.18);
 }
 
 .speaker-queue-copy {
@@ -1922,6 +1993,11 @@ select.field {
   color: #d8ebff;
 }
 
+.speaker-queue-state-done {
+  background: rgba(148, 163, 184, 0.16);
+  color: #dbe3ee;
+}
+
 .speaker-queue-state-ready {
   background: rgba(71, 147, 127, 0.18);
   color: #c7f2e6;
@@ -1946,6 +2022,11 @@ select.field {
   min-width: 0;
   min-height: 25rem;
   padding: 4.75rem clamp(1rem, 2.8vw, 1.75rem) 1.5rem;
+}
+
+.cinema-stage-conversation .speaker-focus-shell {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .speaker-focus-content {
@@ -2096,6 +2177,27 @@ select.field {
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   color: rgba(212, 198, 181, 0.84);
+}
+
+@media (min-width: 901px) {
+  .cinema-stage-conversation .speaker-focus-shell {
+    justify-items: start;
+  }
+
+  .cinema-stage-conversation .speaker-focus-content {
+    justify-self: stretch;
+    width: min(100%, 42rem);
+  }
+
+  .cinema-stage-conversation .speaker-focus-figure {
+    justify-items: start;
+    transform: none;
+  }
+
+  .cinema-stage-conversation .speaker-focus-meta {
+    justify-items: start;
+    text-align: left;
+  }
 }
 
 .speaker-focus-bubble {
@@ -2290,6 +2392,11 @@ select.field {
   margin-top: auto;
   flex-shrink: 0;
   border-bottom: 0;
+}
+
+.cinema-stage-conversation .speaker-playbar-shell {
+  grid-column: 1 / -1;
+  grid-row: 2;
 }
 
 .timeline-button-group {
@@ -2575,6 +2682,36 @@ select.field {
   gap: 0.6rem;
 }
 
+.transcript-sheet-actions.transcript-sheet-actions-top {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  width: auto;
+}
+
+.transcript-copy-button {
+  width: 2.65rem;
+  height: 2.65rem;
+  padding: 0;
+}
+
+.transcript-copy-button.is-success {
+  border-color: rgba(110, 231, 183, 0.32);
+  background: rgba(110, 231, 183, 0.12);
+  color: #b9f6d6;
+}
+
+.transcript-copy-button.is-error {
+  border-color: rgba(248, 113, 113, 0.32);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
+}
+
+.transcript-copy-button .action-button-icon {
+  margin-right: 0;
+}
+
 .transcript-status-chip {
   display: inline-flex;
   align-items: center;
@@ -2636,6 +2773,10 @@ select.field {
   padding: 1.3rem 1.5rem 2rem;
 }
 
+.transcript-sheet-body-with-top-actions {
+  padding-top: 4.6rem;
+}
+
 .transcript-sheet-footer {
   margin-top: 1.5rem;
   padding-top: 1rem;
@@ -2668,6 +2809,17 @@ select.field {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent-strong);
+}
+
+.transcript-markdown-h2 .transcript-markdown-code {
+  background: transparent;
+  padding: 0;
+  font-size: 0.76em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--muted);
+  opacity: 0.8;
 }
 
 .transcript-markdown-p,
@@ -2876,13 +3028,34 @@ select.field {
     min-height: 24rem;
   }
 
+  .cinema-stage-conversation {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    row-gap: 0.9rem;
+  }
+
   .speaker-queue-shell {
     width: min(18rem, calc(100% - 2rem));
+  }
+
+  .cinema-stage-conversation .speaker-queue-shell {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    max-height: 16rem;
   }
 
   .speaker-focus-shell {
     min-height: 23rem;
     padding-top: 5.2rem;
+  }
+
+  .cinema-stage-conversation .speaker-focus-shell {
+    grid-row: 2;
+  }
+
+  .cinema-stage-conversation .speaker-playbar-shell {
+    grid-row: 3;
   }
 
   .speaker-focus-stack {
@@ -2967,13 +3140,39 @@ select.field {
   }
 
   .chamber-header {
+    flex-direction: column;
+    align-items: stretch;
     margin-bottom: 1rem;
+  }
+
+  .chamber-runtime-actions {
+    justify-content: space-between;
+  }
+
+  .chamber-panel-tools {
+    justify-items: start;
+  }
+
+  .chamber-usage-meta {
+    padding-right: 0;
+    white-space: normal;
   }
 
   .transcript-sheet-header,
   .transcript-sheet-body {
     padding-left: 1rem;
     padding-right: 1rem;
+  }
+
+  .transcript-sheet-actions.transcript-sheet-actions-top {
+    top: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  .transcript-sheet-body-with-top-actions {
+    padding-top: 4.2rem;
   }
 
   .transcript-sheet-actions {
@@ -2995,9 +3194,17 @@ select.field {
   .speaker-queue-shell {
     top: 0.75rem;
     bottom: calc(0.75rem + var(--speaker-playbar-reserved-height));
-    left: 0.75rem;
+    right: 0.75rem;
     width: calc(100% - 1.5rem);
     padding: 0.7rem;
+  }
+
+  .cinema-stage-conversation .speaker-queue-shell {
+    top: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    max-height: 14rem;
   }
 
   .speaker-queue-item {

@@ -46,6 +46,7 @@ export interface UsageSummary {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
+  cost: number;
 }
 
 export interface PitTurn {
@@ -324,6 +325,7 @@ export function emptyUsage(): UsageSummary {
     promptTokens: 0,
     completionTokens: 0,
     totalTokens: 0,
+    cost: 0,
   };
 }
 
@@ -336,6 +338,7 @@ export function addUsage(target: UsageSummary, delta?: Partial<UsageSummary> | n
     promptTokens: target.promptTokens + (delta.promptTokens ?? 0),
     completionTokens: target.completionTokens + (delta.completionTokens ?? 0),
     totalTokens: target.totalTokens + (delta.totalTokens ?? 0),
+    cost: target.cost + (delta.cost ?? 0),
   };
 }
 

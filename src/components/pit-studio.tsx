@@ -273,7 +273,7 @@ type QueueEntry = {
   model: string;
   chapterLabel: string;
   participant: ParticipantConfig | null;
-  state: "active" | "ready" | "thinking";
+  state: "active" | "done" | "ready" | "thinking";
   frameIndex: number | null;
 };
 
@@ -490,50 +490,50 @@ function buildQueueEntries({
     entries.push({ frame, frameIndex });
     return entries;
   }, []);
+  const currentTurnId = currentFrame?.turnId ?? null;
 
-  if (!currentFrame) {
-    if (!hasPlaybackStarted) {
-      return [];
-    }
-
-    return plannedTurns.slice(actualTurnStarts.length).map((plannedTurn, index) => ({
-      id: plannedTurn.id,
-      kind: plannedTurn.kind,
-      speakerName: plannedTurn.speakerName,
-      model: plannedTurn.model,
-      chapterLabel: plannedTurn.chapterLabel,
-      participant: participantById.get(plannedTurn.speakerId) ?? null,
-      state: index === 0 ? "thinking" : "ready",
-      frameIndex: null,
-    }));
+  if (!hasPlaybackStarted) {
+    return [];
   }
 
-  const currentTurnIndex = actualTurnStarts.findIndex(({ frame }) => frame.turnId === currentFrame.turnId);
-  const visibleActualTurns = (currentTurnIndex >= 0 ? actualTurnStarts.slice(currentTurnIndex) : actualTurnStarts).map(
-    ({ frame, frameIndex }, index) => ({
-      id: frame.id,
-      kind: frame.kind,
-      speakerName: frame.speakerName,
-      model: frame.model,
-      chapterLabel: frame.chapterLabel,
-      participant: participantById.get(frame.speakerId) ?? null,
-      state: index === 0 ? ("active" as const) : ("ready" as const),
-      frameIndex,
-    }),
-  );
+  return plannedTurns.map((plannedTurn, index) => {
+    const actualTurn = actualTurnStarts[index] ?? null;
+    const actualFrame = actualTurn?.frame ?? null;
+    const speakerId = actualFrame?.speakerId ?? plannedTurn.speakerId;
+    const state =
+      actualFrame !== null
+        ? actualFrame.turnId === currentTurnId
+          ? ("active" as const)
+          : ("done" as const)
+        : (isRunning || isAwaitingTurnResponse) && index === actualTurnStarts.length
+          ? ("thinking" as const)
+          : ("ready" as const);
 
-  const remainingPlannedTurns = plannedTurns.slice(actualTurnStarts.length).map((plannedTurn, index) => ({
-    id: plannedTurn.id,
-    kind: plannedTurn.kind,
-    speakerName: plannedTurn.speakerName,
-    model: plannedTurn.model,
-    chapterLabel: plannedTurn.chapterLabel,
-    participant: participantById.get(plannedTurn.speakerId) ?? null,
-    state: (isRunning || isAwaitingTurnResponse) && index === 0 ? ("thinking" as const) : ("ready" as const),
-    frameIndex: null,
-  }));
+    return {
+      id: actualFrame?.turnId ?? plannedTurn.id,
+      kind: actualFrame?.kind ?? plannedTurn.kind,
+      speakerName: actualFrame?.speakerName ?? plannedTurn.speakerName,
+      model: actualFrame?.model ?? plannedTurn.model,
+      chapterLabel: actualFrame?.chapterLabel ?? plannedTurn.chapterLabel,
+      participant: participantById.get(speakerId) ?? null,
+      state,
+      frameIndex: actualTurn?.frameIndex ?? null,
+    };
+  });
+}
 
-  return [...visibleActualTurns, ...remainingPlannedTurns];
+function queueStateLabel(state: QueueEntry["state"]): string {
+  switch (state) {
+    case "active":
+      return "active";
+    case "done":
+      return "done";
+    case "thinking":
+      return "thinking";
+    case "ready":
+    default:
+      return "ready";
+  }
 }
 
 function participantInitials(name: string): string {
@@ -749,6 +749,15 @@ function PromptGlyph() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8M6 12h12M9 17h6" />
       <rect x="3.8" y="4" width="16.4" height="16" rx="3.2" />
+    </svg>
+  );
+}
+
+function CopyGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <rect x="9" y="9" width="10" height="10" rx="2.2" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 9V7.4A2.4 2.4 0 0 0 12.6 5H7.4A2.4 2.4 0 0 0 5 7.4v5.2A2.4 2.4 0 0 0 7.4 15H9" />
     </svg>
   );
 }
@@ -1637,6 +1646,23 @@ function transcriptTurnBody(turn: PitTurn): string {
   return segments.join("\n\n");
 }
 
+function formatTokenCount(value: number): string {
+  return value.toLocaleString("en-US");
+}
+
+function formatUsageCost(value: number): string {
+  if (value > 0 && value < 0.0001) {
+    return "<$0.0001";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: value < 1 ? 4 : 2,
+    maximumFractionDigits: value < 1 ? 4 : 2,
+  }).format(value);
+}
+
 function buildTranscriptMarkdown({
   prompt,
   turns,
@@ -1659,7 +1685,7 @@ function buildTranscriptMarkdown({
   for (const turn of turns) {
     lines.push(
       "",
-      `## ${chapterLabelForTurn(turn)} · ${turn.model} · ${turn.speakerName}`,
+      `## ${chapterLabelForTurn(turn)} · ${turn.speakerName} · \`${turn.model}\``,
       "",
       transcriptTurnBody(turn),
     );
@@ -1670,6 +1696,31 @@ function buildTranscriptMarkdown({
   }
 
   return lines.join("\n");
+}
+
+async function copyTextToClipboard(text: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const fallback = document.createElement("textarea");
+  fallback.value = text;
+  fallback.setAttribute("readonly", "");
+  fallback.style.position = "fixed";
+  fallback.style.top = "0";
+  fallback.style.left = "-9999px";
+
+  document.body.appendChild(fallback);
+  fallback.select();
+  fallback.setSelectionRange(0, fallback.value.length);
+
+  const didCopy = document.execCommand("copy");
+  document.body.removeChild(fallback);
+
+  if (!didCopy) {
+    throw new Error("Clipboard copy failed.");
+  }
 }
 
 function StudioSettingsModal({
@@ -1774,6 +1825,8 @@ function TranscriptPanel({
 }) {
   const transcriptBodyRef = useRef<HTMLDivElement | null>(null);
   const shouldStickToBottomRef = useRef(true);
+  const copyResetTimeoutRef = useRef<number | null>(null);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
 
   function updateTranscriptScrollLock() {
     const body = transcriptBodyRef.current;
@@ -1801,9 +1854,64 @@ function TranscriptPanel({
     });
   }, [markdown]);
 
+  const setCopyFeedback = useCallback((nextState: "copied" | "error") => {
+    setCopyState(nextState);
+
+    if (copyResetTimeoutRef.current !== null) {
+      window.clearTimeout(copyResetTimeoutRef.current);
+    }
+
+    copyResetTimeoutRef.current = window.setTimeout(() => {
+      setCopyState("idle");
+      copyResetTimeoutRef.current = null;
+    }, 2000);
+  }, []);
+
+  const handleCopyMarkdown = useCallback(async () => {
+    try {
+      await copyTextToClipboard(markdown);
+      setCopyFeedback("copied");
+    } catch {
+      setCopyFeedback("error");
+    }
+  }, [markdown, setCopyFeedback]);
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimeoutRef.current !== null) {
+        window.clearTimeout(copyResetTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const copyButtonLabel =
+    copyState === "copied"
+      ? "Transcript copied as Markdown"
+      : copyState === "error"
+        ? "Copy transcript failed"
+        : "Copy transcript as Markdown";
+
   return (
     <article className="transcript-sheet transcript-sheet-inline">
-      <div ref={transcriptBodyRef} className="transcript-sheet-body" onScroll={updateTranscriptScrollLock}>
+      <div className="transcript-sheet-actions transcript-sheet-actions-top">
+        <button
+          type="button"
+          onClick={handleCopyMarkdown}
+          className={`action-button hero-icon-button transcript-copy-button ${copyState === "copied" ? "is-success" : ""} ${copyState === "error" ? "is-error" : ""}`.trim()}
+          aria-label={copyButtonLabel}
+          title={copyButtonLabel}
+        >
+          <span className="action-button-icon">
+            {copyState === "copied" ? <CheckGlyph /> : <CopyGlyph />}
+          </span>
+        </button>
+      </div>
+
+      <div
+        ref={transcriptBodyRef}
+        className="transcript-sheet-body transcript-sheet-body-with-top-actions"
+        onScroll={updateTranscriptScrollLock}
+      >
         <ReactMarkdown
           components={{
             h1: ({ children }) => <h1 className="transcript-markdown-h1">{children}</h1>,
@@ -1834,7 +1942,7 @@ function TranscriptPanel({
                 ) : (
                   <span className="transcript-status-dot" />
                 )}
-                {isRunning ? (thinkingSpeakerName ? `Thinking: ${thinkingSpeakerName}` : "Thinking...") : `${turnCount} turns`}
+                {isRunning ? (thinkingSpeakerName ? `${thinkingSpeakerName}: thinking...` : "Thinking...") : `${turnCount} turns`}
               </span>
             ) : null}
           </div>
@@ -1898,6 +2006,7 @@ function RawPromptModal({
 function ChamberStage({
   roster,
   plannedRounds,
+  usage,
   currentFrame,
   displayedBubbleContent,
   chapters,
@@ -1929,6 +2038,7 @@ function ChamberStage({
 }: {
   roster: ParticipantConfig[];
   plannedRounds: number;
+  usage: RunResult["usage"];
   currentFrame?: PlaybackFrame;
   displayedBubbleContent: string;
   chapters: TimelineChapter[];
@@ -1973,8 +2083,10 @@ function ChamberStage({
     isAwaitingTurnResponse,
     isRunning,
   });
+  const activeEntry = queueEntries.find((entry) => entry.state === "active") ?? null;
   const thinkingEntry = queueEntries.find((entry) => entry.state === "thinking") ?? null;
-  const queuedFocusEntry = thinkingEntry ?? queueEntries[0] ?? null;
+  const queuedFocusEntry = activeEntry ?? thinkingEntry ?? queueEntries.find((entry) => entry.state !== "done") ?? null;
+  const queueScrollTargetId = activeEntry?.id ?? thinkingEntry?.id ?? null;
   const focusSpeaker =
     (currentFrame ? roster.find((participant) => participant.id === currentFrame.speakerId) : null) ??
     queuedFocusEntry?.participant ??
@@ -1985,6 +2097,7 @@ function ChamberStage({
   const canGoNext = activeFrameIndex < frames.length - 1;
   const isPlayButtonActive = isPlaybackPlaying && (isRunning || canGoNext || isBubbleStreaming);
   const [debugFrame, setDebugFrame] = useState<PlaybackFrame | null>(null);
+  const activeQueueItemRef = useRef<HTMLDivElement | null>(null);
   const manualDismissTimerStyle =
     {
       "--bubble-dismiss-progress": String(manualDismissCountdownProgress),
@@ -1994,6 +2107,17 @@ function ChamberStage({
     onPausePlayback();
     setDebugFrame(frame);
   }
+
+  useEffect(() => {
+    if (panelMode !== "conversation" || !queueScrollTargetId) {
+      return;
+    }
+
+    activeQueueItemRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [panelMode, queueScrollTargetId]);
 
   return (
     <>
@@ -2009,17 +2133,26 @@ function ChamberStage({
               <span>Back</span>
             </button>
             {hasPlaybackStarted ? (
-              <div className="mode-toggle mode-toggle-compact stage-panel-toggle" aria-label="Stage panel mode">
-                {(["conversation", "transcript"] as const).map((nextPanelMode) => (
-                  <button
-                    key={nextPanelMode}
-                    type="button"
-                    onClick={() => onPanelModeChange(nextPanelMode)}
-                    className={`mode-toggle-button mode-toggle-button-compact ${panelMode === nextPanelMode ? "is-selected" : ""}`}
-                  >
-                    {nextPanelMode}
-                  </button>
-                ))}
+              <div className="chamber-panel-tools">
+                <div className="mode-toggle mode-toggle-compact stage-panel-toggle" aria-label="Stage panel mode">
+                  {(["conversation", "transcript"] as const).map((nextPanelMode) => (
+                    <button
+                      key={nextPanelMode}
+                      type="button"
+                      onClick={() => onPanelModeChange(nextPanelMode)}
+                      className={`mode-toggle-button mode-toggle-button-compact ${panelMode === nextPanelMode ? "is-selected" : ""}`}
+                    >
+                      {nextPanelMode}
+                    </button>
+                  ))}
+                </div>
+                <p className="chamber-usage-meta mono" aria-label="Usage so far">
+                  <span>{formatTokenCount(usage.totalTokens)} tokens</span>
+                  <span className="chamber-usage-meta-separator" aria-hidden="true">
+                    ·
+                  </span>
+                  <span>{formatUsageCost(usage.cost)} so far</span>
+                </p>
               </div>
             ) : null}
           </div>
@@ -2027,17 +2160,24 @@ function ChamberStage({
 
         {hasPlaybackStarted ? (
           <div className={`stage-frame ${panelMode === "transcript" ? "stage-frame-transcript" : ""}`}>
-            <div className={`cinema-stage ${panelMode === "transcript" ? "cinema-stage-transcript" : ""}`}>
+            <div
+              className={`cinema-stage ${panelMode === "transcript" ? "cinema-stage-transcript" : panelMode === "conversation" ? "cinema-stage-conversation" : ""}`}
+            >
               {panelMode === "conversation" ? (
                 <>
                   <div className="cinema-vignette" />
                   <div className="pit-floor-glow" />
-                  <aside className="speaker-queue-shell" aria-label="Upcoming speakers">
-                    <p className="speaker-queue-kicker">Up next</p>
+                  <aside className="speaker-queue-shell" aria-label="Speaker queue">
+                    <p className="speaker-queue-kicker">Queue</p>
                     <div className="speaker-queue-list">
                       {queueEntries.length > 0 ? (
                         queueEntries.map(({ id, participant, state, speakerName, model, chapterLabel }, index) => (
-                          <div key={id} className={`speaker-queue-item is-${state}`}>
+                          <div
+                            key={id}
+                            ref={id === queueScrollTargetId ? activeQueueItemRef : undefined}
+                            className={`speaker-queue-item is-${state}`}
+                            aria-current={state === "active" ? "true" : undefined}
+                          >
                             <span className="speaker-queue-rank mono">{String(index + 1).padStart(2, "0")}</span>
                             <ParticipantAvatar
                               name={speakerName}
@@ -2052,7 +2192,7 @@ function ChamberStage({
                               </span>
                             </span>
                             <span className={`speaker-queue-state speaker-queue-state-${state}`}>
-                              {state === "active" ? "active" : state === "thinking" ? "thinking" : "ready"}
+                              {queueStateLabel(state)}
                             </span>
                           </div>
                         ))
@@ -2842,6 +2982,7 @@ export function PitStudio() {
           <ChamberStage
             roster={result?.roster ?? roster}
             plannedRounds={config.rounds}
+            usage={result?.usage ?? emptyUsage()}
             currentFrame={currentFrame}
             displayedBubbleContent={displayedBubbleContent}
             chapters={chapters}
