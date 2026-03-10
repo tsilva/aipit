@@ -1,5 +1,4 @@
 import {
-  COORDINATOR_PRESET_ID,
   BALLOON_DELIMITER,
   addUsage,
   createRosterSnapshot,
@@ -29,11 +28,20 @@ export interface RunExecutionOptions {
   apiKey?: string;
   siteUrl?: string;
   onProgress?: (event: RunProgressEvent) => void;
+  signal?: AbortSignal;
 }
 
 export type RunProgressEvent =
   | { type: "status"; message: string }
   | { type: "warning"; warning: string }
+  | {
+      type: "thinking";
+      speakerId: string;
+      speakerName: string;
+      model: string;
+      kind: PitTurn["kind"];
+      round?: number;
+    }
   | { type: "opening"; turn: PitTurn; usage: UsageSummary }
   | { type: "member_turn"; turn: PitTurn; usage: UsageSummary }
   | { type: "intervention"; turn: PitTurn; usage: UsageSummary }
@@ -73,112 +81,73 @@ const OPENROUTER_MAX_RETRIES = 3;
 const OPENROUTER_MAX_COMPLETION_TOKENS = 4000;
 const OPENROUTER_RETRY_DELAY_MS = 350;
 
-function formatRoster(input: RunInput): string {
-  const lines = [
-    `Moderator: ${input.coordinator.name} (${input.coordinator.model})`,
-    ...input.members.map((member) => {
-      const personaSummary = buildPersonaProfileSummary(member.personaProfile);
-      return `Debater: ${member.name} (${member.model})${personaSummary ? ` persona: ${personaSummary}` : ""}`;
-    }),
-  ];
-
-  return lines.join("\n");
+interface PromptFrame {
+  objective: string;
+  transcript: PitTurn[];
+  nextInQueue: ParticipantConfig[];
 }
 
-function getPresetLabel(participant: ParticipantConfig): string {
+function buildCompactProfile(participant: ParticipantConfig): string {
   const preset = participant.presetId ? PARTICIPANT_PERSONA_PRESET_MAP.get(participant.presetId) : undefined;
 
-  if (preset) {
-    return `${preset.title}. ${preset.summary}`;
+  if (preset?.summary) {
+    return preset.summary;
   }
 
-  return buildPersonaProfileSummary(participant.personaProfile) || participant.personaProfile.role || "No public summary";
+  return (
+    buildPersonaProfileSummary(participant.personaProfile) ||
+    participant.personaProfile.perspective ||
+    participant.personaProfile.promptNotes ||
+    participant.personaProfile.role ||
+    "No profile provided"
+  );
 }
 
-function getRelationshipNote(viewer: ParticipantConfig, other: ParticipantConfig): string {
-  const viewerPreset = viewer.presetId ? PARTICIPANT_PERSONA_PRESET_MAP.get(viewer.presetId) : undefined;
-  if (viewerPreset?.relationships && other.presetId) {
-    const note = viewerPreset.relationships[other.presetId];
-    if (note) {
-      return note;
-    }
-  }
+function formatParticipantProfiles(input: RunInput, currentSpeaker: ParticipantConfig): string {
+  const participants = [input.coordinator, ...input.members];
 
-  if (other.presetId === COORDINATOR_PRESET_ID) {
-    return "Treat the moderator as a live interviewer who knows the field, presses for clarity, and must be answered directly.";
-  }
+  return participants
+    .map((participant) => {
+      if (participant.id === currentSpeaker.id) {
+        return `- You (${participant.name}): ${buildCompactProfile(participant)}`;
+      }
 
-  return "Treat this person as another live participant in the room: respond to their actual arguments, not a generic stereotype.";
-}
+      if (participant.id === input.coordinator.id) {
+        return `- Moderator (${participant.name}): ${buildCompactProfile(participant)}`;
+      }
 
-function buildRoomContext(
-  input: RunInput,
-  participant: ParticipantConfig,
-  role: "coordinator" | "member",
-): string {
-  const others = [input.coordinator, ...input.members].filter((candidate) => candidate.id !== participant.id);
-  const lines = [
-    role === "coordinator"
-      ? "This is a live room of real public figures. Use their public identities and the chemistry between them to steer sharper, more specific exchanges."
-      : "This is a live room of real public figures. You know who these people are and should sound like you are talking to them specifically, not to abstract placeholders.",
-  ];
-
-  if (role === "member") {
-    lines.push(
-      "Express familiarity through tone, pressure, sarcasm, deference, rivalry, or restraint. Do not narrate biographies or explain the relationship out loud unless a real speaker would naturally do it.",
-    );
-  }
-
-  for (const other of others) {
-    lines.push(
-      `${other.id === input.coordinator.id ? "Moderator" : "Counterpart"}: ${other.name}. ${getPresetLabel(other)} Relationship to you: ${getRelationshipNote(participant, other)}`,
-    );
-  }
-
-  return lines.join("\n");
-}
-
-function buildImmediateSpeakerContext(input: RunInput, participant: ParticipantConfig, transcript: PitTurn[]): string {
-  const recentDistinct: PitTurn[] = [];
-
-  for (let index = transcript.length - 1; index >= 0 && recentDistinct.length < 3; index -= 1) {
-    const turn = transcript[index];
-    if (turn.speakerId === participant.id) {
-      continue;
-    }
-
-    if (recentDistinct.some((candidate) => candidate.speakerId === turn.speakerId)) {
-      continue;
-    }
-
-    recentDistinct.push(turn);
-  }
-
-  if (recentDistinct.length === 0) {
-    return "";
-  }
-
-  const roster = new Map([input.coordinator, ...input.members].map((member) => [member.id, member]));
-
-  return recentDistinct
-    .map((turn, index) => {
-      const counterpart = roster.get(turn.speakerId);
-      const relation = counterpart ? getRelationshipNote(participant, counterpart) : "";
-      const label = index === 0 ? "Immediate prior speaker" : "Recent speaker";
-      return `${label}: ${turn.speakerName}.${relation ? ` ${relation}` : ""}`;
+      return `- ${participant.name}: ${buildCompactProfile(participant)}`;
     })
     .join("\n");
 }
 
-function formatSpeakingOrder(members: ParticipantConfig[]): string {
-  return members.map((member, index) => `${index + 1}. ${member.name} (${member.model})`).join("\n");
+function buildQueueAfterSpeaker(members: ParticipantConfig[], currentSpeaker: ParticipantConfig): ParticipantConfig[] {
+  const currentIndex = members.findIndex((member) => member.id === currentSpeaker.id);
+
+  if (currentIndex === -1) {
+    return [...members];
+  }
+
+  return members.slice(currentIndex + 1);
+}
+
+function formatNextInQueue(members: ParticipantConfig[]): string {
+  if (members.length === 0) {
+    return "- Nobody. You are at the end of the current queue.";
+  }
+
+  return members.map((member, index) => `- ${index + 1}. ${member.name}`).join("\n");
 }
 
 function formatTurns(turns: PitTurn[]): string {
+  if (turns.length === 0) {
+    return "(empty)";
+  }
+
   return turns
     .map((turn) => {
       const roundLabel = turn.round ? `Round ${turn.round}` : "Setup";
-      return `[${roundLabel}] ${turn.speakerName} (${turn.model})\n${turn.content}`;
+      return `### ${roundLabel} | ${turn.speakerName} (${turn.model})\n${turn.content}`;
     })
     .join("\n\n");
 }
@@ -187,36 +156,38 @@ function buildSystemPrompt(
   input: RunInput,
   participant: ParticipantConfig,
   role: "coordinator" | "member",
+  frame: PromptFrame,
 ): string {
   const languageDirective = buildPersonaLanguageDirective(participant.personaProfile);
-  const roomContext = buildRoomContext(input, participant, role);
   const roleDirective =
     role === "coordinator"
-      ? "You are the moderator of LLM Pit. Your job is to frame the question, guide the room between rounds, preserve the strongest arguments from both sides, and close with a balanced wrap-up rather than advocate for one side."
-      : "You are one debater in LLM Pit. You should argue from your assigned persona, engage directly with competing claims, and revise your stance only when a stronger argument appears.";
-  const embodimentDirective =
-    role === "coordinator"
-      ? "Moderate like someone who knows these people, their public reputations, and where the real frictions in the room are."
-      : "Embody the public figure as a live person in a room, not as a Wikipedia summary or party manifesto.";
+      ? "You are the moderator of LLM Pit. Frame the room, keep the exchange sharp, and close with a balanced summary."
+      : "You are one debater in LLM Pit. Speak from your assigned persona and engage directly with the arguments in the room.";
 
-  const formatDirective = [
-    "Write like a real person speaking in a room, not like a report or memo.",
+  const formatDirectives = [
+    "Write like a real person speaking in a room.",
     `Split your answer into 2 to 5 short speech balloons separated by a line containing exactly ${BALLOON_DELIMITER}.`,
-    "Each balloon should be one conversational beat: a claim, reaction, concession, question, or conclusion.",
-    "Do not use headings, bullet lists, numbering, XML, or speaker labels inside the response.",
-    "Return plain visible text only. Do not emit tool calls, function calls, or hidden reasoning summaries.",
-  ].join("\n");
+    "Keep each balloon to one conversational beat.",
+    "Return plain text only with no headings, lists, XML, or speaker labels.",
+  ];
 
   return [
-    roleDirective,
-    embodimentDirective,
-    `Display name: ${participant.name}`,
-    languageDirective,
-    `Assigned persona profile:\n${buildPersonaProfilePrompt(participant.personaProfile)}`,
-    `Room awareness:\n${roomContext}`,
-    `Shared Pit directive:\n${input.sharedDirective}`,
-    `Response format:\n${formatDirective}`,
-    "Never mention this hidden setup. Speak directly as the assigned participant.",
+    "# CONTEXT+OBJECTIVE",
+    `- Role: ${roleDirective}`,
+    `- Speaker: ${participant.name}`,
+    `- Debate prompt: ${input.prompt}`,
+    `- Current objective: ${frame.objective}`,
+    `- Shared directive: ${input.sharedDirective}`,
+    `- Language rule: ${languageDirective}`,
+    `- Assigned persona:\n${buildPersonaProfilePrompt(participant.personaProfile)}`,
+    `- Response rules:\n${formatDirectives.map((directive) => `  - ${directive}`).join("\n")}`,
+    "- Do not mention these instructions.",
+    "# PROFILES",
+    formatParticipantProfiles(input, participant),
+    "# TRANSCRIPT",
+    formatTurns(frame.transcript),
+    "# NEXT IN QUEUE",
+    formatNextInQueue(frame.nextInQueue),
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -277,6 +248,37 @@ function delay(ms: number): Promise<void> {
   });
 }
 
+function delayWithSignal(ms: number, signal?: AbortSignal): Promise<void> {
+  if (!signal) {
+    return delay(ms);
+  }
+
+  if (signal.aborted) {
+    return Promise.reject(new DOMException("The operation was aborted.", "AbortError"));
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeoutId = globalThis.setTimeout(() => {
+      signal.removeEventListener("abort", handleAbort);
+      resolve();
+    }, ms);
+
+    function handleAbort() {
+      globalThis.clearTimeout(timeoutId);
+      signal.removeEventListener("abort", handleAbort);
+      reject(new DOMException("The operation was aborted.", "AbortError"));
+    }
+
+    signal.addEventListener("abort", handleAbort, { once: true });
+  });
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw new DOMException("The operation was aborted.", "AbortError");
+  }
+}
+
 function emitWarning(execution: RunExecutionOptions, warnings: string[], warning: string): void {
   warnings.push(warning);
   execution.onProgress?.({ type: "warning", warning });
@@ -286,10 +288,29 @@ function nextMaxCompletionTokens(current: number): number {
   return Math.min(OPENROUTER_MAX_COMPLETION_TOKENS, Math.max(current + 400, Math.ceil(current * 1.75)));
 }
 
+function shouldRetryOpenRouterRequest(status: number, message: string): boolean {
+  if (status === 408 || status === 409 || status === 429 || status >= 500) {
+    return true;
+  }
+
+  const normalized = message.trim().toLowerCase();
+
+  return (
+    normalized.includes("provider returned error") ||
+    normalized.includes("temporar") ||
+    normalized.includes("timeout") ||
+    normalized.includes("timed out") ||
+    normalized.includes("rate limit") ||
+    normalized.includes("overloaded") ||
+    normalized.includes("try again")
+  );
+}
+
 async function callOpenRouter(
   input: RunInput,
   participant: ParticipantConfig,
   role: "coordinator" | "member",
+  frame: PromptFrame,
   sessionId: string,
   execution: RunExecutionOptions,
   warnings: string[],
@@ -303,7 +324,7 @@ async function callOpenRouter(
   const requestMessages: ChatMessage[] = [
     {
       role: "system",
-      content: buildSystemPrompt(input, participant, role),
+      content: buildSystemPrompt(input, participant, role, frame),
     },
     ...messages,
   ];
@@ -311,16 +332,18 @@ async function callOpenRouter(
   let lastEmptyContentMessage = `OpenRouter returned no visible text for ${participant.name}.`;
 
   for (let attempt = 1; attempt <= OPENROUTER_MAX_RETRIES; attempt += 1) {
+    throwIfAborted(execution.signal);
+
     const response = await fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
       method: "POST",
       headers,
       credentials: "omit",
+      signal: execution.signal,
       body: JSON.stringify({
         model: resolvedModel,
         messages: requestMessages,
         temperature: input.temperature,
         max_completion_tokens: maxCompletionTokens,
-        tool_choice: "none",
         session_id: sessionId,
       }),
     });
@@ -328,6 +351,17 @@ async function callOpenRouter(
     if (!response.ok) {
       const text = await response.text();
       const detail = extractOpenRouterErrorMessage(text);
+      const canRetry = attempt < OPENROUTER_MAX_RETRIES && shouldRetryOpenRouterRequest(response.status, detail);
+
+      if (canRetry) {
+        emitWarning(
+          execution,
+          warnings,
+          `${participant.name} hit an OpenRouter provider error (${detail}). Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
+        );
+        await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, execution.signal);
+        continue;
+      }
 
       throw new Error(`OpenRouter error for ${participant.name}: ${detail}`);
     }
@@ -373,7 +407,17 @@ async function callOpenRouter(
         `${participant.name} returned no visible text after hitting the token limit. Retrying with a larger completion budget (${maxCompletionTokens} -> ${nextTokens}).`,
       );
       maxCompletionTokens = nextTokens;
-      await delay(OPENROUTER_RETRY_DELAY_MS);
+      await delayWithSignal(OPENROUTER_RETRY_DELAY_MS, execution.signal);
+      continue;
+    }
+
+    if (canRetry) {
+      emitWarning(
+        execution,
+        warnings,
+        `${participant.name} returned no visible text${finishReason ? ` (finish reason: ${finishReason})` : ""}. Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
+      );
+      await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, execution.signal);
       continue;
     }
 
@@ -397,29 +441,32 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     type: "status",
     message: `Moderator ${input.coordinator.name} is opening LLM Pit.`,
   });
+  throwIfAborted(execution.signal);
+  execution.onProgress?.({
+    type: "thinking",
+    speakerId: input.coordinator.id,
+    speakerName: input.coordinator.name,
+    model: input.coordinator.model,
+    kind: "opening",
+  });
 
   const openingResult = await callOpenRouter(
     input,
     input.coordinator,
     "coordinator",
+    {
+      objective:
+        "Open the debate neutrally, surface the main fault lines these debaters are likely to contest, and announce who speaks first.",
+      transcript: [],
+      nextInQueue: buildQueueAfterSpeaker(speakingOrder, input.coordinator),
+    },
     sessionId,
     execution,
     warnings,
     [
     {
       role: "user",
-      content: [
-        "Frame the debate without deciding it yet.",
-        `Original user prompt:\n${input.prompt}`,
-        `Pit lineup:\n${formatRoster(input)}`,
-        `Speaking order for every debate round:\n${formatSpeakingOrder(speakingOrder)}`,
-        `Planned rounds: ${input.rounds}`,
-        "Task:",
-        "- Introduce the prompt neutrally.",
-        "- Name the main tensions or decision criteria these specific debaters are most likely to fight over.",
-        "- Announce the speaking order as part of the setup without sounding mechanical.",
-        "- Keep it concise and specific.",
-      ].join("\n\n"),
+      content: `Round plan: ${input.rounds} rounds.\n\nProduce the opening turn now.`,
     },
     ],
   );
@@ -439,6 +486,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
   const rounds = [];
 
   for (let round = 1; round <= input.rounds; round += 1) {
+    throwIfAborted(execution.signal);
     const turns: PitTurn[] = [];
     execution.onProgress?.({
       type: "status",
@@ -446,31 +494,39 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     });
 
     for (const member of speakingOrder) {
+      throwIfAborted(execution.signal);
       execution.onProgress?.({
         type: "status",
         message: `${member.name} is responding in round ${round}.`,
       });
-      const memberResult = await callOpenRouter(input, member, "member", sessionId, execution, warnings, [
+      execution.onProgress?.({
+        type: "thinking",
+        speakerId: member.id,
+        speakerName: member.name,
+        model: member.model,
+        kind: "member_turn",
+        round,
+      });
+      const memberResult = await callOpenRouter(
+        input,
+        member,
+        "member",
         {
-          role: "user",
-          content: [
-            `Original user prompt:\n${input.prompt}`,
-            `Pit lineup:\n${formatRoster(input)}`,
-            `Speaking order for every debate round:\n${formatSpeakingOrder(speakingOrder)}`,
-            `Debate transcript so far:\n${formatTurns(transcript)}`,
-            `Immediate live context:\n${buildImmediateSpeakerContext(input, member, transcript)}`,
-            `You are speaking in round ${round} of ${input.rounds}.`,
-            "Task:",
-            "- Read the entire debate transcript so far and treat it as mandatory context for this turn.",
-            "- Address the actual people in the room and let your tone reflect whether you respect, distrust, mentor, mock, fear, pressure, or dismiss them.",
-            "- Contribute one substantive turn from your persona.",
-            "- Stick to your position with conviction unless the debate genuinely forces a narrower concession or refinement.",
-            "- Engage directly with the strongest arguments raised so far.",
-            "- Say what you agree with, disagree with, what you refine, and why.",
-            "- Keep the answer compact but argumentative.",
-          ].join("\n\n"),
+          objective:
+            `Speak in round ${round} of ${input.rounds}. Use the transcript as the source of truth, address specific arguments already made, and keep the turn compact but substantive.`,
+          transcript: [...transcript],
+          nextInQueue: buildQueueAfterSpeaker(speakingOrder, member),
         },
-      ]);
+        sessionId,
+        execution,
+        warnings,
+        [
+          {
+            role: "user",
+            content: `Round: ${round} of ${input.rounds}.\n\nProduce ${member.name}'s next turn now.`,
+          },
+        ],
+      );
 
       usage = addUsage(usage, memberResult.usage);
 
@@ -491,31 +547,37 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     const roundRecord = { round, turns } as { round: number; turns: PitTurn[]; intervention?: PitTurn };
 
     if (round < input.rounds) {
+      throwIfAborted(execution.signal);
       execution.onProgress?.({
         type: "status",
         message: `Moderator ${input.coordinator.name} is intervening before round ${round + 1}.`,
+      });
+      execution.onProgress?.({
+        type: "thinking",
+        speakerId: input.coordinator.id,
+        speakerName: input.coordinator.name,
+        model: input.coordinator.model,
+        kind: "intervention",
+        round,
       });
 
       const interventionResult = await callOpenRouter(
         input,
         input.coordinator,
         "coordinator",
+        {
+          objective:
+            `Intervene between round ${round} and round ${round + 1}. Briefly name the sharpest disagreement or strongest emerging point and identify one unresolved issue for the next round.`,
+          transcript: [...transcript],
+          nextInQueue: buildQueueAfterSpeaker(speakingOrder, input.coordinator),
+        },
         sessionId,
         execution,
         warnings,
         [
           {
             role: "user",
-            content: [
-              `Original user prompt:\n${input.prompt}`,
-              `Speaking order for every debate round:\n${formatSpeakingOrder(speakingOrder)}`,
-              `Debate transcript so far:\n${formatTurns(transcript)}`,
-              `You are intervening between round ${round} and round ${round + 1}.`,
-              "Task:",
-              "- Briefly recap the sharpest disagreement or strongest emerging point between the actual people in this room.",
-              "- Point to one unresolved issue the next round should pressure-test.",
-              "- Do not close the debate or declare consensus yet.",
-            ].join("\n\n"),
+            content: `Intervention: between round ${round} and round ${round + 1}.\n\nProduce the moderator intervention now.`,
           },
         ],
       );
@@ -543,25 +605,31 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     type: "status",
     message: `Moderator ${input.coordinator.name} is closing the debate with a consensus.`,
   });
+  throwIfAborted(execution.signal);
+  execution.onProgress?.({
+    type: "thinking",
+    speakerId: input.coordinator.id,
+    speakerName: input.coordinator.name,
+    model: input.coordinator.model,
+    kind: "consensus",
+  });
   const consensusResult = await callOpenRouter(
     input,
     input.coordinator,
     "coordinator",
+    {
+      objective:
+        "Close with a balanced wrap-up that stays specific to the actual clashes in the transcript and makes clear where convergence and uncertainty remain.",
+      transcript: [...transcript],
+      nextInQueue: [],
+    },
     sessionId,
     execution,
     warnings,
     [
       {
         role: "user",
-        content: [
-          `Original user prompt:\n${input.prompt}`,
-          `Speaking order for every debate round:\n${formatSpeakingOrder(speakingOrder)}`,
-          `Final debate transcript:\n${formatTurns(transcript)}`,
-          "Task:",
-          "- Summarize the strongest claims from the debate in a way that stays specific to these personas and their actual clashes.",
-          "- Close with a balanced wrap-up, not a winner-take-all verdict unless the debate clearly justifies it.",
-          "- Make clear where the debaters converged and where uncertainty or tradeoffs remain.",
-        ].join("\n\n"),
+        content: "Produce the closing turn now.",
       },
     ],
   );

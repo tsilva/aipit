@@ -32,7 +32,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-On first load, the app lets you save an OpenRouter API key in browser local storage and validates it against OpenRouter. A valid key is required before debates can run.
+The repo does not include an OpenRouter API key. On first load, each user must paste their own key, which the app stores in browser local storage and validates against OpenRouter. A valid key is required before debates can run.
 
 ## Environment variables
 
@@ -42,7 +42,7 @@ On first load, the app lets you save an OpenRouter API key in browser local stor
 
 This app is a standard Next.js App Router project, so Vercel can deploy it without extra adapters.
 
-1. No backend secret is required. The app uses a browser-stored OpenRouter key after it validates.
+1. No backend secret is required. Each browser user must provide and validate their own OpenRouter key locally.
 2. Deploy a preview:
 
 ```bash
@@ -57,6 +57,6 @@ vercel deploy --prod -y
 
 ## Notes
 
-- OpenRouter requests are made directly from the client, so browser runs require a validated OpenRouter API key.
+- OpenRouter requests are made directly from the client, so browser runs require a validated user-provided OpenRouter API key.
 - The UI is implemented in `src/components/pit-studio.tsx`.
 - The orchestration logic lives in `src/lib/pit-engine.ts`.

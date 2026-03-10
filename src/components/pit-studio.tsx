@@ -31,10 +31,95 @@ import { buildPersonaProfilePreview } from "@/lib/persona-profile";
 import { filterParticipantPersonaPresets, type ParticipantPersonaPreset } from "@/lib/persona-presets";
 
 const OPENROUTER_KEY_STORAGE = "llmpit.openrouter.key";
-const DEFAULT_OPENROUTER_API_KEY =
-  "***REMOVED***";
+const PIT_LINEUP_STORAGE = "llmpit.lineup";
 
 type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizeStoredParticipant(value: unknown, fallback: ParticipantConfig): ParticipantConfig {
+  const raw = isRecord(value) ? value : {};
+  const personaProfile = isRecord(raw.personaProfile) ? raw.personaProfile : {};
+
+  return {
+    ...fallback,
+    id: typeof raw.id === "string" && raw.id.trim() ? raw.id : fallback.id,
+    name: typeof raw.name === "string" ? raw.name : fallback.name,
+    model: typeof raw.model === "string" ? raw.model : fallback.model,
+    presetId: typeof raw.presetId === "string" && raw.presetId.trim() ? raw.presetId : undefined,
+    avatarUrl: typeof raw.avatarUrl === "string" && raw.avatarUrl.trim() ? raw.avatarUrl : undefined,
+    personaProfile: {
+      ...fallback.personaProfile,
+      ...Object.fromEntries(Object.entries(personaProfile).filter(([, fieldValue]) => typeof fieldValue === "string")),
+    },
+  };
+}
+
+function arraysEqual(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function orderParticipants(roster: ParticipantConfig[], lineupOrder: string[]): ParticipantConfig[] {
+  const participantById = new Map(roster.map((participant) => [participant.id, participant]));
+  const ordered = lineupOrder
+    .map((participantId) => participantById.get(participantId) ?? null)
+    .filter((participant): participant is ParticipantConfig => participant !== null);
+  const missing = roster.filter((participant) => !lineupOrder.includes(participant.id));
+
+  return [...ordered, ...missing];
+}
+
+function syncLineupOrder(lineupOrder: string[], roster: ParticipantConfig[]): string[] {
+  const rosterIds = roster.map((participant) => participant.id);
+  const nextOrder = [...lineupOrder.filter((participantId) => rosterIds.includes(participantId))];
+
+  for (const participantId of rosterIds) {
+    if (!nextOrder.includes(participantId)) {
+      nextOrder.push(participantId);
+    }
+  }
+
+  return arraysEqual(lineupOrder, nextOrder) ? lineupOrder : nextOrder;
+}
+
+function readStoredLineup(): (Pick<RunInput, "coordinator" | "members"> & { order: string[] }) | null {
+  const storedLineup = window.localStorage.getItem(PIT_LINEUP_STORAGE);
+
+  if (!storedLineup) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(storedLineup);
+
+    if (!isRecord(parsed)) {
+      window.localStorage.removeItem(PIT_LINEUP_STORAGE);
+      return null;
+    }
+
+    const defaultInput = createDefaultInput();
+    const coordinator = normalizeStoredParticipant(parsed.coordinator, defaultInput.coordinator);
+    const members = Array.isArray(parsed.members)
+      ? parsed.members.map((member, index) => normalizeStoredParticipant(member, createMember(index + 1)))
+      : defaultInput.members;
+    const roster = [coordinator, ...members];
+    const validIds = new Set(roster.map((participant) => participant.id));
+    const order = Array.isArray(parsed.order)
+      ? parsed.order.filter((participantId): participantId is string => typeof participantId === "string" && validIds.has(participantId))
+      : [];
+
+    return {
+      coordinator,
+      members,
+      order: syncLineupOrder(order, roster),
+    };
+  } catch {
+    window.localStorage.removeItem(PIT_LINEUP_STORAGE);
+    return null;
+  }
+}
 
 function emptyApiKeyStatusMessage(): string {
   return missingOpenRouterKeyMessage();
@@ -324,14 +409,16 @@ function buildQueueEntries({
   roster,
   plannedTurns,
   currentFrame,
-  isAwaitingFirstTurn,
+  hasPlaybackStarted,
+  isAwaitingTurnResponse,
   isRunning,
 }: {
   frames: PlaybackFrame[];
   roster: ParticipantConfig[];
   plannedTurns: PlannedQueueTurn[];
   currentFrame?: PlaybackFrame;
-  isAwaitingFirstTurn: boolean;
+  hasPlaybackStarted: boolean;
+  isAwaitingTurnResponse: boolean;
   isRunning: boolean;
 }): QueueEntry[] {
   const participantById = new Map(roster.map((participant) => [participant.id, participant]));
@@ -345,7 +432,7 @@ function buildQueueEntries({
   }, []);
 
   if (!currentFrame) {
-    if (!isAwaitingFirstTurn) {
+    if (!hasPlaybackStarted) {
       return [];
     }
 
@@ -382,7 +469,7 @@ function buildQueueEntries({
     model: plannedTurn.model,
     chapterLabel: plannedTurn.chapterLabel,
     participant: participantById.get(plannedTurn.speakerId) ?? null,
-    state: isRunning && index === 0 ? ("thinking" as const) : ("ready" as const),
+    state: (isRunning || isAwaitingTurnResponse) && index === 0 ? ("thinking" as const) : ("ready" as const),
     frameIndex: null,
   }));
 
@@ -551,6 +638,15 @@ function PreviousGlyph() {
   );
 }
 
+function BackGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6 4 12l6 6" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h15" />
+    </svg>
+  );
+}
+
 function NextGlyph() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -597,51 +693,145 @@ function PromptGlyph() {
   );
 }
 
+function GitHubGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 .5C5.65.5.5 5.65.5 12A11.5 11.5 0 0 0 8.36 22.9c.58.1.79-.25.79-.56v-2.18c-3.2.7-3.88-1.35-3.88-1.35-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.76 2.7 1.25 3.36.95.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.27 1.19-3.07-.12-.3-.52-1.5.11-3.12 0 0 .97-.31 3.18 1.18a10.9 10.9 0 0 1 5.8 0c2.2-1.5 3.17-1.18 3.17-1.18.63 1.62.23 2.82.11 3.12.74.8 1.19 1.82 1.19 3.07 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.08.78 2.17v3.22c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
+    </svg>
+  );
+}
+
 function promptPlaceholder(): string {
   return "What should these personas fight out in LLM Pit?";
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+function buildPresetParticipant(preset: ParticipantPersonaPreset, index: number): ParticipantConfig {
+  return {
+    ...createMember(index),
+    name: preset.name,
+    model: DEFAULT_PRESET_MODEL,
+    presetId: preset.id,
+    personaProfile: { ...preset.personaProfile },
+    avatarUrl: preset.avatarUrl,
+  };
+}
+
+function promoteParticipantToModerator(input: RunInput, participantId: string): RunInput {
+  if (input.coordinator.id === participantId) {
+    return input;
+  }
+
+  const moderatorIndex = input.members.findIndex((member) => member.id === participantId);
+
+  if (moderatorIndex === -1) {
+    return input;
+  }
+
+  return {
+    ...input,
+    coordinator: input.members[moderatorIndex],
+    members: input.members.map((member, index) => (index === moderatorIndex ? input.coordinator : member)),
+  };
+}
+
+function addParticipantToLineup(input: RunInput, preset: ParticipantPersonaPreset): RunInput {
+  const incomingParticipant = buildPresetParticipant(preset, input.members.length + 1);
+
+  if (input.members.length === 0) {
+    return {
+      ...input,
+      coordinator: incomingParticipant,
+      members: [input.coordinator],
+    };
+  }
+
+  return {
+    ...input,
+    members: [...input.members, incomingParticipant],
+  };
+}
+
+function removeParticipantFromLineup(input: RunInput, participantId: string): RunInput {
+  if (input.coordinator.id === participantId) {
+    if (input.members.length === 0) {
+      return input;
+    }
+
+    const [nextCoordinator, ...remainingMembers] = input.members;
+
+    return {
+      ...input,
+      coordinator: nextCoordinator,
+      members: remainingMembers,
+    };
+  }
+
+  return {
+    ...input,
+    members: input.members.filter((member) => member.id !== participantId),
+  };
+}
+
 function SetupParticipantCard({
   participant,
+  isModerator,
   roleLabel,
+  onSelectModerator,
   onEdit,
 }: {
   participant: ParticipantConfig;
+  isModerator: boolean;
   roleLabel: string;
+  onSelectModerator: () => void;
   onEdit: () => void;
 }) {
   const personaPreview = buildPersonaProfilePreview(participant.personaProfile).trim().replace(/\s+/g, " ");
 
   return (
-    <button type="button" className="hero-roster-card" onClick={onEdit} aria-label={`Edit ${participant.name}`}>
-      <span className="hero-roster-edit" aria-hidden="true">
-        <SettingsGlyph />
-      </span>
+    <div className={`hero-roster-card ${isModerator ? "hero-roster-card-active" : ""}`}>
+      <button
+        type="button"
+        className="hero-roster-select"
+        onClick={onSelectModerator}
+        aria-pressed={isModerator}
+        aria-label={isModerator ? `${participant.name} is the moderator` : `Make ${participant.name} the moderator`}
+      >
+        <div className="hero-roster-card-top">
+          <ParticipantAvatar
+            name={participant.name}
+            avatarUrl={participant.avatarUrl}
+            className="hero-roster-avatar"
+            fallbackClassName="hero-roster-avatar-fallback"
+            imageClassName="avatar-image"
+          />
 
-      <div className="hero-roster-card-top">
-        <ParticipantAvatar
-          name={participant.name}
-          avatarUrl={participant.avatarUrl}
-          className="hero-roster-avatar"
-          fallbackClassName="hero-roster-avatar-fallback"
-          imageClassName="avatar-image"
-        />
-
-        <div className="hero-roster-copy">
-          <span className="hero-roster-role">{roleLabel}</span>
-          <span className="hero-roster-name">{participant.name}</span>
-          <span className="hero-roster-model mono">{participant.model}</span>
+          <div className="hero-roster-copy">
+            <span className="hero-roster-role">{roleLabel}</span>
+            <span className="hero-roster-name">{participant.name}</span>
+            <span className="hero-roster-model mono">{participant.model}</span>
+          </div>
         </div>
-      </div>
 
-      <p className="hero-roster-persona">
-        {personaPreview ? `${personaPreview.slice(0, 180)}${personaPreview.length > 180 ? "..." : ""}` : "Add a persona to shape this voice in the room."}
-      </p>
-    </button>
+        <p className="hero-roster-persona">
+          {personaPreview
+            ? `${personaPreview.slice(0, 180)}${personaPreview.length > 180 ? "..." : ""}`
+            : "Add a persona to shape this voice in the room."}
+        </p>
+      </button>
+
+      <button type="button" className="hero-roster-edit" onClick={onEdit} aria-label={`Edit ${participant.name}`} title={`Edit ${participant.name}`}>
+        <SettingsGlyph />
+      </button>
+    </div>
   );
 }
 
 function StudioHero({
+  roster,
   config,
   apiKey,
   apiKeyStatus,
@@ -656,8 +846,10 @@ function StudioHero({
   onOpenSettings,
   onPromptChange,
   onAddMember,
+  onSelectModerator,
   onOpenParticipant,
 }: {
+  roster: ParticipantConfig[];
   config: RunInput;
   apiKey: string;
   apiKeyStatus: ApiKeyStatus;
@@ -672,9 +864,9 @@ function StudioHero({
   onOpenSettings: () => void;
   onPromptChange: (value: string) => void;
   onAddMember: () => void;
+  onSelectModerator: (id: string) => void;
   onOpenParticipant: (id: string) => void;
 }) {
-  const roster = [config.coordinator, ...config.members];
   const apiKeyLabel = hasLoadedKey ? (hasApiKey ? maskApiKey(apiKey) : "No key saved") : "Loading";
   const [isEditingApiKey, setIsEditingApiKey] = useState(false);
   const apiKeyInputRef = useRef<HTMLInputElement | null>(null);
@@ -715,6 +907,19 @@ function StudioHero({
   return (
     <section className="hero-shell">
       <section className="hero-panel hero-copy-panel">
+        <div className="hero-copy-actions">
+          <a
+            href="https://github.com/llmcouncil"
+            target="_blank"
+            rel="noreferrer"
+            className="hero-github-link"
+            aria-label="Open llmcouncil on GitHub"
+            title="Open llmcouncil on GitHub"
+          >
+            <GitHubGlyph />
+          </a>
+        </div>
+
         <div className="hero-copy-stack">
           <h1 className="hero-title">LLM Pit</h1>
           <p className="hero-body">
@@ -740,7 +945,9 @@ function StudioHero({
             <SetupParticipantCard
               key={participant.id}
               participant={participant}
+              isModerator={participant.id === config.coordinator.id}
               roleLabel={participant.id === config.coordinator.id ? "Moderator" : "Debater"}
+              onSelectModerator={() => onSelectModerator(participant.id)}
               onEdit={() => onOpenParticipant(participant.id)}
             />
           ))}
@@ -799,7 +1006,7 @@ function StudioHero({
             <p className="hero-kicker">OpenRouter Access</p>
             <h2 className="hero-panel-title">API key</h2>
             <p className="hero-panel-copy">
-              Browser runs need a valid OpenRouter API key. Create one in{" "}
+              Browser runs need your own valid OpenRouter API key. This repo does not include one. Create one in{" "}
               <a href="https://openrouter.ai/" target="_blank" rel="noreferrer" className="hero-api-link">
                 OpenRouter
               </a>{" "}
@@ -1640,8 +1847,10 @@ function ChamberStage({
   transcriptTurnCount,
   transcriptMarkdown,
   isPlaybackPlaying,
+  isAwaitingTurnResponse,
   onPanelModeChange,
   onOpenParticipant,
+  onExit,
   onPausePlayback,
   onTogglePlayback,
   onPreviousFrame,
@@ -1666,8 +1875,10 @@ function ChamberStage({
   transcriptTurnCount: number;
   transcriptMarkdown: string;
   isPlaybackPlaying: boolean;
+  isAwaitingTurnResponse: boolean;
   onPanelModeChange: (mode: StagePanelMode) => void;
   onOpenParticipant: (id: string) => void;
+  onExit: () => void;
   onPausePlayback: () => void;
   onTogglePlayback: () => void;
   onPreviousFrame: () => void;
@@ -1680,19 +1891,20 @@ function ChamberStage({
     members: roster.slice(1),
   });
   const hasPlaybackStarted = hasSessionStarted || isRunning || frames.length > 0;
-  const isAwaitingFirstTurn = hasPlaybackStarted && frames.length === 0 && !error;
   const queueEntries = buildQueueEntries({
     frames,
     roster,
     plannedTurns: plannedQueueTurns,
     currentFrame,
-    isAwaitingFirstTurn,
+    hasPlaybackStarted,
+    isAwaitingTurnResponse,
     isRunning,
   });
   const thinkingEntry = queueEntries.find((entry) => entry.state === "thinking") ?? null;
+  const queuedFocusEntry = thinkingEntry ?? queueEntries[0] ?? null;
   const focusSpeaker =
     (currentFrame ? roster.find((participant) => participant.id === currentFrame.speakerId) : null) ??
-    thinkingEntry?.participant ??
+    queuedFocusEntry?.participant ??
     null;
 
   const canConfigureActiveSpeaker = false;
@@ -1714,8 +1926,12 @@ function ChamberStage({
             <h1 className="chamber-runtime-title">Live debate</h1>
             <p className="chamber-runtime-prompt">{prompt.trim() || "No prompt set yet."}</p>
           </div>
-          {hasPlaybackStarted ? (
-            <div className="chamber-runtime-actions">
+          <div className="chamber-runtime-actions">
+            <button type="button" className="chamber-back-button" onClick={onExit}>
+              <BackGlyph />
+              <span>Back</span>
+            </button>
+            {hasPlaybackStarted ? (
               <div className="mode-toggle mode-toggle-compact stage-panel-toggle" aria-label="Stage panel mode">
                 {(["conversation", "transcript"] as const).map((nextPanelMode) => (
                   <button
@@ -1728,8 +1944,8 @@ function ChamberStage({
                   </button>
                 ))}
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
 
         {hasPlaybackStarted ? (
@@ -1805,7 +2021,10 @@ function ChamberStage({
                           </button>
                         ) : null}
 
-                        <div className={`speaker-focus-avatar ${currentFrame || thinkingEntry ? "is-speaking" : "is-idle"}`} aria-hidden="true">
+                        <div
+                          className={`speaker-focus-avatar ${currentFrame || queuedFocusEntry ? "is-speaking" : "is-idle"}`}
+                          aria-hidden="true"
+                        >
                           <span className="speaker-focus-avatar-ring" />
                           <ParticipantAvatar
                             name={focusSpeaker?.name ?? "LLM Pit"}
@@ -1823,7 +2042,7 @@ function ChamberStage({
                         </div>
                       </div>
 
-                      <div className={`speaker-focus-bubble ${!currentFrame && !thinkingEntry ? "is-idle" : ""}`}>
+                      <div className={`speaker-focus-bubble ${!currentFrame && !queuedFocusEntry ? "is-idle" : ""}`}>
                         {currentFrame ? (
                           <article key={currentFrame.id} className="speaker-focus-bubble-card has-debug-action">
                             <button
@@ -1840,20 +2059,12 @@ function ChamberStage({
                               {displayedBubbleContent || "\u00a0"}
                             </p>
                           </article>
-                        ) : thinkingEntry ? (
+                        ) : queuedFocusEntry ? (
                           <article className="speaker-focus-bubble-card speaker-focus-bubble-card-muted">
-                            <p className="stage-bubble-speaker">{thinkingEntry.speakerName}</p>
+                            <p className="stage-bubble-speaker">{queuedFocusEntry.speakerName}</p>
                             <p className="stage-bubble-copy stage-bubble-copy-thinking">Thinking...</p>
                           </article>
-                        ) : (
-                          <article className="speaker-focus-bubble-card speaker-focus-bubble-card-muted">
-                            <p className="stage-bubble-speaker">
-                              LLM Pit
-                              <span>ready</span>
-                            </p>
-                            <p className="stage-bubble-copy">Start the debate to put the active speaker here.</p>
-                          </article>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -1947,14 +2158,16 @@ function ChamberStage({
 
 export function PitStudio() {
   const [config, setConfig] = useState<RunInput>(() => createDefaultInput());
+  const [lineupOrder, setLineupOrder] = useState<string[]>([]);
   const [result, setResult] = useState<RunResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
-  const [apiKey, setApiKey] = useState(DEFAULT_OPENROUTER_API_KEY);
+  const [apiKey, setApiKey] = useState("");
   const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>("empty");
   const [apiKeyStatusMessage, setApiKeyStatusMessage] = useState(emptyApiKeyStatusMessage);
-  const [draftApiKey, setDraftApiKey] = useState(DEFAULT_OPENROUTER_API_KEY);
+  const [draftApiKey, setDraftApiKey] = useState("");
   const [hasLoadedKey, setHasLoadedKey] = useState(false);
+  const [hasLoadedLineup, setHasLoadedLineup] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showPersonaSelectorModal, setShowPersonaSelectorModal] = useState(false);
   const [studioView, setStudioView] = useState<StudioView>("setup");
@@ -1966,9 +2179,13 @@ export function PitStudio() {
   const [revealedBubbleChars, setRevealedBubbleChars] = useState(0);
   const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(true);
   const [frameCompletedAt, setFrameCompletedAt] = useState<number | null>(null);
+  const [isAwaitingTurnResponse, setIsAwaitingTurnResponse] = useState(false);
   const keyValidationRequestIdRef = useRef(0);
+  const runAbortControllerRef = useRef<AbortController | null>(null);
+  const activeRunIdRef = useRef(0);
 
   const roster = [config.coordinator, ...config.members];
+  const orderedRoster = orderParticipants(roster, lineupOrder);
   const hasApiKey = apiKey.trim().length > 0;
   const hasValidatedApiKey = apiKeyStatus === "valid";
   const hasPrompt = config.prompt.trim().length > 0;
@@ -1996,8 +2213,23 @@ export function PitStudio() {
     : "";
 
   useEffect(() => {
+    const storedLineup = readStoredLineup();
+
+    if (storedLineup) {
+      setConfig((current) => ({
+        ...current,
+        coordinator: storedLineup.coordinator,
+        members: storedLineup.members,
+      }));
+      setLineupOrder(storedLineup.order);
+    }
+
+    setHasLoadedLineup(true);
+  }, []);
+
+  useEffect(() => {
     const storedKey = window.localStorage.getItem(OPENROUTER_KEY_STORAGE)?.trim() ?? "";
-    const nextApiKey = storedKey || DEFAULT_OPENROUTER_API_KEY;
+    const nextApiKey = storedKey;
     if (nextApiKey) {
       setApiKey(nextApiKey);
       setDraftApiKey(nextApiKey);
@@ -2010,11 +2242,33 @@ export function PitStudio() {
         setApiKeyStatusMessage,
       });
     } else {
+      setApiKey("");
+      setDraftApiKey("");
       setApiKeyStatus("empty");
       setApiKeyStatusMessage(emptyApiKeyStatusMessage());
     }
     setHasLoadedKey(true);
   }, []);
+
+  useEffect(() => {
+    const currentRoster = [config.coordinator, ...config.members];
+    setLineupOrder((current) => syncLineupOrder(current, currentRoster));
+  }, [config.coordinator, config.members]);
+
+  useEffect(() => {
+    if (!hasLoadedLineup) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      PIT_LINEUP_STORAGE,
+      JSON.stringify({
+        coordinator: config.coordinator,
+        members: config.members,
+        order: lineupOrder,
+      }),
+    );
+  }, [config.coordinator, config.members, hasLoadedLineup, lineupOrder]);
 
   useEffect(() => {
     if (activeEditorId && !editableParticipant) {
@@ -2131,27 +2385,15 @@ export function PitStudio() {
   }
 
   function addMemberFromPreset(preset: ParticipantPersonaPreset) {
-    setConfig((current) => ({
-      ...current,
-      members: [
-        ...current.members,
-        {
-          ...createMember(current.members.length + 1),
-          name: preset.name,
-          model: DEFAULT_PRESET_MODEL,
-          presetId: preset.id,
-          personaProfile: { ...preset.personaProfile },
-          avatarUrl: preset.avatarUrl,
-        },
-      ],
-    }));
+    setConfig((current) => addParticipantToLineup(current, preset));
   }
 
-  function removeMember(id: string) {
-    setConfig((current) => ({
-      ...current,
-      members: current.members.filter((member) => member.id !== id),
-    }));
+  function selectModerator(id: string) {
+    setConfig((current) => promoteParticipantToModerator(current, id));
+  }
+
+  function removeParticipant(id: string) {
+    setConfig((current) => removeParticipantFromLineup(current, id));
   }
 
   function openParticipantEditor(id: string) {
@@ -2162,10 +2404,10 @@ export function PitStudio() {
     const trimmed = draftApiKey.trim();
     if (!trimmed) {
       window.localStorage.removeItem(OPENROUTER_KEY_STORAGE);
-      setApiKey(DEFAULT_OPENROUTER_API_KEY);
-      setDraftApiKey(DEFAULT_OPENROUTER_API_KEY);
+      setApiKey("");
+      setDraftApiKey("");
       await validateStoredApiKey({
-        nextApiKey: DEFAULT_OPENROUTER_API_KEY,
+        nextApiKey: "",
         requestIdRef: keyValidationRequestIdRef,
         siteUrl: window.location.origin,
         setApiKeyStatus,
@@ -2176,11 +2418,7 @@ export function PitStudio() {
       return true;
     }
 
-    if (trimmed === DEFAULT_OPENROUTER_API_KEY) {
-      window.localStorage.removeItem(OPENROUTER_KEY_STORAGE);
-    } else {
-      window.localStorage.setItem(OPENROUTER_KEY_STORAGE, trimmed);
-    }
+    window.localStorage.setItem(OPENROUTER_KEY_STORAGE, trimmed);
     setApiKey(trimmed);
     setDraftApiKey(trimmed);
     await validateStoredApiKey({
@@ -2248,6 +2486,28 @@ export function PitStudio() {
     selectFrame(activeFrameIndex + 1);
   }
 
+  const resetSimulationState = useCallback(() => {
+    setStudioView("setup");
+    setPanelMode("conversation");
+    setResult(null);
+    setError(null);
+    setIsRunning(false);
+    setActiveFrameIndex(0);
+    setIsPlaybackPlaying(true);
+    setCompletedBubbleIds({});
+    setRevealedBubbleId(null);
+    setRevealedBubbleChars(0);
+    setFrameCompletedAt(null);
+    setIsAwaitingTurnResponse(false);
+  }, []);
+
+  const exitSimulation = useCallback(() => {
+    activeRunIdRef.current += 1;
+    runAbortControllerRef.current?.abort();
+    runAbortControllerRef.current = null;
+    resetSimulationState();
+  }, [resetSimulationState]);
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!hasPrompt) {
@@ -2260,7 +2520,14 @@ export function PitStudio() {
       return;
     }
 
+    runAbortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    runAbortControllerRef.current = abortController;
+    const runId = activeRunIdRef.current + 1;
+    activeRunIdRef.current = runId;
+
     setStudioView("simulation");
+    setPanelMode("conversation");
     setError(null);
     setActiveFrameIndex(0);
     setIsPlaybackPlaying(true);
@@ -2268,6 +2535,7 @@ export function PitStudio() {
     setRevealedBubbleId(null);
     setRevealedBubbleChars(0);
     setFrameCompletedAt(null);
+    setIsAwaitingTurnResponse(true);
     const payload: RunInput = {
       ...config,
       mode: "debate",
@@ -2289,16 +2557,30 @@ export function PitStudio() {
       const resultPayload = await runPitWorkflow(payload, {
         apiKey,
         siteUrl: window.location.origin,
+        signal: abortController.signal,
         onProgress: (progressEvent) => {
+          if (activeRunIdRef.current !== runId) {
+            return;
+          }
           applyProgressEvent(progressEvent);
         },
       });
 
-      setResult(resultPayload);
+      if (activeRunIdRef.current === runId) {
+        setResult(resultPayload);
+      }
     } catch (submissionError) {
+      if (activeRunIdRef.current !== runId || isAbortError(submissionError)) {
+        return;
+      }
+
       setError(submissionError instanceof Error ? submissionError.message : "LLM Pit run failed.");
     } finally {
-      setIsRunning(false);
+      if (activeRunIdRef.current === runId) {
+        runAbortControllerRef.current = null;
+        setIsRunning(false);
+        setIsAwaitingTurnResponse(false);
+      }
     }
   }
 
@@ -2358,7 +2640,18 @@ export function PitStudio() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isTransportEnabled, studioView]);
 
+  useEffect(() => {
+    return () => {
+      runAbortControllerRef.current?.abort();
+    };
+  }, []);
+
   function applyProgressEvent(event: RunProgressEvent) {
+    if (event.type === "thinking") {
+      setIsAwaitingTurnResponse(true);
+      return;
+    }
+
     if (event.type === "status") {
       return;
     }
@@ -2374,6 +2667,8 @@ export function PitStudio() {
       );
       return;
     }
+
+    setIsAwaitingTurnResponse(false);
 
     setResult((current) => {
       if (!current) {
@@ -2437,6 +2732,7 @@ export function PitStudio() {
       >
         {studioView === "setup" ? (
           <StudioHero
+            roster={orderedRoster}
             config={config}
             apiKey={apiKey}
             apiKeyStatus={apiKeyStatus}
@@ -2451,6 +2747,7 @@ export function PitStudio() {
             onOpenSettings={() => setShowSettingsModal(true)}
             onPromptChange={(prompt) => setConfig((current) => ({ ...current, prompt }))}
             onAddMember={() => setShowPersonaSelectorModal(true)}
+            onSelectModerator={selectModerator}
             onOpenParticipant={openParticipantEditor}
           />
         ) : (
@@ -2473,8 +2770,10 @@ export function PitStudio() {
             transcriptTurnCount={transcriptTurns.length}
             transcriptMarkdown={transcriptMarkdown}
             isPlaybackPlaying={isPlaybackPlaying}
+            isAwaitingTurnResponse={isAwaitingTurnResponse}
             onPanelModeChange={setPanelMode}
             onOpenParticipant={openParticipantEditor}
+            onExit={exitSimulation}
             onPausePlayback={pausePlayback}
             onTogglePlayback={togglePlayback}
             onPreviousFrame={selectPreviousFrame}
@@ -2519,10 +2818,10 @@ export function PitStudio() {
           }}
           onClose={() => setActiveEditorId(null)}
           onRemove={
-            editableParticipant.id === config.coordinator.id || config.members.length <= 2
+            roster.length <= 1
               ? undefined
               : () => {
-                  removeMember(editableParticipant.id);
+                  removeParticipant(editableParticipant.id);
                   setActiveEditorId(null);
                 }
           }

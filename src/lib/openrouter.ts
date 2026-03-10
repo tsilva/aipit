@@ -78,7 +78,6 @@ async function probeOpenRouterChat(apiKey: string, siteUrl?: string): Promise<bo
       model: OPENROUTER_VALIDATION_MODEL,
       messages: [{ role: "user", content: "Reply with OK." }],
       max_completion_tokens: 8,
-      tool_choice: "none",
     }),
   });
 
