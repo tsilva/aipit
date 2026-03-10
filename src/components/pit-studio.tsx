@@ -2389,9 +2389,11 @@ function ChamberStage({
                                 className="bubble-debug-button"
                                 onClick={() => openRawPrompt(currentFrame)}
                                 aria-label="Show raw prompt for this speech bubble"
-                                title="Show raw prompt"
                               >
                                 <PromptGlyph />
+                                <span className="bubble-debug-tooltip" aria-hidden="true">
+                                  Show raw prompt
+                                </span>
                               </button>
                             ) : null}
                             <p className="stage-bubble-speaker">
