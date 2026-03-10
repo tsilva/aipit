@@ -626,10 +626,6 @@ select.field {
   padding: 1.35rem;
 }
 
-.hero-prompt-shell {
-  padding-right: 5rem;
-}
-
 .hero-copy-panel {
   display: grid;
   gap: 1rem;
@@ -899,11 +895,13 @@ select.field {
   display: grid;
   gap: 0.55rem;
   margin-top: 1.35rem;
+  min-width: 0;
   width: 100%;
 }
 
 .hero-prompt-input-shell {
   display: grid;
+  min-width: 0;
   width: 100%;
 }
 
@@ -968,6 +966,8 @@ select.field {
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.9rem;
+  width: 100%;
+  padding-right: 3.8rem;
 }
 
 .hero-api-header {
@@ -3320,10 +3320,6 @@ select.field {
     padding-right: 4.6rem;
   }
 
-  .hero-prompt-shell {
-    padding-right: 4.6rem;
-  }
-
   .hero-copy-actions {
     top: 1rem;
     right: 1rem;
@@ -3344,6 +3340,10 @@ select.field {
 
   .hero-prompt-input {
     font-size: 0.98rem;
+  }
+
+  .hero-prompt-header {
+    padding-right: 3.4rem;
   }
 
   .hero-selector-actions {
