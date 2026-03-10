@@ -1013,10 +1013,10 @@ function StudioHero({
   onOpenParticipant: (id: string) => void;
 }) {
   const apiKeyLabel = hasLoadedKey ? (hasApiKey ? maskApiKey(apiKey) : "No key saved") : "Loading";
-  const [isEditingApiKey, setIsEditingApiKey] = useState(false);
+  const [isEditingApiKey, setIsEditingApiKey] = useState(() => hasLoadedKey && !apiKey.trim());
   const apiKeyInputRef = useRef<HTMLInputElement | null>(null);
   const hasMountedApiKeyEditorRef = useRef(false);
-  const isApiKeyEditorVisible = isEditingApiKey || (hasLoadedKey && !hasApiKey);
+  const isApiKeyEditorVisible = isEditingApiKey;
   const previousApiKeyEditorVisibilityRef = useRef(isApiKeyEditorVisible);
   const hasPendingApiKeyChanges = draftApiKey.trim() !== apiKey.trim();
   const apiKeyFieldValue = isApiKeyEditorVisible ? draftApiKey : apiKeyLabel;
