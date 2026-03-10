@@ -3258,6 +3258,38 @@ select.field {
     grid-template-columns: 1fr;
   }
 
+  .hero-roster-card {
+    min-height: 0;
+  }
+
+  .hero-roster-select {
+    gap: 0.75rem;
+    padding: 0.9rem;
+  }
+
+  .hero-roster-card-top {
+    gap: 0.75rem;
+    padding-right: 2.35rem;
+  }
+
+  .hero-roster-avatar {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.9rem;
+  }
+
+  .hero-roster-name {
+    padding-right: 2.1rem;
+    font-size: 0.94rem;
+  }
+
+  .hero-roster-persona {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+
   .chamber-shell {
     padding: 0.8rem 1rem 0.9rem;
     border-radius: 1.2rem;
@@ -3490,6 +3522,103 @@ select.field {
   }
 }
 
+@media (max-width: 380px), (max-height: 640px) {
+  .chamber-shell {
+    padding: 0.7rem 0.8rem 0.8rem;
+  }
+
+  .chamber-header {
+    margin-bottom: 0.85rem;
+  }
+
+  .chamber-runtime-title {
+    margin-top: 0.25rem;
+    font-size: 1.45rem;
+  }
+
+  .chamber-runtime-prompt {
+    margin-top: 0.55rem;
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+
+  .chamber-runtime-actions {
+    gap: 0.45rem;
+  }
+
+  .mode-toggle-button-compact {
+    padding: 0.42rem 0.65rem;
+    font-size: 0.72rem;
+  }
+
+  .speaker-focus-shell {
+    padding: 0.75rem 0.75rem 0.9rem;
+  }
+
+  .speaker-focus-avatar {
+    width: 5.8rem;
+    padding: 0.5rem;
+  }
+
+  .speaker-focus-name {
+    max-width: 8.5rem;
+    font-size: 0.82rem;
+  }
+
+  .speaker-focus-model {
+    max-width: 9rem;
+    font-size: 0.52rem;
+  }
+
+  .speaker-focus-bubble-card {
+    min-height: 0;
+    padding: 0.78rem 0.82rem 0.72rem;
+  }
+
+  .speaker-focus-bubble-card.has-debug-action {
+    padding-right: 3.1rem;
+  }
+
+  .speaker-queue-shell {
+    padding: 0.6rem;
+  }
+
+  .speaker-queue-header {
+    margin-bottom: 0.45rem;
+  }
+
+  .speaker-queue-list {
+    padding-right: 0;
+  }
+
+  .speaker-queue-item {
+    min-height: 3.2rem;
+    height: auto;
+    gap: 0.5rem;
+    padding: 0.45rem 0.5rem;
+  }
+
+  .speaker-queue-name {
+    font-size: 0.8rem;
+  }
+
+  .speaker-queue-model {
+    font-size: 0.58rem;
+  }
+
+  .speaker-queue-state {
+    min-width: 3.7rem;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.48rem;
+  }
+
+  .timeline-shell {
+    gap: 0.6rem;
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+  }
+}
+
 @media (max-width: 900px) and (max-height: 760px) {
   .cinema-stage-conversation {
     grid-template-rows: auto auto auto;
@@ -3531,5 +3660,15 @@ select.field {
   .participant-modal-panel,
   .raw-prompt-modal-panel {
     max-height: calc(100dvh - 2rem);
+  }
+}
+
+@media (max-width: 380px), (max-height: 640px) {
+  .cinema-stage-conversation .speaker-queue-shell {
+    max-height: none !important;
+  }
+
+  .speaker-queue-list {
+    overflow: visible !important;
   }
 }
