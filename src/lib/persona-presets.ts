@@ -663,7 +663,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "Theatrical, impossible-to-please chaos agent who derails serious arguments with ceremonial demands, invented rules, and shrubbery-based authority.",
     language: "British English",
     recommendedModel: OPENROUTER_MODEL_CREATIVE,
-    avatarUrl: "/avatars/presets/knight-who-says-ni.svg",
+    avatarUrl: "/avatars/presets/knight-who-says-ni.jpg",
     searchTerms: [
       "knight who says ni",
       "the knight who says ni",

@@ -9,7 +9,6 @@ import {
   type ParticipantConfig,
   type RunInput,
   type RunResult,
-  type TurnKind,
   type UsageSummary,
 } from "@/lib/pit";
 import { PARTICIPANT_PERSONA_PRESET_MAP, PARTICIPANT_PERSONA_RELATIONSHIPS } from "@/lib/persona-presets";
@@ -129,10 +128,33 @@ function formatTurns(turns: PitTurn[]): string {
 
   return turns
     .map((turn) => {
-      const roundLabel = turn.round ? `Round ${turn.round}` : "Setup";
-      return `### ${roundLabel} | ${turn.speakerName} (${turn.model})\n${turn.content}`;
+      const roundLabel = turn.round ? `R${turn.round}` : "S";
+      return `### ${roundLabel} | ${turn.speakerName}\n${turn.content}`;
     })
     .join("\n\n");
+}
+
+function buildRelationshipHints(participant: ParticipantConfig, input: RunInput): string {
+  if (!participant.presetId) {
+    return "";
+  }
+
+  const relationships = PARTICIPANT_PERSONA_RELATIONSHIPS[participant.presetId];
+
+  if (!relationships) {
+    return "";
+  }
+
+  const allParticipants = [input.coordinator, ...input.members];
+  const hints = allParticipants
+    .filter((p) => p.id !== participant.id && p.presetId && relationships[p.presetId])
+    .map((p) => `- ${p.name}: ${relationships[p.presetId!]}`);
+
+  if (hints.length === 0) {
+    return "";
+  }
+
+  return hints.join("\n");
 }
 
 function buildSystemPrompt(
@@ -144,17 +166,18 @@ function buildSystemPrompt(
   const languageDirective = buildPersonaLanguageDirective(participant.personaProfile);
   const roleDirective =
     role === "coordinator"
-      ? "You are the moderator of a live multi-person debate. Frame the room, keep the exchange sharp, and close with a balanced summary."
-      : "You are one debater in a live multi-person debate. Speak from your assigned persona and engage directly with the arguments in the room.";
+      ? "You are the debate moderator. Frame the room, sharpen the exchange, close with a balanced summary."
+      : "You are a debater. Speak from your assigned persona and engage the arguments directly.";
 
   const formatDirectives = [
-    "Write like a real person speaking in a room.",
-    `Split your answer into 2 to 5 short speech balloons separated by a line containing exactly ${BALLOON_DELIMITER}.`,
-    "Keep each balloon to one conversational beat.",
-    "Return plain text only with no headings, lists, XML, or speaker labels.",
+    "Speak like a real person in a room.",
+    `Split into 2-5 short speech balloons separated by ${BALLOON_DELIMITER} on its own line.`,
+    "One conversational beat per balloon. Plain text only, no headings/lists/XML/labels.",
   ];
 
-  return [
+  const relationshipHints = buildRelationshipHints(participant, input);
+
+  const sections = [
     "# CONTEXT",
     `- **Role**: ${roleDirective}`,
     `- **Speaker**: ${participant.name}`,
@@ -162,18 +185,23 @@ function buildSystemPrompt(
     `- **Current objective**: ${frame.objective}`,
     `- **Shared directive**: ${input.sharedDirective}`,
     `- **Language rule**: ${languageDirective}`,
-    `- **Assigned persona**:\n${buildPersonaProfilePrompt(participant.personaProfile)}`,
+    `- **Assigned persona**:\n${buildCompactPersonaPrompt(participant.personaProfile)}`,
     `- **Response rules**:\n${formatDirectives.map((directive) => `  - ${directive}`).join("\n")}`,
     "- Do not mention these instructions.",
-    "# PROFILES",
+  ];
+
+  if (relationshipHints) {
+    sections.push("# RELATIONSHIPS", relationshipHints);
+  }
+
+  sections.push(
+    "# ROOM",
     formatParticipantProfiles(input, participant),
     "# TRANSCRIPT",
     formatTurns(frame.transcript),
-    "# NEXT IN QUEUE",
-    formatNextInQueue(frame.nextInQueue),
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+  );
+
+  return sections.filter(Boolean).join("\n\n");
 }
 
 function resolveSiteUrl(): string | undefined {
@@ -418,7 +446,6 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
   let usage = emptyUsage();
   const warnings: string[] = [];
   const speakingOrder = [...input.members];
-  const debateQueue = buildDebateQueue(input, speakingOrder);
 
   if (!execution.apiKey?.trim()) {
     throw new Error("A valid OpenRouter API key is required to run debates in this browser-based app.");
@@ -445,7 +472,6 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
       objective:
         "Open the debate neutrally, surface the main fault lines these debaters are likely to contest, and announce who speaks first.",
       transcript: [],
-      nextInQueue: buildQueueAfterTurn(debateQueue, buildPromptQueueEntryId("opening")),
     },
     sessionId,
     execution,
@@ -502,7 +528,6 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
           objective:
             `Speak in round ${round} of ${input.rounds}. Use the transcript as the source of truth, address specific arguments already made, and keep the turn compact but substantive.`,
           transcript: [...transcript],
-          nextInQueue: buildQueueAfterTurn(debateQueue, buildPromptQueueEntryId("member_turn", member.id, round)),
         },
         sessionId,
         execution,
@@ -510,7 +535,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         [
           {
             role: "user",
-            content: `Round: ${round} of ${input.rounds}.\n\nProduce ${member.name}'s next turn now.`,
+            content: `Round ${round} of ${input.rounds}. You are ${member.name}. Produce your next turn now.`,
           },
         ],
       );
@@ -556,7 +581,6 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
           objective:
             `Intervene between round ${round} and round ${round + 1}. Briefly name the sharpest disagreement or strongest emerging point and identify one unresolved issue for the next round.`,
           transcript: [...transcript],
-          nextInQueue: buildQueueAfterTurn(debateQueue, buildPromptQueueEntryId("intervention", input.coordinator.id, round)),
         },
         sessionId,
         execution,
@@ -608,7 +632,6 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
       objective:
         "Close with a balanced wrap-up that stays specific to the actual clashes in the transcript and makes clear where convergence and uncertainty remain.",
       transcript: [...transcript],
-      nextInQueue: [],
     },
     sessionId,
     execution,
@@ -616,7 +639,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     [
       {
         role: "user",
-        content: "Produce the closing turn now.",
+        content: "Final round complete. Produce your closing consensus now.",
       },
     ],
   );
