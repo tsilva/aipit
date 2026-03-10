@@ -91,7 +91,7 @@ export const COORDINATOR_PRESET_ID = "jose-rodrigues-dos-santos";
 
 export const BALLOON_DELIMITER = "<<<BALLOON>>>";
 
-export const DEFAULT_SHARED_DIRECTIVE = `You are participating in LLM Pit, a persona-versus-persona debate. Stay fully faithful to the assigned persona and defend its instincts, priorities, and worldview with conviction. Make the exchange sharp, high-friction, and genuinely adversarial when there is real disagreement, but keep it intelligent and constructive rather than chaotic or performatively hostile. Engage directly with the strongest points raised by the other debaters, digest what has already been said, and respond to the actual debate instead of repeating a canned stump speech. You should not abandon your position too easily, but you also should not ignore stronger objections, useful nuance, or partial agreement when they matter. Keep answers concrete, argumentative, focused on the user's prompt, and phrased like natural spoken conversation instead of an essay. Each participant should keep speaking in their own native language throughout the debate and assume translators are handling mutual understanding.`;
+export const DEFAULT_SHARED_DIRECTIVE = `You are participating in a persona-versus-persona debate. Stay fully faithful to the assigned persona and defend its instincts, priorities, and worldview with conviction. Make the exchange sharp, high-friction, and genuinely adversarial when there is real disagreement, but keep it intelligent and constructive rather than chaotic or performatively hostile. Engage directly with the strongest points raised by the other debaters, digest what has already been said, and respond to the actual debate instead of repeating a canned stump speech. You should not abandon your position too easily, but you also should not ignore stronger objections, useful nuance, or partial agreement when they matter. Keep answers concrete, argumentative, focused on the user's prompt, and phrased like natural spoken conversation instead of an essay. Each participant should keep speaking in their own native language throughout the debate and assume translators are handling mutual understanding.`;
 
 const CONTROVERSIAL_DEBATE_TOPICS = [
   "Should democracies ban anonymous political speech during election season?",
@@ -106,6 +106,50 @@ const CONTROVERSIAL_DEBATE_TOPICS = [
   "Should social media platforms be forced to verify the identity of political influencers?",
   "Should the voting age be raised for national elections?",
   "Should journalists face penalties for publishing classified leaks that embarrass the state?",
+  "Should governments be allowed to shut down major social networks during civil unrest?",
+  "Should rich democracies deport migrants who enter illegally even if they have built families locally?",
+  "Should assisted suicide be available for severe depression without terminal illness?",
+  "Should parents lose custody if they refuse mainstream medical treatment for their children?",
+  "Should biological sex override gender identity in all sports and prison placements?",
+  "Should the state be allowed to conscript civilians during a major war in Europe?",
+  "Should AI companies be held criminally liable when their models enable mass fraud or suicide coaching?",
+  "Should all political donations above a low threshold be banned outright?",
+  "Should billionaires be barred from owning major newspapers or television networks?",
+  "Should schools be allowed to socially transition children without parental consent?",
+  "Should abortion remain legal up to birth when severe hardship, but not medical emergency, is claimed?",
+  "Should governments force healthy young adults to prioritize organ donation after death?",
+  "Should repeat violent offenders lose the right to early release permanently?",
+  "Should pornography be age-verified at the device or identity level by law?",
+  "Should countries with collapsing birth rates pay women directly to have more children?",
+  "Should states remove children from extremist households before any crime is committed?",
+  "Should private schools lose all public recognition if they screen students by religion or ideology?",
+  "Should police bodycam footage always be released publicly after fatal encounters?",
+  "Should NATO countries be required to send troops, not just money, when an ally is invaded?",
+  "Should governments impose hard limits on how many homes one person or fund can own?",
+  "Should universal basic income replace most targeted welfare programs even if some vulnerable groups lose out?",
+  "Should convicted terrorists ever be allowed back into society after serving their sentence?",
+  "Should college admissions eliminate legacy preference and also eliminate most athletic preference?",
+  "Should public health systems refuse expensive late-stage treatment to smokers who ignored repeated warnings?",
+  "Should online anonymity be abolished for accounts with more than a million followers?",
+  "Should blasphemy protections return when speech is likely to trigger mass unrest?",
+  "Should constitutional courts be able to overturn referendum results on moral grounds?",
+  "Should tax authorities publish the names of top tax avoiders even when schemes are legal?",
+  "Should governments cap personal wealth once it passes a certain threshold?",
+  "Should surrogacy be banned as a form of exploitation even when all adults consent?",
+  "Should adults be free to sell a kidney legally under regulated conditions?",
+  "Should universities be allowed to expel students for organizing disruptive political occupations?",
+  "Should police be allowed to use predictive AI to justify stop-and-search in high-crime areas?",
+  "Should citizenship be revocable for dual nationals convicted of anti-state violence?",
+  "Should public broadcasters be legally required to give climate skeptics equal airtime?",
+  "Should governments ban extremist parties before they win power democratically?",
+  "Should corporations lose limited liability when they repeatedly break labor or environmental law?",
+  "Should prisoners be allowed to vote while serving time for serious crimes?",
+  "Should parents be prosecuted when their minor child commits a mass shooting with family-owned weapons?",
+  "Should states ban algorithmic feeds for minors even if it breaks most social media products?",
+  "Should adoption agencies be allowed to reject couples on religious grounds?",
+  "Should the state force psychiatric treatment on chronically homeless people who refuse it?",
+  "Should governments make DNA databases mandatory for all citizens to solve future crimes?",
+  "Should death-row-style penalties return for certain acts of terrorism or child murder?",
 ] as const;
 
 function makeId(prefix: string): string {
@@ -259,7 +303,7 @@ export function normalizeRunInput(value: unknown): RunInput {
   }
 
   if (input.members.length < 2) {
-    throw new Error("At least two debaters are required to start LLM Pit.");
+    throw new Error("At least two debaters are required to start the debate.");
   }
 
   for (const member of input.members) {

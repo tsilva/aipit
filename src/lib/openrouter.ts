@@ -11,7 +11,7 @@ export function missingOpenRouterKeyMessage(): string {
 }
 
 function resolveAppName(): string {
-  return process.env.NEXT_PUBLIC_OPENROUTER_APP_NAME || "LLM Pit";
+  return process.env.NEXT_PUBLIC_OPENROUTER_APP_NAME || "LLM Council";
 }
 
 export function buildOpenRouterHeaders({

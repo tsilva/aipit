@@ -606,11 +606,14 @@ select.field {
 .hero-copy-panel {
   display: grid;
   gap: 1rem;
+  padding-right: 5rem;
 }
 
 .hero-copy-actions {
-  display: flex;
-  justify-content: flex-end;
+  position: absolute;
+  top: 1.35rem;
+  right: 1.35rem;
+  z-index: 1;
 }
 
 .hero-github-link {
@@ -1654,6 +1657,7 @@ select.field {
 .speaker-queue-list {
   display: grid;
   flex: 1 1 auto;
+  align-content: start;
   gap: 0.45rem;
   min-height: 0;
   overflow-y: auto;
@@ -1673,20 +1677,10 @@ select.field {
   padding: 0.55rem 0.65rem;
   text-align: left;
   color: var(--foreground);
-}
-
-.speaker-queue-item:disabled {
   cursor: default;
-}
-
-.speaker-queue-item:hover {
-  transform: translateY(-1px);
-  border-color: rgba(240, 171, 105, 0.28);
-  background: rgba(255, 248, 237, 0.07);
-}
-
-.speaker-queue-item:disabled:hover {
-  transform: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .speaker-queue-rank {
@@ -2049,6 +2043,44 @@ select.field {
 
 .stage-bubble-speaker span {
   color: rgba(95, 75, 61, 0.74);
+}
+
+.stage-bubble-dismiss-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.22rem 0.5rem 0.22rem 0.28rem;
+  border-radius: 999px;
+  background: rgba(255, 248, 240, 0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(216, 122, 59, 0.16),
+    0 0.4rem 1rem rgba(116, 76, 42, 0.08);
+  color: #7b4d2f;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.stage-bubble-dismiss-spinner {
+  position: relative;
+  width: 0.92rem;
+  height: 0.92rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: conic-gradient(
+    from -90deg,
+    #d87a3b calc(var(--bubble-dismiss-progress, 0) * 1turn),
+    rgba(216, 122, 59, 0.16) 0
+  );
+}
+
+.stage-bubble-dismiss-spinner::after {
+  content: "";
+  position: absolute;
+  inset: 0.16rem;
+  border-radius: 999px;
+  background: rgba(255, 251, 246, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(216, 122, 59, 0.12);
 }
 
 .stage-bubble-copy {
@@ -2426,6 +2458,33 @@ select.field {
   color: var(--accent-strong);
 }
 
+.transcript-status-avatar {
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 243, 227, 0.85), rgba(216, 122, 59, 0.9)),
+    #d87a3b;
+  color: #fff8ef;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 0 0 1px rgba(255, 231, 198, 0.12);
+}
+
+.transcript-status-avatar-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  font-size: 0.46rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
 .transcript-status-dot {
   width: 0.45rem;
   height: 0.45rem;
@@ -2482,6 +2541,13 @@ select.field {
   color: var(--ink-soft);
   font-size: 0.95rem;
   line-height: 1.72;
+}
+
+.transcript-model-id {
+  margin: 0.35rem 0 0;
+  color: rgba(212, 198, 181, 0.7);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
 }
 
 .transcript-markdown-em {
@@ -2734,6 +2800,15 @@ select.field {
   .hero-prompt-shell,
   .hero-roster-shell {
     padding: 1rem;
+  }
+
+  .hero-copy-panel {
+    padding-right: 4.6rem;
+  }
+
+  .hero-copy-actions {
+    top: 1rem;
+    right: 1rem;
   }
 
   .hero-title {

@@ -14,7 +14,7 @@ const monoFont = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LLM Pit",
+  title: "LLM Council",
   description:
     "Throw persona simulations against each other in moderator-led debates powered by OpenRouter models.",
 };

@@ -9,6 +9,7 @@ import {
   type ParticipantConfig,
   type RunInput,
   type RunResult,
+  type TurnKind,
   type UsageSummary,
 } from "@/lib/pit";
 import { PARTICIPANT_PERSONA_PRESET_MAP } from "@/lib/persona-presets";
@@ -84,7 +85,13 @@ const OPENROUTER_RETRY_DELAY_MS = 350;
 interface PromptFrame {
   objective: string;
   transcript: PitTurn[];
-  nextInQueue: ParticipantConfig[];
+  nextInQueue: PromptQueueEntry[];
+}
+
+interface PromptQueueEntry {
+  id: string;
+  speakerName: string;
+  label: string;
 }
 
 function buildCompactProfile(participant: ParticipantConfig): string {
@@ -121,22 +128,70 @@ function formatParticipantProfiles(input: RunInput, currentSpeaker: ParticipantC
     .join("\n");
 }
 
-function buildQueueAfterSpeaker(members: ParticipantConfig[], currentSpeaker: ParticipantConfig): ParticipantConfig[] {
-  const currentIndex = members.findIndex((member) => member.id === currentSpeaker.id);
-
-  if (currentIndex === -1) {
-    return [...members];
+function buildPromptQueueEntryId(kind: TurnKind, speakerId?: string, round?: number): string {
+  if (kind === "opening" || kind === "consensus") {
+    return kind;
   }
 
-  return members.slice(currentIndex + 1);
+  if (kind === "intervention") {
+    return `intervention-${round ?? 0}`;
+  }
+
+  return `member-${round ?? 0}-${speakerId ?? "unknown"}`;
 }
 
-function formatNextInQueue(members: ParticipantConfig[]): string {
-  if (members.length === 0) {
+function buildDebateQueue(input: RunInput, speakingOrder: ParticipantConfig[]): PromptQueueEntry[] {
+  const queue: PromptQueueEntry[] = [
+    {
+      id: buildPromptQueueEntryId("opening"),
+      speakerName: input.coordinator.name,
+      label: "Opening",
+    },
+  ];
+
+  for (let round = 1; round <= input.rounds; round += 1) {
+    for (const member of speakingOrder) {
+      queue.push({
+        id: buildPromptQueueEntryId("member_turn", member.id, round),
+        speakerName: member.name,
+        label: `Round ${round}`,
+      });
+    }
+
+    if (round < input.rounds) {
+      queue.push({
+        id: buildPromptQueueEntryId("intervention", input.coordinator.id, round),
+        speakerName: input.coordinator.name,
+        label: `Intervention after round ${round}`,
+      });
+    }
+  }
+
+  queue.push({
+    id: buildPromptQueueEntryId("consensus"),
+    speakerName: input.coordinator.name,
+    label: "Consensus",
+  });
+
+  return queue;
+}
+
+function buildQueueAfterTurn(queue: PromptQueueEntry[], currentTurnId: string): PromptQueueEntry[] {
+  const currentIndex = queue.findIndex((entry) => entry.id === currentTurnId);
+
+  if (currentIndex === -1) {
+    return [...queue];
+  }
+
+  return queue.slice(currentIndex + 1);
+}
+
+function formatNextInQueue(entries: PromptQueueEntry[]): string {
+  if (entries.length === 0) {
     return "- Nobody. You are at the end of the current queue.";
   }
 
-  return members.map((member, index) => `- ${index + 1}. ${member.name}`).join("\n");
+  return entries.map((entry, index) => `- ${index + 1}. ${entry.speakerName} (${entry.label})`).join("\n");
 }
 
 function formatTurns(turns: PitTurn[]): string {
@@ -161,8 +216,8 @@ function buildSystemPrompt(
   const languageDirective = buildPersonaLanguageDirective(participant.personaProfile);
   const roleDirective =
     role === "coordinator"
-      ? "You are the moderator of LLM Pit. Frame the room, keep the exchange sharp, and close with a balanced summary."
-      : "You are one debater in LLM Pit. Speak from your assigned persona and engage directly with the arguments in the room.";
+      ? "You are the moderator of a live multi-person debate. Frame the room, keep the exchange sharp, and close with a balanced summary."
+      : "You are one debater in a live multi-person debate. Speak from your assigned persona and engage directly with the arguments in the room.";
 
   const formatDirectives = [
     "Write like a real person speaking in a room.",
@@ -172,15 +227,15 @@ function buildSystemPrompt(
   ];
 
   return [
-    "# CONTEXT+OBJECTIVE",
-    `- Role: ${roleDirective}`,
-    `- Speaker: ${participant.name}`,
-    `- Debate prompt: ${input.prompt}`,
-    `- Current objective: ${frame.objective}`,
-    `- Shared directive: ${input.sharedDirective}`,
-    `- Language rule: ${languageDirective}`,
-    `- Assigned persona:\n${buildPersonaProfilePrompt(participant.personaProfile)}`,
-    `- Response rules:\n${formatDirectives.map((directive) => `  - ${directive}`).join("\n")}`,
+    "# CONTEXT",
+    `- **Role**: ${roleDirective}`,
+    `- **Speaker**: ${participant.name}`,
+    `- **Debate prompt**: ${input.prompt}`,
+    `- **Current objective**: ${frame.objective}`,
+    `- **Shared directive**: ${input.sharedDirective}`,
+    `- **Language rule**: ${languageDirective}`,
+    `- **Assigned persona**:\n${buildPersonaProfilePrompt(participant.personaProfile)}`,
+    `- **Response rules**:\n${formatDirectives.map((directive) => `  - ${directive}`).join("\n")}`,
     "- Do not mention these instructions.",
     "# PROFILES",
     formatParticipantProfiles(input, participant),
@@ -253,23 +308,25 @@ function delayWithSignal(ms: number, signal?: AbortSignal): Promise<void> {
     return delay(ms);
   }
 
-  if (signal.aborted) {
+  const abortSignal = signal;
+
+  if (abortSignal.aborted) {
     return Promise.reject(new DOMException("The operation was aborted.", "AbortError"));
   }
 
   return new Promise((resolve, reject) => {
     const timeoutId = globalThis.setTimeout(() => {
-      signal.removeEventListener("abort", handleAbort);
+      abortSignal.removeEventListener("abort", handleAbort);
       resolve();
     }, ms);
 
     function handleAbort() {
       globalThis.clearTimeout(timeoutId);
-      signal.removeEventListener("abort", handleAbort);
+      abortSignal.removeEventListener("abort", handleAbort);
       reject(new DOMException("The operation was aborted.", "AbortError"));
     }
 
-    signal.addEventListener("abort", handleAbort, { once: true });
+    abortSignal.addEventListener("abort", handleAbort, { once: true });
   });
 }
 
@@ -432,6 +489,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
   let usage = emptyUsage();
   const warnings: string[] = [];
   const speakingOrder = [...input.members];
+  const debateQueue = buildDebateQueue(input, speakingOrder);
 
   if (!execution.apiKey?.trim()) {
     throw new Error("A valid OpenRouter API key is required to run debates in this browser-based app.");
@@ -439,7 +497,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
 
   execution.onProgress?.({
     type: "status",
-    message: `Moderator ${input.coordinator.name} is opening LLM Pit.`,
+    message: `Moderator ${input.coordinator.name} is opening the debate.`,
   });
   throwIfAborted(execution.signal);
   execution.onProgress?.({
@@ -458,16 +516,16 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
       objective:
         "Open the debate neutrally, surface the main fault lines these debaters are likely to contest, and announce who speaks first.",
       transcript: [],
-      nextInQueue: buildQueueAfterSpeaker(speakingOrder, input.coordinator),
+      nextInQueue: buildQueueAfterTurn(debateQueue, buildPromptQueueEntryId("opening")),
     },
     sessionId,
     execution,
     warnings,
     [
-    {
-      role: "user",
-      content: `Round plan: ${input.rounds} rounds.\n\nProduce the opening turn now.`,
-    },
+      {
+        role: "user",
+        content: `Round plan: ${input.rounds} rounds.\n\nProduce the opening turn now.`,
+      },
     ],
   );
 
@@ -515,7 +573,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
           objective:
             `Speak in round ${round} of ${input.rounds}. Use the transcript as the source of truth, address specific arguments already made, and keep the turn compact but substantive.`,
           transcript: [...transcript],
-          nextInQueue: buildQueueAfterSpeaker(speakingOrder, member),
+          nextInQueue: buildQueueAfterTurn(debateQueue, buildPromptQueueEntryId("member_turn", member.id, round)),
         },
         sessionId,
         execution,
@@ -569,7 +627,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
           objective:
             `Intervene between round ${round} and round ${round + 1}. Briefly name the sharpest disagreement or strongest emerging point and identify one unresolved issue for the next round.`,
           transcript: [...transcript],
-          nextInQueue: buildQueueAfterSpeaker(speakingOrder, input.coordinator),
+          nextInQueue: buildQueueAfterTurn(debateQueue, buildPromptQueueEntryId("intervention", input.coordinator.id, round)),
         },
         sessionId,
         execution,

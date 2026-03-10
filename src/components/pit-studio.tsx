@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  Children,
+  isValidElement,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -8,7 +10,9 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type CSSProperties,
   type ComponentPropsWithoutRef,
+  type ReactNode,
 } from "react";
 import ReactMarkdown from "react-markdown";
 import {
@@ -32,6 +36,7 @@ import { filterParticipantPersonaPresets, type ParticipantPersonaPreset } from "
 
 const OPENROUTER_KEY_STORAGE = "llmpit.openrouter.key";
 const PIT_LINEUP_STORAGE = "llmpit.lineup";
+const TRANSCRIPT_MODEL_PREFIX = "MODEL_ID::";
 
 type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid";
 
@@ -121,8 +126,62 @@ function readStoredLineup(): (Pick<RunInput, "coordinator" | "members"> & { orde
   }
 }
 
+function readStoredApiKey(): string {
+  return window.localStorage.getItem(OPENROUTER_KEY_STORAGE)?.trim() ?? "";
+}
+
 function emptyApiKeyStatusMessage(): string {
   return missingOpenRouterKeyMessage();
+}
+
+type InitialStudioState = {
+  config: RunInput;
+  lineupOrder: string[];
+  apiKey: string;
+  apiKeyStatus: ApiKeyStatus;
+  apiKeyStatusMessage: string;
+  draftApiKey: string;
+  hasLoadedKey: boolean;
+  hasLoadedLineup: boolean;
+};
+
+function buildInitialStudioState(): InitialStudioState {
+  const defaultInput = createDefaultInput();
+
+  if (typeof window === "undefined") {
+    return {
+      config: defaultInput,
+      lineupOrder: [],
+      apiKey: "",
+      apiKeyStatus: "empty",
+      apiKeyStatusMessage: emptyApiKeyStatusMessage(),
+      draftApiKey: "",
+      hasLoadedKey: false,
+      hasLoadedLineup: false,
+    };
+  }
+
+  const storedLineup = readStoredLineup();
+  const storedApiKey = readStoredApiKey();
+
+  return {
+    config: storedLineup
+      ? {
+          ...defaultInput,
+          coordinator: storedLineup.coordinator,
+          members: storedLineup.members,
+        }
+      : defaultInput,
+    lineupOrder: storedLineup?.order ?? [],
+    apiKey: storedApiKey,
+    apiKeyStatus: storedApiKey ? "checking" : "empty",
+    apiKeyStatusMessage: storedApiKey
+      ? "Validating API key with OpenRouter..."
+      : emptyApiKeyStatusMessage(),
+    draftApiKey: storedApiKey,
+    hasLoadedKey: true,
+    hasLoadedLineup: true,
+  };
 }
 
 async function validateStoredApiKey({
@@ -267,6 +326,10 @@ function bubbleRevealIncrement(content: string): number {
 function bubbleHoldDuration(content: string): number {
   const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
   return Math.min(9000, Math.max(3200, wordCount * 280));
+}
+
+function formatBubbleDismissCountdown(remainingMs: number): string {
+  return `${Math.max(0, remainingMs) / 1000 < 10 ? (Math.max(0, remainingMs) / 1000).toFixed(1) : Math.ceil(Math.max(0, remainingMs) / 1000)}s`;
 }
 
 function flattenTurns(result: RunResult | null): PitTurn[] {
@@ -702,7 +765,7 @@ function GitHubGlyph() {
 }
 
 function promptPlaceholder(): string {
-  return "What should these personas fight out in LLM Pit?";
+  return "What should these personas fight out in LLM Council?";
 }
 
 function isAbortError(error: unknown): boolean {
@@ -921,7 +984,7 @@ function StudioHero({
         </div>
 
         <div className="hero-copy-stack">
-          <h1 className="hero-title">LLM Pit</h1>
+          <h1 className="hero-title">LLM Council</h1>
           <p className="hero-body">
             Pick a moderator, choose at least two persona simulations, and throw them into a live debate. Once you hit play, the setup surface clears out and the room takes over.
           </p>
@@ -1603,7 +1666,7 @@ function buildTranscriptMarkdown({
       "",
       `## ${chapterLabelForTurn(turn)} · ${turn.speakerName}`,
       "",
-      `*${turn.model}*`,
+      `${TRANSCRIPT_MODEL_PREFIX} ${turn.model}`,
       "",
       transcriptTurnBody(turn),
     );
@@ -1614,6 +1677,22 @@ function buildTranscriptMarkdown({
   }
 
   return lines.join("\n");
+}
+
+function flattenTextContent(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node);
+  }
+
+  if (Array.isArray(node)) {
+    return node.map((child) => flattenTextContent(child)).join("");
+  }
+
+  if (isValidElement<{ children?: ReactNode }>(node)) {
+    return flattenTextContent(node.props.children);
+  }
+
+  return "";
 }
 
 function StudioSettingsModal({
@@ -1708,11 +1787,13 @@ function TranscriptPanel({
   isRunning,
   markdown,
   thinkingSpeakerName,
+  thinkingParticipant,
 }: {
   turnCount: number;
   isRunning: boolean;
   markdown: string;
   thinkingSpeakerName?: string | null;
+  thinkingParticipant?: ParticipantConfig | null;
 }) {
   const transcriptBodyRef = useRef<HTMLDivElement | null>(null);
   const shouldStickToBottomRef = useRef(true);
@@ -1750,7 +1831,15 @@ function TranscriptPanel({
           components={{
             h1: ({ children }) => <h1 className="transcript-markdown-h1">{children}</h1>,
             h2: ({ children }) => <h2 className="transcript-markdown-h2">{children}</h2>,
-            p: ({ children }) => <p className="transcript-markdown-p">{children}</p>,
+            p: ({ children }) => {
+              const text = flattenTextContent(Children.toArray(children));
+
+              if (text.startsWith(TRANSCRIPT_MODEL_PREFIX)) {
+                return <p className="transcript-model-id mono">{text.slice(TRANSCRIPT_MODEL_PREFIX.length).trim()}</p>;
+              }
+
+              return <p className="transcript-markdown-p">{children}</p>;
+            },
             em: ({ children }) => <em className="transcript-markdown-em">{children}</em>,
             ul: ({ children }) => <ul className="transcript-markdown-ul">{children}</ul>,
             ol: ({ children }) => <ol className="transcript-markdown-ol">{children}</ol>,
@@ -1766,7 +1855,16 @@ function TranscriptPanel({
           <div className="transcript-sheet-actions transcript-sheet-actions-footer">
             {isRunning || turnCount > 0 ? (
               <span className={`transcript-status-chip ${isRunning ? "is-live" : ""}`}>
-                <span className="transcript-status-dot" />
+                {isRunning && thinkingParticipant ? (
+                  <ParticipantAvatar
+                    name={thinkingParticipant.name}
+                    avatarUrl={thinkingParticipant.avatarUrl}
+                    className="transcript-status-avatar"
+                    fallbackClassName="transcript-status-avatar-fallback"
+                  />
+                ) : (
+                  <span className="transcript-status-dot" />
+                )}
                 {isRunning ? (thinkingSpeakerName ? `Thinking: ${thinkingSpeakerName}` : "Thinking...") : `${turnCount} turns`}
               </span>
             ) : null}
@@ -1848,6 +1946,9 @@ function ChamberStage({
   transcriptMarkdown,
   isPlaybackPlaying,
   isAwaitingTurnResponse,
+  showManualDismissCountdown,
+  manualDismissCountdownLabel,
+  manualDismissCountdownProgress,
   onPanelModeChange,
   onOpenParticipant,
   onExit,
@@ -1876,6 +1977,9 @@ function ChamberStage({
   transcriptMarkdown: string;
   isPlaybackPlaying: boolean;
   isAwaitingTurnResponse: boolean;
+  showManualDismissCountdown: boolean;
+  manualDismissCountdownLabel: string | null;
+  manualDismissCountdownProgress: number;
   onPanelModeChange: (mode: StagePanelMode) => void;
   onOpenParticipant: (id: string) => void;
   onExit: () => void;
@@ -1912,6 +2016,10 @@ function ChamberStage({
   const canGoNext = activeFrameIndex < frames.length - 1;
   const isPlayButtonActive = isPlaybackPlaying && (isRunning || canGoNext || isBubbleStreaming);
   const [debugFrame, setDebugFrame] = useState<PlaybackFrame | null>(null);
+  const manualDismissTimerStyle =
+    {
+      "--bubble-dismiss-progress": String(manualDismissCountdownProgress),
+    } as CSSProperties;
 
   function openRawPrompt(frame: PlaybackFrame) {
     onPausePlayback();
@@ -1959,19 +2067,8 @@ function ChamberStage({
                     <p className="speaker-queue-kicker">Up next</p>
                     <div className="speaker-queue-list">
                       {queueEntries.length > 0 ? (
-                        queueEntries.map(({ id, participant, state, frameIndex, speakerName, model, chapterLabel }, index) => (
-                          <button
-                            key={id}
-                            type="button"
-                            className={`speaker-queue-item is-${state}`}
-                            onClick={() => {
-                              if (frameIndex !== null) {
-                                onSelectFrame(frameIndex);
-                              }
-                            }}
-                            disabled={frameIndex === null}
-                            aria-label={`${state === "active" ? "Current" : state === "thinking" ? "Thinking" : "Upcoming"} turn: ${speakerName}`}
-                          >
+                        queueEntries.map(({ id, participant, state, speakerName, model, chapterLabel }, index) => (
+                          <div key={id} className={`speaker-queue-item is-${state}`}>
                             <span className="speaker-queue-rank mono">{String(index + 1).padStart(2, "0")}</span>
                             <ParticipantAvatar
                               name={speakerName}
@@ -1988,7 +2085,7 @@ function ChamberStage({
                             <span className={`speaker-queue-state speaker-queue-state-${state}`}>
                               {state === "active" ? "active" : state === "thinking" ? "thinking" : "ready"}
                             </span>
-                          </button>
+                          </div>
                         ))
                       ) : (
                         <div className="speaker-queue-empty">{isRunning ? "Wrapping up the final turn." : "Debate complete."}</div>
@@ -2004,6 +2101,7 @@ function ChamberStage({
                   isRunning={isRunning}
                   markdown={transcriptMarkdown}
                   thinkingSpeakerName={thinkingEntry?.speakerName ?? null}
+                  thinkingParticipant={thinkingEntry?.participant ?? null}
                 />
               ) : (
                 <div className="speaker-focus-shell">
@@ -2027,7 +2125,7 @@ function ChamberStage({
                         >
                           <span className="speaker-focus-avatar-ring" />
                           <ParticipantAvatar
-                            name={focusSpeaker?.name ?? "LLM Pit"}
+                            name={focusSpeaker?.name ?? "LLM Council"}
                             avatarUrl={focusSpeaker?.avatarUrl}
                             className="speaker-focus-avatar-core"
                             fallbackClassName="speaker-focus-avatar-fallback"
@@ -2035,7 +2133,7 @@ function ChamberStage({
                         </div>
 
                         <div className="speaker-focus-meta">
-                          <span className="speaker-focus-name">{focusSpeaker?.name ?? "LLM Pit"}</span>
+                          <span className="speaker-focus-name">{focusSpeaker?.name ?? "LLM Council"}</span>
                           <span className="speaker-focus-model mono">
                             {focusSpeaker?.model ?? (isRunning ? "thinking" : "ready")}
                           </span>
@@ -2054,7 +2152,20 @@ function ChamberStage({
                             >
                               <PromptGlyph />
                             </button>
-                            <p className="stage-bubble-speaker">{currentFrame.speakerName}</p>
+                            <p className="stage-bubble-speaker">
+                              <span>{currentFrame.speakerName}</span>
+                              {showManualDismissCountdown && manualDismissCountdownLabel ? (
+                                <span
+                                  className="stage-bubble-dismiss-timer mono"
+                                  style={manualDismissTimerStyle}
+                                  aria-label={`${manualDismissCountdownLabel} until bubble dismissal cue`}
+                                  title={`${manualDismissCountdownLabel} until bubble dismissal cue`}
+                                >
+                                  <span className="stage-bubble-dismiss-spinner" aria-hidden="true" />
+                                  <span>{manualDismissCountdownLabel}</span>
+                                </span>
+                              ) : null}
+                            </p>
                             <p className={`stage-bubble-copy ${isBubbleStreaming ? "is-streaming" : ""}`}>
                               {displayedBubbleContent || "\u00a0"}
                             </p>
@@ -2157,17 +2268,22 @@ function ChamberStage({
 }
 
 export function PitStudio() {
-  const [config, setConfig] = useState<RunInput>(() => createDefaultInput());
-  const [lineupOrder, setLineupOrder] = useState<string[]>([]);
+  const initialStudioStateRef = useRef<InitialStudioState | null>(null);
+
+  if (initialStudioStateRef.current === null) {
+    initialStudioStateRef.current = buildInitialStudioState();
+  }
+
+  const initialStudioState = initialStudioStateRef.current;
+  const [config, setConfig] = useState<RunInput>(initialStudioState.config);
+  const [lineupOrder, setLineupOrder] = useState<string[]>(initialStudioState.lineupOrder);
   const [result, setResult] = useState<RunResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
-  const [apiKey, setApiKey] = useState("");
-  const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>("empty");
-  const [apiKeyStatusMessage, setApiKeyStatusMessage] = useState(emptyApiKeyStatusMessage);
-  const [draftApiKey, setDraftApiKey] = useState("");
-  const [hasLoadedKey, setHasLoadedKey] = useState(false);
-  const [hasLoadedLineup, setHasLoadedLineup] = useState(false);
+  const [apiKey, setApiKey] = useState(initialStudioState.apiKey);
+  const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>(initialStudioState.apiKeyStatus);
+  const [apiKeyStatusMessage, setApiKeyStatusMessage] = useState(initialStudioState.apiKeyStatusMessage);
+  const [draftApiKey, setDraftApiKey] = useState(initialStudioState.draftApiKey);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showPersonaSelectorModal, setShowPersonaSelectorModal] = useState(false);
   const [studioView, setStudioView] = useState<StudioView>("setup");
@@ -2180,9 +2296,12 @@ export function PitStudio() {
   const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(true);
   const [frameCompletedAt, setFrameCompletedAt] = useState<number | null>(null);
   const [isAwaitingTurnResponse, setIsAwaitingTurnResponse] = useState(false);
+  const [dismissCountdownNow, setDismissCountdownNow] = useState(() => Date.now());
   const keyValidationRequestIdRef = useRef(0);
   const runAbortControllerRef = useRef<AbortController | null>(null);
   const activeRunIdRef = useRef(0);
+  const hasLoadedKey = initialStudioState.hasLoadedKey;
+  const hasLoadedLineup = initialStudioState.hasLoadedLineup;
 
   const roster = [config.coordinator, ...config.members];
   const orderedRoster = orderParticipants(roster, lineupOrder);
@@ -2208,47 +2327,34 @@ export function PitStudio() {
   const isPlaybackActive = panelMode === "transcript" ? true : isPlaybackPlaying;
   const isBubbleStreaming =
     Boolean(currentFrame) && revealedBubbleChars < (currentFrame?.bubbleContent.length ?? 0);
+  const currentBubbleHoldDurationMs = currentFrame ? bubbleHoldDuration(currentFrame.bubbleContent) : 0;
+  const isManualDismissCountdownVisible =
+    panelMode === "conversation" && Boolean(currentFrame) && !isPlaybackPlaying && frameCompletedAt !== null;
+  const manualDismissCountdownMsRemaining =
+    isManualDismissCountdownVisible && frameCompletedAt !== null
+      ? Math.max(0, frameCompletedAt + currentBubbleHoldDurationMs - dismissCountdownNow)
+      : null;
+  const manualDismissCountdownProgress =
+    isManualDismissCountdownVisible && currentBubbleHoldDurationMs > 0 && manualDismissCountdownMsRemaining !== null
+      ? Math.min(1, Math.max(0, 1 - manualDismissCountdownMsRemaining / currentBubbleHoldDurationMs))
+      : 0;
+  const manualDismissCountdownLabel =
+    manualDismissCountdownMsRemaining === null ? null : formatBubbleDismissCountdown(manualDismissCountdownMsRemaining);
   const displayedBubbleContent = currentFrame
     ? currentFrame.bubbleContent.slice(0, Math.min(revealedBubbleChars, currentFrame.bubbleContent.length))
     : "";
 
   useEffect(() => {
-    const storedLineup = readStoredLineup();
-
-    if (storedLineup) {
-      setConfig((current) => ({
-        ...current,
-        coordinator: storedLineup.coordinator,
-        members: storedLineup.members,
-      }));
-      setLineupOrder(storedLineup.order);
-    }
-
-    setHasLoadedLineup(true);
-  }, []);
-
-  useEffect(() => {
-    const storedKey = window.localStorage.getItem(OPENROUTER_KEY_STORAGE)?.trim() ?? "";
-    const nextApiKey = storedKey;
-    if (nextApiKey) {
-      setApiKey(nextApiKey);
-      setDraftApiKey(nextApiKey);
-      setShowSettingsModal(false);
+    if (initialStudioState.apiKey) {
       void validateStoredApiKey({
-        nextApiKey,
+        nextApiKey: initialStudioState.apiKey,
         requestIdRef: keyValidationRequestIdRef,
         siteUrl: window.location.origin,
         setApiKeyStatus,
         setApiKeyStatusMessage,
       });
-    } else {
-      setApiKey("");
-      setDraftApiKey("");
-      setApiKeyStatus("empty");
-      setApiKeyStatusMessage(emptyApiKeyStatusMessage());
     }
-    setHasLoadedKey(true);
-  }, []);
+  }, [initialStudioState.apiKey]);
 
   useEffect(() => {
     const currentRoster = [config.coordinator, ...config.members];
@@ -2369,6 +2475,19 @@ export function PitStudio() {
     revealedBubbleId,
     revealedBubbleChars,
   ]);
+
+  useEffect(() => {
+    if (!isManualDismissCountdownVisible) {
+      return;
+    }
+
+    setDismissCountdownNow(Date.now());
+    const intervalId = window.setInterval(() => {
+      setDismissCountdownNow(Date.now());
+    }, 100);
+
+    return () => window.clearInterval(intervalId);
+  }, [currentBubbleHoldDurationMs, currentFrame?.id, frameCompletedAt, isManualDismissCountdownVisible]);
 
   function updateCoordinator(patch: Partial<ParticipantConfig>) {
     setConfig((current) => ({
@@ -2511,12 +2630,12 @@ export function PitStudio() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!hasPrompt) {
-      setError("Enter a prompt before starting LLM Pit.");
+      setError("Enter a prompt before starting LLM Council.");
       return;
     }
 
     if (!hasValidatedApiKey) {
-      setError("Add and validate an OpenRouter API key before starting LLM Pit.");
+      setError("Add and validate an OpenRouter API key before starting LLM Council.");
       return;
     }
 
@@ -2574,7 +2693,7 @@ export function PitStudio() {
         return;
       }
 
-      setError(submissionError instanceof Error ? submissionError.message : "LLM Pit run failed.");
+      setError(submissionError instanceof Error ? submissionError.message : "LLM Council run failed.");
     } finally {
       if (activeRunIdRef.current === runId) {
         runAbortControllerRef.current = null;
@@ -2771,6 +2890,9 @@ export function PitStudio() {
             transcriptMarkdown={transcriptMarkdown}
             isPlaybackPlaying={isPlaybackPlaying}
             isAwaitingTurnResponse={isAwaitingTurnResponse}
+            showManualDismissCountdown={isManualDismissCountdownVisible}
+            manualDismissCountdownLabel={manualDismissCountdownLabel}
+            manualDismissCountdownProgress={manualDismissCountdownProgress}
             onPanelModeChange={setPanelMode}
             onOpenParticipant={openParticipantEditor}
             onExit={exitSimulation}

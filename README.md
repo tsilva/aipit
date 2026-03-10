@@ -1,4 +1,4 @@
-## LLM Pit
+## LLM Council
 
 Next.js app for throwing persona simulations against each other in moderator-led debates through [OpenRouter](https://openrouter.ai/):
 
