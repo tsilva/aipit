@@ -5,7 +5,7 @@ export const OPENROUTER_MODEL_CONVERSATIONAL = "google/gemini-3-flash-preview";
 export const OPENROUTER_MODEL_CREATIVE = "mistralai/mistral-small-creative";
 export const OPENROUTER_MODEL_LIGHTWEIGHT = "google/gemini-3.1-flash-lite-preview";
 
-export const MODEL_SUGGESTIONS = [
+export const SUPPORTED_OPENROUTER_MODELS = [
   OPENROUTER_MODEL_POLISHED,
   OPENROUTER_MODEL_REASONING,
   OPENROUTER_MODEL_COMBATIVE,
@@ -14,5 +14,13 @@ export const MODEL_SUGGESTIONS = [
   OPENROUTER_MODEL_LIGHTWEIGHT,
 ] as const;
 
+export type SupportedOpenRouterModel = (typeof SUPPORTED_OPENROUTER_MODELS)[number];
+
+export const MODEL_SUGGESTIONS = SUPPORTED_OPENROUTER_MODELS;
+
 export const DEFAULT_PRESET_MODEL = OPENROUTER_MODEL_REASONING;
 export const DEFAULT_COORDINATOR_MODEL = OPENROUTER_MODEL_POLISHED;
+
+export function isSupportedOpenRouterModel(model: string): model is SupportedOpenRouterModel {
+  return SUPPORTED_OPENROUTER_MODELS.includes(model as SupportedOpenRouterModel);
+}

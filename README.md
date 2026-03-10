@@ -22,6 +22,7 @@
 - 🐛 **Raw prompt debug mode** — inspect exactly what each model receives
 - 🎲 **57 built-in controversial debate topics** — random topic picker for instant pit sessions
 - 🔐 **Server-side OpenRouter proxy** — requests flow through Next.js route handlers, with optional Vercel-hosted API key
+- 🛡️ **Hosted-key abuse guardrails** — same-origin enforcement, per-IP rate limits, model allowlisting, payload caps, and no server-key metadata exposure
 
 ## 🏗️ How It Works
 
@@ -62,6 +63,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000).
 
 OpenRouter traffic is proxied through internal Next.js API routes under `src/app/api/openrouter`.
+When the shared server key is used, the proxy only accepts same-origin browser requests, rate-limits them per IP, clamps completion budgets, strips unsupported OpenRouter options, and only forwards the supported model list exposed in the editor. Hosted key validation also returns an empty success response instead of relaying server-key metadata from OpenRouter.
 
 If `OPENROUTER_API_KEY` is configured on the server, the proxy uses that key whenever the browser does not send a user-provided key. Users can still paste their own key, and that key takes precedence for validation and debate runs.
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { OPENROUTER_CHAT_COMPLETIONS_URL } from "@/lib/openrouter";
+import { isSupportedOpenRouterModel, SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
 import { OpenRouterProxyError, proxyOpenRouterRequest } from "@/lib/openrouter-server";
 
 type ChatProxyRequest = {
@@ -25,14 +26,32 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ error: { message: "Missing chat completion payload." } }, { status: 400 });
   }
 
+  const requestedModel = payload.body.model;
+
+  if (typeof requestedModel !== "string") {
+    return NextResponse.json({ error: { message: "Missing chat completion model." } }, { status: 400 });
+  }
+
+  if (!isSupportedOpenRouterModel(requestedModel)) {
+    return NextResponse.json(
+      {
+        error: {
+          message: `Unsupported model. Allowed models: ${SUPPORTED_OPENROUTER_MODELS.join(", ")}`,
+        },
+      },
+      { status: 400 },
+    );
+  }
+
   try {
     return await proxyOpenRouterRequest({
+      request,
       routeName: "/api/openrouter/chat/completions",
       upstreamUrl: OPENROUTER_CHAT_COMPLETIONS_URL,
       method: "POST",
       apiKey: typeof payload.apiKey === "string" ? payload.apiKey : undefined,
       siteUrl: typeof payload.siteUrl === "string" ? payload.siteUrl : undefined,
-      body: JSON.stringify(payload.body),
+      body: payload.body,
       signal: request.signal,
     });
   } catch (error) {

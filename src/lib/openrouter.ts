@@ -1,7 +1,9 @@
+import { OPENROUTER_MODEL_LIGHTWEIGHT } from "@/lib/openrouter-models";
+
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export const OPENROUTER_CHAT_COMPLETIONS_URL = `${OPENROUTER_BASE_URL}/chat/completions`;
 export const OPENROUTER_KEY_URL = `${OPENROUTER_BASE_URL}/key`;
-export const OPENROUTER_VALIDATION_MODEL = "google/gemini-3.1-flash-lite-preview";
+export const OPENROUTER_VALIDATION_MODEL = OPENROUTER_MODEL_LIGHTWEIGHT;
 export const OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH = "/api/openrouter/chat/completions";
 export const OPENROUTER_PROXY_KEY_PATH = "/api/openrouter/key";
 
