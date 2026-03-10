@@ -735,6 +735,17 @@ function CloseGlyph() {
   );
 }
 
+function TrashGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 7h14" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5.8c0-.72.58-1.3 1.3-1.3h3.4c.72 0 1.3.58 1.3 1.3V7" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.2 7l.6 10.1c.04.78.69 1.39 1.47 1.39h3.5c.78 0 1.43-.61 1.47-1.39L15.8 7" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 10.2v4.6M13.5 10.2v4.6" />
+    </svg>
+  );
+}
+
 function PlusGlyph() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -1599,14 +1610,27 @@ function ParticipantSettingsSheet({
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close member settings"
-            className="icon-circle-button participant-modal-close"
-          >
-            <CloseGlyph />
-          </button>
+          <div className="participant-modal-actions">
+            {onRemove ? (
+              <button
+                type="button"
+                onClick={onRemove}
+                aria-label="Remove member"
+                title="Remove member"
+                className="icon-circle-button participant-modal-delete"
+              >
+                <TrashGlyph />
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close member settings"
+              className="icon-circle-button participant-modal-close"
+            >
+              <CloseGlyph />
+            </button>
+          </div>
         </div>
 
         <div className="participant-modal-body">
@@ -1744,17 +1768,6 @@ function ParticipantSettingsSheet({
           </FieldShell>
           </div>
 
-          {onRemove ? (
-            <div className="participant-modal-footer">
-              <button
-                type="button"
-                onClick={onRemove}
-                className="rounded-full border border-red-500/35 px-4 py-2 text-sm font-medium text-red-200 transition hover:border-red-400 hover:bg-red-500/10 hover:text-white"
-              >
-                Remove member
-              </button>
-            </div>
-          ) : null}
         </div>
       </section>
     </div>

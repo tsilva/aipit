@@ -500,8 +500,26 @@ select.field {
   flex-shrink: 0;
 }
 
+.participant-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}
+
 .participant-modal-close {
   flex-shrink: 0;
+}
+
+.participant-modal-delete {
+  border-color: rgba(239, 68, 68, 0.24);
+  color: rgba(254, 202, 202, 0.92);
+}
+
+.participant-modal-delete:hover {
+  border-color: rgba(248, 113, 113, 0.46);
+  background: rgba(127, 29, 29, 0.22);
+  color: #fff1f2;
 }
 
 .participant-modal-body {
@@ -510,14 +528,6 @@ select.field {
   padding: 1.25rem 1.85rem 1.25rem 1.25rem;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
-}
-
-.participant-modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
-  border-top: 1px solid var(--line);
-  padding-top: 1.25rem;
 }
 
 .persona-preset-card-name {
