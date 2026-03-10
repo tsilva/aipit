@@ -182,7 +182,7 @@ export function createCoordinator(): ParticipantConfig {
       gender: "Male",
       nationality: "Portuguese",
     }),
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/e/e8/Jos%C3%A9RodriguesDosSantos.png",
+    avatarUrl: "/avatars/presets/jose-rodrigues-dos-santos.jpg",
   };
 }
 

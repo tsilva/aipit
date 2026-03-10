@@ -1,17 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import Image from "next/image";
 import {
   useCallback,
   useDeferredValue,
   useEffect,
   useEffectEvent,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type ComponentPropsWithoutRef,
 } from "react";
-import ReactMarkdown from "react-markdown";
 import {
   MODEL_SUGGESTIONS,
   PIT_RUN_DEFAULTS,
@@ -33,11 +36,16 @@ import {
 } from "@/lib/openrouter";
 import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
 import { buildPersonaProfilePreview } from "@/lib/persona-profile";
-import { filterParticipantPersonaPresets, type ParticipantPersonaPreset } from "@/lib/persona-presets";
+import type { ParticipantPersonaPreset } from "@/lib/persona-presets";
 
 const OPENROUTER_KEY_STORAGE = "aipit.openrouter.key";
 const PIT_LINEUP_STORAGE = "aipit.lineup";
 type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
+
+const TranscriptMarkdownContent = dynamic(() => import("@/components/transcript-markdown"), {
+  loading: () => <p className="transcript-markdown-p">Loading transcript...</p>,
+  ssr: false,
+});
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -46,6 +54,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function normalizeStoredParticipant(value: unknown, fallback: ParticipantConfig): ParticipantConfig {
   const raw = isRecord(value) ? value : {};
   const personaProfile = isRecord(raw.personaProfile) ? raw.personaProfile : {};
+  const normalizedPersonaProfile = Object.entries(personaProfile).reduce<Record<string, string>>((accumulator, [field, fieldValue]) => {
+    if (typeof fieldValue === "string") {
+      accumulator[field] = fieldValue;
+    }
+
+    return accumulator;
+  }, {});
 
   return {
     ...fallback,
@@ -56,7 +71,7 @@ function normalizeStoredParticipant(value: unknown, fallback: ParticipantConfig)
     avatarUrl: typeof raw.avatarUrl === "string" && raw.avatarUrl.trim() ? raw.avatarUrl : undefined,
     personaProfile: {
       ...fallback.personaProfile,
-      ...Object.fromEntries(Object.entries(personaProfile).filter(([, fieldValue]) => typeof fieldValue === "string")),
+      ...normalizedPersonaProfile,
     },
   };
 }
@@ -338,9 +353,20 @@ function flattenTurns(result: RunResult | null): PitTurn[] {
     return [];
   }
 
+  const roundTurns =
+    result.rounds?.reduce<PitTurn[]>((turns, round) => {
+      turns.push(...round.turns);
+
+      if (round.intervention) {
+        turns.push(round.intervention);
+      }
+
+      return turns;
+    }, []) ?? [];
+
   return [
     ...(result.opening ? [result.opening] : []),
-    ...(result.rounds?.flatMap((round) => [...round.turns, ...(round.intervention ? [round.intervention] : [])]) ?? []),
+    ...roundTurns,
     ...(result.synthesis ? [result.synthesis] : []),
     ...(result.consensus ? [result.consensus] : []),
   ];
@@ -554,6 +580,29 @@ function participantInitials(name: string): string {
   return parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
 }
 
+function isLocalAvatarAsset(url: string): boolean {
+  return url.startsWith("/") && !url.startsWith("//");
+}
+
+function isLocalRuntime(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const hostname = window.location.hostname.toLowerCase();
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname === "[::1]" ||
+    hostname.endsWith(".local")
+  );
+}
+
+function subscribeToRuntime(): () => void {
+  return () => {};
+}
+
 function ParticipantAvatar({
   name,
   avatarUrl,
@@ -561,6 +610,7 @@ function ParticipantAvatar({
   fallbackClassName,
   imageClassName,
   decorative = true,
+  sizes = "64px",
 }: {
   name: string;
   avatarUrl?: string;
@@ -568,22 +618,42 @@ function ParticipantAvatar({
   fallbackClassName?: string;
   imageClassName?: string;
   decorative?: boolean;
+  sizes?: string;
 }) {
   const normalizedAvatarUrl = avatarUrl?.trim();
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
   const showImage = Boolean(normalizedAvatarUrl) && failedAvatarUrl !== normalizedAvatarUrl;
+  const optimizedAvatarUrl =
+    showImage && normalizedAvatarUrl && isLocalAvatarAsset(normalizedAvatarUrl) ? normalizedAvatarUrl : null;
+  const shouldUseOptimizedImage = optimizedAvatarUrl !== null;
 
   return (
-    <span className={className} aria-hidden={decorative}>
+    <span
+      className={className}
+      aria-hidden={decorative}
+      style={shouldUseOptimizedImage ? { position: "relative" } : undefined}
+    >
       {showImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          className={imageClassName ?? "avatar-image"}
-          src={normalizedAvatarUrl}
-          alt={decorative ? "" : `${name} avatar`}
-          loading="lazy"
-          onError={() => setFailedAvatarUrl(normalizedAvatarUrl ?? null)}
-        />
+        shouldUseOptimizedImage ? (
+          <Image
+            className={imageClassName ?? "avatar-image"}
+            src={optimizedAvatarUrl}
+            alt={decorative ? "" : `${name} avatar`}
+            fill
+            sizes={sizes}
+            onError={() => setFailedAvatarUrl(normalizedAvatarUrl ?? null)}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className={imageClassName ?? "avatar-image"}
+            src={normalizedAvatarUrl}
+            alt={decorative ? "" : `${name} avatar`}
+            loading="lazy"
+            decoding="async"
+            onError={() => setFailedAvatarUrl(normalizedAvatarUrl ?? null)}
+          />
+        )
       ) : (
         <span className={fallbackClassName ?? "avatar-fallback"}>{participantInitials(name)}</span>
       )}
@@ -862,6 +932,7 @@ function SetupParticipantCard({
   onSelectModerator: () => void;
   onEdit: () => void;
 }) {
+  const moderatorActionId = useId();
   const personaPreview = buildPersonaProfilePreview(participant.personaProfile).trim().replace(/\s+/g, " ");
 
   return (
@@ -871,7 +942,8 @@ function SetupParticipantCard({
         className="hero-roster-select"
         onClick={onSelectModerator}
         aria-pressed={isModerator}
-        aria-label={isModerator ? `${participant.name} is the moderator` : `Make ${participant.name} the moderator`}
+        aria-describedby={moderatorActionId}
+        title={isModerator ? `${participant.name} is the moderator` : `Make ${participant.name} the moderator`}
       >
         <div className="hero-roster-card-top">
           <ParticipantAvatar
@@ -880,6 +952,7 @@ function SetupParticipantCard({
             className="hero-roster-avatar"
             fallbackClassName="hero-roster-avatar-fallback"
             imageClassName="avatar-image"
+            sizes="54px"
           />
 
           <div className="hero-roster-copy">
@@ -894,6 +967,9 @@ function SetupParticipantCard({
             ? `${personaPreview.slice(0, 180)}${personaPreview.length > 180 ? "..." : ""}`
             : "Add a persona to shape this voice in the room."}
         </p>
+        <span id={moderatorActionId} className="sr-only">
+          {isModerator ? `${participant.name} is currently the moderator.` : `Select ${participant.name} as the moderator.`}
+        </span>
       </button>
 
       <button type="button" className="hero-roster-edit" onClick={onEdit} aria-label={`Edit ${participant.name}`} title={`Edit ${participant.name}`}>
@@ -1023,7 +1099,13 @@ function StudioHero({
             <h2 className="hero-panel-title">Select the moderator and debaters</h2>
           </div>
 
-          <button type="button" onClick={onAddMember} className="chamber-add-button">
+          <button
+            type="button"
+            onClick={onAddMember}
+            className="chamber-add-button"
+            aria-label="Add debater"
+            title="Add debater"
+          >
             <PlusGlyph />
           </button>
         </div>
@@ -1062,13 +1144,13 @@ function StudioHero({
               <WandGlyph />
             </button>
 
-            <input
-              type="text"
+            <AutoSizeTextarea
               id="hero-pit-prompt"
               className="field hero-prompt-input"
               value={config.prompt}
               onChange={(event) => onPromptChange(event.target.value)}
               placeholder={promptPlaceholder()}
+              rows={2}
             />
           </div>
         </label>
@@ -1163,8 +1245,34 @@ function PersonaSelectorModal({
   onSelectPreset: (preset: ParticipantPersonaPreset) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [filterPresets, setFilterPresets] = useState<((query: string) => ParticipantPersonaPreset[]) | null>(null);
+  const [didPresetLoadFail, setDidPresetLoadFail] = useState(false);
   const deferredQuery = useDeferredValue(query);
-  const presets = filterParticipantPersonaPresets(deferredQuery);
+  const presets = filterPresets ? filterPresets(deferredQuery) : [];
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void import("@/lib/persona-presets")
+      .then(({ filterParticipantPersonaPresets }) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setFilterPresets(() => filterParticipantPersonaPresets);
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        setDidPresetLoadFail(true);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="settings-modal-backdrop">
@@ -1196,7 +1304,15 @@ function PersonaSelectorModal({
           />
 
           <div className="persona-preset-list persona-selector-modal-list" role="list" aria-label="Persona presets">
-            {presets.length > 0 ? (
+            {filterPresets === null && !didPresetLoadFail ? (
+              <div className="persona-preset-empty" role="status" aria-live="polite">
+                Loading personas...
+              </div>
+            ) : didPresetLoadFail ? (
+              <div className="persona-preset-empty" role="status">
+                Persona presets failed to load. Close and reopen the picker to try again.
+              </div>
+            ) : presets.length > 0 ? (
               presets.map((preset) => (
                 <button
                   key={preset.id}
@@ -1211,6 +1327,7 @@ function PersonaSelectorModal({
                       className="persona-preset-avatar"
                       fallbackClassName="persona-preset-avatar-fallback"
                       imageClassName="avatar-image"
+                      sizes="48px"
                     />
                     <span className="persona-preset-card-copy">
                       <span className="persona-preset-card-header">
@@ -1349,6 +1466,7 @@ function ParticipantSettingsSheet({
                   fallbackClassName="participant-avatar-preview-fallback"
                   imageClassName="avatar-image"
                   decorative={false}
+                  sizes="64px"
                 />
               </button>
 
@@ -1839,21 +1957,7 @@ function TranscriptPanel({
         className="transcript-sheet-body transcript-sheet-body-with-top-actions"
         onScroll={updateTranscriptScrollLock}
       >
-        <ReactMarkdown
-          components={{
-            h1: ({ children }) => <h1 className="transcript-markdown-h1">{children}</h1>,
-            h2: ({ children }) => <h2 className="transcript-markdown-h2">{children}</h2>,
-            p: ({ children }) => <p className="transcript-markdown-p">{children}</p>,
-            em: ({ children }) => <em className="transcript-markdown-em">{children}</em>,
-            ul: ({ children }) => <ul className="transcript-markdown-ul">{children}</ul>,
-            ol: ({ children }) => <ol className="transcript-markdown-ol">{children}</ol>,
-            li: ({ children }) => <li className="transcript-markdown-li">{children}</li>,
-            code: ({ children }) => <code className="transcript-markdown-code">{children}</code>,
-            blockquote: ({ children }) => <blockquote className="transcript-markdown-blockquote">{children}</blockquote>,
-          }}
-        >
-          {markdown}
-        </ReactMarkdown>
+        <TranscriptMarkdownContent markdown={markdown} />
 
         <div className="transcript-sheet-footer">
           <div className="transcript-sheet-actions transcript-sheet-actions-footer">
@@ -1865,6 +1969,7 @@ function TranscriptPanel({
                     avatarUrl={thinkingParticipant.avatarUrl}
                     className="transcript-status-avatar"
                     fallbackClassName="transcript-status-avatar-fallback"
+                    sizes="18px"
                   />
                 ) : (
                   <span className="transcript-status-dot" />
@@ -2024,6 +2129,7 @@ function ChamberStage({
   const canGoNext = activeFrameIndex < frames.length - 1;
   const isPlayButtonActive = isPlaybackPlaying && (isRunning || canGoNext || isBubbleStreaming);
   const [debugFrame, setDebugFrame] = useState<PlaybackFrame | null>(null);
+  const showBubbleDebugButton = useSyncExternalStore(subscribeToRuntime, isLocalRuntime, () => false);
   const activeQueueItemRef = useRef<HTMLDivElement | null>(null);
   const manualDismissTimerStyle =
     {
@@ -2112,6 +2218,7 @@ function ChamberStage({
                               avatarUrl={participant?.avatarUrl}
                               className="speaker-queue-avatar"
                               fallbackClassName="speaker-queue-avatar-fallback"
+                              sizes="32px"
                             />
                             <span className="speaker-queue-copy">
                               <span className="speaker-queue-name">{speakerName}</span>
@@ -2164,6 +2271,7 @@ function ChamberStage({
                             avatarUrl={focusSpeaker?.avatarUrl}
                             className="speaker-focus-avatar-core"
                             fallbackClassName="speaker-focus-avatar-fallback"
+                            sizes="(max-width: 768px) 112px, 176px"
                           />
                         </div>
 
@@ -2177,16 +2285,21 @@ function ChamberStage({
 
                       <div className={`speaker-focus-bubble ${!currentFrame && !queuedFocusEntry ? "is-idle" : ""}`}>
                         {currentFrame ? (
-                          <article key={currentFrame.id} className="speaker-focus-bubble-card has-debug-action">
-                            <button
-                              type="button"
-                              className="bubble-debug-button"
-                              onClick={() => openRawPrompt(currentFrame)}
-                              aria-label="Show raw prompt for this speech bubble"
-                              title="Show raw prompt"
-                            >
-                              <PromptGlyph />
-                            </button>
+                          <article
+                            key={currentFrame.id}
+                            className={`speaker-focus-bubble-card ${showBubbleDebugButton ? "has-debug-action" : ""}`}
+                          >
+                            {showBubbleDebugButton ? (
+                              <button
+                                type="button"
+                                className="bubble-debug-button"
+                                onClick={() => openRawPrompt(currentFrame)}
+                                aria-label="Show raw prompt for this speech bubble"
+                                title="Show raw prompt"
+                              >
+                                <PromptGlyph />
+                              </button>
+                            ) : null}
                             <p className="stage-bubble-speaker">
                               <span>{currentFrame.speakerName}</span>
                               {showManualDismissCountdown && manualDismissCountdownLabel ? (

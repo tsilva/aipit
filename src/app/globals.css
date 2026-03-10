@@ -884,10 +884,12 @@ select.field {
 }
 
 .hero-prompt-input {
-  min-height: 0;
+  min-height: calc(2em + 2.4rem);
   padding: 1.2rem 4.2rem 1.2rem 1.15rem;
   font-size: 1.04rem;
   line-height: 1.4;
+  resize: none;
+  overflow: hidden;
 }
 
 .hero-prompt-wand-button {
@@ -3059,6 +3061,37 @@ select.field {
     max-width: none;
   }
 
+  .studio-form-simulation {
+    gap: 0.35rem;
+    padding: 0.35rem;
+  }
+
+  .studio-form-simulation .chamber-shell {
+    padding: 0.6rem 0.7rem 0.75rem;
+    border-radius: 1rem;
+  }
+
+  .studio-form-simulation .stage-frame {
+    border-radius: 1rem;
+  }
+
+  .studio-form-simulation .cinema-stage {
+    padding: 0.75rem 0.5rem 0.55rem;
+  }
+
+  .studio-form-simulation .transcript-sheet-body {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+  }
+
+  .studio-form-simulation .transcript-sheet-actions.transcript-sheet-actions-top {
+    right: 1rem;
+  }
+
+  .studio-form-simulation .transcript-sheet-body-with-top-actions {
+    padding-right: 4rem;
+  }
+
   .cinema-stage {
     min-height: 24rem;
   }
@@ -3093,6 +3126,12 @@ select.field {
   .cinema-stage-conversation .speaker-playbar-shell {
     grid-row: 2;
     grid-column: 1;
+  }
+
+  .studio-form-simulation .cinema-stage-conversation .speaker-playbar-shell {
+    width: calc(100% + 1rem);
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
   }
 
   .speaker-focus-stack {
@@ -3352,6 +3391,12 @@ select.field {
     padding-right: 0.75rem;
   }
 
+  .cinema-stage-conversation .speaker-playbar-shell {
+    width: calc(100% + 1.5rem);
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+  }
+
   .speaker-queue-shell {
     top: 0.75rem;
     bottom: calc(0.75rem + var(--speaker-playbar-reserved-height));
@@ -3523,6 +3568,43 @@ select.field {
 }
 
 @media (max-width: 380px), (max-height: 640px) {
+  .studio-form-simulation {
+    gap: 0.25rem;
+    padding: 0.2rem;
+  }
+
+  .studio-form-simulation .chamber-shell {
+    padding: 0.45rem 0.5rem 0.6rem;
+    border-radius: 0.85rem;
+  }
+
+  .studio-form-simulation .stage-frame {
+    border-radius: 0.85rem;
+  }
+
+  .studio-form-simulation .cinema-stage {
+    padding: 0.65rem 0.4rem 0.45rem;
+  }
+
+  .studio-form-simulation .transcript-sheet-body {
+    padding-left: 0.7rem;
+    padding-right: 0.7rem;
+  }
+
+  .studio-form-simulation .transcript-sheet-actions.transcript-sheet-actions-top {
+    right: 0.85rem;
+  }
+
+  .studio-form-simulation .transcript-sheet-body-with-top-actions {
+    padding-right: 3.7rem;
+  }
+
+  .studio-form-simulation .cinema-stage-conversation .speaker-playbar-shell {
+    width: calc(100% + 0.8rem);
+    margin-left: -0.4rem;
+    margin-right: -0.4rem;
+  }
+
   .chamber-shell {
     padding: 0.7rem 0.8rem 0.8rem;
   }
