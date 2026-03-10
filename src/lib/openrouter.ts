@@ -9,11 +9,15 @@ const OPENROUTER_KEY_VALIDATION_RETRIES = 3;
 const OPENROUTER_VALIDATION_RETRY_DELAY_MS = 400;
 
 export function missingOpenRouterKeyMessage(): string {
-  return "No API key saved. Add a valid OpenRouter key to run debates.";
+  return "No personal API key saved, and no server-side OpenRouter key is configured.";
 }
 
 export function invalidOpenRouterKeyMessage(): string {
   return "This API key is invalid. Add a valid OpenRouter key to run debates.";
+}
+
+export function serverOpenRouterKeyMessage(): string {
+  return "No personal API key saved. Using the server-side OpenRouter key.";
 }
 
 function resolveAppName(): string {
@@ -103,7 +107,7 @@ function shouldRetryValidation(message: string, status?: number): boolean {
   return normalized.includes("user not found") || normalized.includes("temporar") || normalized.includes("timeout");
 }
 
-async function probeOpenRouterChat(apiKey: string, siteUrl?: string): Promise<boolean> {
+async function probeOpenRouterChat(apiKey: string | undefined, siteUrl?: string): Promise<boolean> {
   const response = await postOpenRouterProxyRequest({
     path: OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH,
     apiKey,
@@ -119,19 +123,13 @@ async function probeOpenRouterChat(apiKey: string, siteUrl?: string): Promise<bo
 }
 
 export async function validateOpenRouterKey(
-  apiKey: string,
+  apiKey: string | undefined,
   siteUrl?: string,
 ): Promise<{ valid: boolean; message: string }> {
-  const trimmedKey = apiKey.trim();
+  const trimmedKey = apiKey?.trim();
+  const isHostedKeyValidation = !trimmedKey;
 
-  if (!trimmedKey) {
-    return {
-      valid: false,
-      message: missingOpenRouterKeyMessage(),
-    };
-  }
-
-  let detail = "OpenRouter rejected this API key.";
+  let detail = isHostedKeyValidation ? "Missing OpenRouter API key." : "OpenRouter rejected this API key.";
   let status: number | undefined;
 
   for (let attempt = 1; attempt <= OPENROUTER_KEY_VALIDATION_RETRIES; attempt += 1) {
@@ -144,7 +142,9 @@ export async function validateOpenRouterKey(
     if (response.ok) {
       return {
         valid: true,
-        message: "OpenRouter API key verified. Selected models are enabled.",
+        message: isHostedKeyValidation
+          ? serverOpenRouterKeyMessage()
+          : "OpenRouter API key verified. Selected models are enabled.",
       };
     }
 
@@ -167,7 +167,9 @@ export async function validateOpenRouterKey(
         return {
           valid: true,
           message:
-            "OpenRouter accepted this key on the chat API after a failed key lookup. Their auth lookup may be transiently inconsistent, but debates should run.",
+            isHostedKeyValidation
+              ? serverOpenRouterKeyMessage()
+              : "OpenRouter accepted this key on the chat API after a failed key lookup. Their auth lookup may be transiently inconsistent, but debates should run.",
         };
       }
     } catch {
@@ -177,7 +179,7 @@ export async function validateOpenRouterKey(
 
   return {
     valid: false,
-    message: invalidOpenRouterKeyMessage(),
+    message: isHostedKeyValidation ? missingOpenRouterKeyMessage() : invalidOpenRouterKeyMessage(),
   };
 }
 

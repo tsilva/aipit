@@ -63,7 +63,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 OpenRouter traffic is proxied through internal Next.js API routes under `src/app/api/openrouter`.
 
-If `OPENROUTER_API_KEY` is configured on the server, the proxy can use that key for upstream requests. The current UI still defaults to bring-your-own-key mode, where each user pastes their own key and the browser forwards it to the proxy for validation and debate runs.
+If `OPENROUTER_API_KEY` is configured on the server, the proxy uses that key whenever the browser does not send a user-provided key. Users can still paste their own key, and that key takes precedence for validation and debate runs.
 
 ## ⚙️ Environment Variables
 
@@ -76,7 +76,7 @@ If `OPENROUTER_API_KEY` is configured on the server, the proxy can use that key 
 
 This app is a standard Next.js App Router project, so Vercel can deploy it without extra adapters.
 
-To prepare a shared hosted key on Vercel, add `OPENROUTER_API_KEY` to the project environment variables. The current UI still runs in bring-your-own-key mode by default, but the proxy is now wired for a later hosted-key flow.
+To prepare a shared hosted key on Vercel, add `OPENROUTER_API_KEY` to the project environment variables. The UI now supports both modes: users can bring their own key, or leave the field empty and rely on the hosted server key.
 
 ```bash
 # Preview deployment

@@ -30,7 +30,6 @@ import {
 } from "@/lib/pit";
 import {
   invalidOpenRouterKeyMessage,
-  missingOpenRouterKeyMessage,
   validateOpenRouterKey,
 } from "@/lib/openrouter";
 import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
@@ -144,7 +143,7 @@ function readStoredApiKey(): string {
 }
 
 function emptyApiKeyStatusMessage(): string {
-  return missingOpenRouterKeyMessage();
+  return "No personal API key saved. Confirm to use your own key or fall back to the server key.";
 }
 
 function unresolvedApiKeyStatusMessage(): string {
@@ -191,10 +190,10 @@ function buildInitialStudioState(): InitialStudioState {
       : defaultInput,
     lineupOrder: storedLineup?.order ?? [],
     apiKey: storedApiKey,
-    apiKeyStatus: storedApiKey ? "checking" : "empty",
+    apiKeyStatus: "checking",
     apiKeyStatusMessage: storedApiKey
       ? "Validating API key with OpenRouter..."
-      : emptyApiKeyStatusMessage(),
+      : "Checking for a server-side OpenRouter key...",
     draftApiKey: storedApiKey,
     hasLoadedKey: true,
     hasLoadedLineup: true,
@@ -216,17 +215,10 @@ async function validateStoredApiKey({
 }): Promise<boolean> {
   const trimmed = nextApiKey.trim();
 
-  if (!trimmed) {
-    requestIdRef.current += 1;
-    setApiKeyStatus("empty");
-    setApiKeyStatusMessage(emptyApiKeyStatusMessage());
-    return false;
-  }
-
   const requestId = requestIdRef.current + 1;
   requestIdRef.current = requestId;
-  setApiKeyStatus("checking");
-  setApiKeyStatusMessage("Validating API key with OpenRouter...");
+  setApiKeyStatus(trimmed ? "checking" : "empty");
+  setApiKeyStatusMessage(trimmed ? "Validating API key with OpenRouter..." : "Checking for a server-side OpenRouter key...");
 
   try {
     const validation = await validateOpenRouterKey(nextApiKey, siteUrl);
@@ -1168,7 +1160,8 @@ function StudioHero({
             <p className="hero-kicker">OpenRouter Access</p>
             <h2 className="hero-panel-title">API key</h2>
             <p className="hero-panel-copy">
-              OpenRouter is used as the LLM provider. Sign up, create an API key, and set it here. Start in{" "}
+              OpenRouter is used as the LLM provider. Paste your own API key here, or leave it empty and use a
+              server-side key when one is configured. Start in{" "}
               <a href="https://openrouter.ai/" target="_blank" rel="noreferrer" className="hero-api-link">
                 OpenRouter
               </a>{" "}
@@ -1191,7 +1184,7 @@ function StudioHero({
               value={apiKeyFieldValue}
               onChange={(event) => onDraftApiKeyChange(event.target.value)}
               onKeyDown={handleApiKeyInputKeyDown}
-              placeholder="sk-or-v1-..."
+              placeholder="sk-or-v1-... (optional if server key exists)"
               autoComplete="off"
               readOnly={!isApiKeyEditorVisible}
               aria-label="OpenRouter API key"
@@ -2460,15 +2453,13 @@ export function PitStudio() {
     : "";
 
   useEffect(() => {
-    if (initialStudioState.apiKey) {
-      void validateStoredApiKey({
-        nextApiKey: initialStudioState.apiKey,
-        requestIdRef: keyValidationRequestIdRef,
-        siteUrl: window.location.origin,
-        setApiKeyStatus,
-        setApiKeyStatusMessage,
-      });
-    }
+    void validateStoredApiKey({
+      nextApiKey: initialStudioState.apiKey,
+      requestIdRef: keyValidationRequestIdRef,
+      siteUrl: window.location.origin,
+      setApiKeyStatus,
+      setApiKeyStatusMessage,
+    });
   }, [initialStudioState.apiKey]);
 
   useEffect(() => {
@@ -2735,7 +2726,7 @@ export function PitStudio() {
     }
 
     if (!hasValidatedApiKey) {
-      setError("Add and validate an OpenRouter API key before starting The AI Pit.");
+      setError("Confirm a personal OpenRouter key or configure a server-side key before starting The AI Pit.");
       return;
     }
 

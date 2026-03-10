@@ -27,6 +27,7 @@ export function resolveOpenRouterProxyApiKey(apiKey?: string): string {
 }
 
 export async function proxyOpenRouterRequest({
+  routeName,
   upstreamUrl,
   method,
   apiKey,
@@ -34,6 +35,7 @@ export async function proxyOpenRouterRequest({
   body,
   signal,
 }: {
+  routeName: string;
   upstreamUrl: string;
   method: "GET" | "POST";
   apiKey?: string;
@@ -41,15 +43,49 @@ export async function proxyOpenRouterRequest({
   body?: string;
   signal?: AbortSignal;
 }): Promise<Response> {
-  const upstreamResponse = await fetch(upstreamUrl, {
-    method,
-    headers: buildOpenRouterHeaders({
-      apiKey: resolveOpenRouterProxyApiKey(apiKey),
+  const startedAt = Date.now();
+  const usingServerKey = !apiKey?.trim();
+  const resolvedApiKey = resolveOpenRouterProxyApiKey(apiKey);
+  let upstreamResponse: Response;
+
+  try {
+    upstreamResponse = await fetch(upstreamUrl, {
+      method,
+      headers: buildOpenRouterHeaders({
+        apiKey: resolvedApiKey,
+        siteUrl,
+      }),
+      body,
+      signal,
+    });
+  } catch (error) {
+    console.error("OpenRouter proxy request failed", {
+      durationMs: Date.now() - startedAt,
+      method,
+      routeName,
       siteUrl,
-    }),
-    body,
-    signal,
-  });
+      upstreamUrl,
+      usingServerKey,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+
+  const logPayload = {
+    durationMs: Date.now() - startedAt,
+    method,
+    routeName,
+    siteUrl,
+    status: upstreamResponse.status,
+    upstreamUrl,
+    usingServerKey,
+  };
+
+  if (upstreamResponse.ok) {
+    console.info("OpenRouter proxy request completed", logPayload);
+  } else {
+    console.warn("OpenRouter proxy request failed", logPayload);
+  }
 
   const contentType = upstreamResponse.headers.get("content-type");
 

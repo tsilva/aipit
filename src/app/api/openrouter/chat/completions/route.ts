@@ -27,6 +27,7 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     return await proxyOpenRouterRequest({
+      routeName: "/api/openrouter/chat/completions",
       upstreamUrl: OPENROUTER_CHAT_COMPLETIONS_URL,
       method: "POST",
       apiKey: typeof payload.apiKey === "string" ? payload.apiKey : undefined,

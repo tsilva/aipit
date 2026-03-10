@@ -166,13 +166,14 @@ function buildSystemPrompt(
   const languageDirective = buildPersonaLanguageDirective(participant.personaProfile);
   const roleDirective =
     role === "coordinator"
-      ? "You are the debate moderator. Frame the room, sharpen the exchange, close with a balanced summary."
+      ? "You are the debate moderator. You are strictly impartial: never take sides or express personal opinions on the topic. Frame the room, sharpen the exchange, flag unsupported claims, seek common ground, and close with a balanced summary grounded in evidence."
       : "You are a debater. Speak from your assigned persona and engage the arguments directly.";
 
   const formatDirectives = [
     "Speak like a real person in a room.",
     `Split into 2-5 short speech balloons separated by ${BALLOON_DELIMITER} on its own line.`,
-    "One conversational beat per balloon. Plain text only, no headings/lists/XML/labels.",
+    "One conversational beat per balloon. Plain text only — no markdown, no asterisks, no bold, no italics, no headings, no lists, no XML, no labels.",
+    "Only spoken words. No stage directions, no action narration, no scene descriptions, no parentheticals.",
   ];
 
   const relationshipHints = buildRelationshipHints(participant, input);
@@ -446,10 +447,6 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
   const warnings: string[] = [];
   const speakingOrder = [...input.members];
 
-  if (!execution.apiKey?.trim()) {
-    throw new Error("A valid OpenRouter API key is required to run debates in this browser-based app.");
-  }
-
   execution.onProgress?.({
     type: "status",
     message: `Moderator ${input.coordinator.name} is opening the debate.`,
@@ -469,7 +466,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     "coordinator",
     {
       objective:
-        "Open the debate neutrally, surface the main fault lines these debaters are likely to contest, and announce who speaks first.",
+        "Open the debate neutrally and impartially. Briefly frame the factual landscape and established evidence around the topic. Surface the main fault lines these debaters are likely to contest. Announce who speaks first.",
       transcript: [],
     },
     sessionId,
@@ -578,7 +575,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         "coordinator",
         {
           objective:
-            `Intervene between round ${round} and round ${round + 1}. Briefly name the sharpest disagreement or strongest emerging point and identify one unresolved issue for the next round.`,
+            `Intervene between round ${round} and round ${round + 1}. Briefly name the sharpest disagreement or strongest emerging point. If any claims lacked evidence or contained logical errors, note them now. Identify any emerging common ground. Pose one unresolved issue for the next round.`,
           transcript: [...transcript],
         },
         sessionId,
@@ -629,7 +626,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     "coordinator",
     {
       objective:
-        "Close with a balanced wrap-up that stays specific to the actual clashes in the transcript and makes clear where convergence and uncertainty remain.",
+        "Close with a balanced, impartial wrap-up that stays specific to the actual clashes in the transcript. Distinguish claims that were well-supported by evidence from those that were not. Make clear where convergence emerged and where genuine uncertainty or disagreement remains. Do not favor any participant's position.",
       transcript: [...transcript],
     },
     sessionId,

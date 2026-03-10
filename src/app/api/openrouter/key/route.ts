@@ -26,6 +26,7 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     return await proxyOpenRouterRequest({
+      routeName: "/api/openrouter/key",
       upstreamUrl: OPENROUTER_KEY_URL,
       method: "GET",
       apiKey: typeof payload.apiKey === "string" ? payload.apiKey : undefined,
