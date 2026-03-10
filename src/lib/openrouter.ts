@@ -10,6 +10,10 @@ export function missingOpenRouterKeyMessage(): string {
   return "No API key saved. Add a valid OpenRouter key to run debates.";
 }
 
+export function invalidOpenRouterKeyMessage(): string {
+  return "This API key is invalid. Add a valid OpenRouter key to run debates.";
+}
+
 function resolveAppName(): string {
   return process.env.NEXT_PUBLIC_OPENROUTER_APP_NAME || "LLM Council";
 }
@@ -142,7 +146,7 @@ export async function validateOpenRouterKey(
 
   return {
     valid: false,
-    message: `${detail} Add a valid OpenRouter key to run debates.`,
+    message: invalidOpenRouterKeyMessage(),
   };
 }
 

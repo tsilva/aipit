@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  Children,
-  isValidElement,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -12,7 +10,6 @@ import {
   useState,
   type CSSProperties,
   type ComponentPropsWithoutRef,
-  type ReactNode,
 } from "react";
 import ReactMarkdown from "react-markdown";
 import {
@@ -29,15 +26,17 @@ import {
   type RunInput,
   type RunResult,
 } from "@/lib/pit";
-import { missingOpenRouterKeyMessage, validateOpenRouterKey } from "@/lib/openrouter";
+import {
+  invalidOpenRouterKeyMessage,
+  missingOpenRouterKeyMessage,
+  validateOpenRouterKey,
+} from "@/lib/openrouter";
 import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
 import { buildPersonaProfilePreview } from "@/lib/persona-profile";
 import { filterParticipantPersonaPresets, type ParticipantPersonaPreset } from "@/lib/persona-presets";
 
 const OPENROUTER_KEY_STORAGE = "llmpit.openrouter.key";
 const PIT_LINEUP_STORAGE = "llmpit.lineup";
-const TRANSCRIPT_MODEL_PREFIX = "MODEL_ID::";
-
 type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -220,15 +219,13 @@ async function validateStoredApiKey({
     setApiKeyStatus(validation.valid ? "valid" : "invalid");
     setApiKeyStatusMessage(validation.message);
     return validation.valid;
-  } catch (validationError) {
+  } catch {
     if (requestIdRef.current !== requestId) {
       return false;
     }
 
     setApiKeyStatus("invalid");
-    setApiKeyStatusMessage(
-      `${validationError instanceof Error ? validationError.message : "Could not validate this API key."} Add a valid OpenRouter key to run debates.`,
-    );
+    setApiKeyStatusMessage(invalidOpenRouterKeyMessage());
     return false;
   }
 }
@@ -984,10 +981,8 @@ function StudioHero({
         </div>
 
         <div className="hero-copy-stack">
-          <h1 className="hero-title">LLM Council</h1>
-          <p className="hero-body">
-            Pick a moderator, choose at least two persona simulations, and throw them into a live debate. Once you hit play, the setup surface clears out and the room takes over.
-          </p>
+          <h1 className="hero-title">LLM Pit</h1>
+          <p className="hero-body">Select debaters, choose a topic, hit start, get some popcorn.</p>
         </div>
       </section>
 
@@ -1069,7 +1064,7 @@ function StudioHero({
             <p className="hero-kicker">OpenRouter Access</p>
             <h2 className="hero-panel-title">API key</h2>
             <p className="hero-panel-copy">
-              Browser runs need your own valid OpenRouter API key. This repo does not include one. Create one in{" "}
+              OpenRouter is used as the LLM provider. Sign up, create an API key, and set it here. Start in{" "}
               <a href="https://openrouter.ai/" target="_blank" rel="noreferrer" className="hero-api-link">
                 OpenRouter
               </a>{" "}
@@ -1664,9 +1659,7 @@ function buildTranscriptMarkdown({
   for (const turn of turns) {
     lines.push(
       "",
-      `## ${chapterLabelForTurn(turn)} · ${turn.speakerName}`,
-      "",
-      `${TRANSCRIPT_MODEL_PREFIX} ${turn.model}`,
+      `## ${chapterLabelForTurn(turn)} · ${turn.model} · ${turn.speakerName}`,
       "",
       transcriptTurnBody(turn),
     );
@@ -1677,22 +1670,6 @@ function buildTranscriptMarkdown({
   }
 
   return lines.join("\n");
-}
-
-function flattenTextContent(node: ReactNode): string {
-  if (typeof node === "string" || typeof node === "number") {
-    return String(node);
-  }
-
-  if (Array.isArray(node)) {
-    return node.map((child) => flattenTextContent(child)).join("");
-  }
-
-  if (isValidElement<{ children?: ReactNode }>(node)) {
-    return flattenTextContent(node.props.children);
-  }
-
-  return "";
 }
 
 function StudioSettingsModal({
@@ -1831,15 +1808,7 @@ function TranscriptPanel({
           components={{
             h1: ({ children }) => <h1 className="transcript-markdown-h1">{children}</h1>,
             h2: ({ children }) => <h2 className="transcript-markdown-h2">{children}</h2>,
-            p: ({ children }) => {
-              const text = flattenTextContent(Children.toArray(children));
-
-              if (text.startsWith(TRANSCRIPT_MODEL_PREFIX)) {
-                return <p className="transcript-model-id mono">{text.slice(TRANSCRIPT_MODEL_PREFIX.length).trim()}</p>;
-              }
-
-              return <p className="transcript-markdown-p">{children}</p>;
-            },
+            p: ({ children }) => <p className="transcript-markdown-p">{children}</p>,
             em: ({ children }) => <em className="transcript-markdown-em">{children}</em>,
             ul: ({ children }) => <ul className="transcript-markdown-ul">{children}</ul>,
             ol: ({ children }) => <ol className="transcript-markdown-ol">{children}</ol>,
