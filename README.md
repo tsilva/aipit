@@ -12,7 +12,7 @@
 ## ✨ Features
 
 - 🎭 **Rich persona profiles** — 12-field character sheets (role, personality, perspective, temperament, debate style, speech style, guardrails, language, gender, nationality, birth date, prompt notes)
-- 👥 **14 built-in presets** — Portuguese political figures (Montenegro, Mortágua, Ventura, Marques Mendes, Gouveia e Melo, Cotrim de Figueiredo, Seguro) + international media & pop-culture voices (Alex Jones, Lex Fridman, Joe Rogan, Donald Trump, Elon Musk, Homer Simpson, Rick Sanchez)
+- 👥 **15 built-in presets** — Portuguese political figures (Montenegro, Mortágua, Ventura, Marques Mendes, Gouveia e Melo, Cotrim de Figueiredo, Seguro) + international media & pop-culture voices (Alex Jones, Lex Fridman, Joe Rogan, Donald Trump, Elon Musk, Homer Simpson, Rick Sanchez, The Knight Who Says "Ni")
 - 🏟️ **Structured debate flow** — opening → rounds → interventions → consensus
 - 🔗 **Persona relationships** — pairwise awareness so debaters know how to engage each other
 - 🤖 **Multi-model support via OpenRouter** — Claude, DeepSeek, Grok, Gemini, Mistral, and more
@@ -108,7 +108,7 @@ src/
     ├── pit.ts                  # Core types and interfaces
     ├── openrouter.ts           # OpenRouter API client
     ├── openrouter-models.ts    # Available model definitions
-    ├── persona-presets.ts      # 14 predefined debate personas
+    ├── persona-presets.ts      # 15 predefined debate personas
     ├── persona-profile.ts      # Persona profile types/utilities
     └── ...
 ```

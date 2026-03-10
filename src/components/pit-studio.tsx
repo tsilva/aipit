@@ -2879,7 +2879,7 @@ export function PitStudio() {
     <main className="studio-page">
       <form
         onSubmit={handleSubmit}
-        className={`studio-form flex w-full flex-col gap-5 px-4 py-4 sm:px-5 lg:px-6 lg:py-5 ${
+        className={`studio-form flex w-full flex-col gap-5 px-2 py-2 sm:px-5 lg:px-6 lg:py-5 ${
           studioView === "simulation" ? "studio-form-simulation" : "mx-auto max-w-[90rem]"
         }`}
       >

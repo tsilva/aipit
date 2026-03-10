@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 function PitStudioLoadingFallback() {
   return (
     <main className="studio-page">
-      <div className="mx-auto w-full max-w-[90rem] px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
+      <div className="mx-auto w-full max-w-[90rem] px-2 py-2 sm:px-5 lg:px-6 lg:py-5">
         <section className="hero-shell" aria-busy="true">
           <section className="hero-panel hero-copy-panel">
             <div className="hero-copy-stack">
