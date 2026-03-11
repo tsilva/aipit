@@ -43,7 +43,7 @@ import {
   createRandomStarterInput,
   createMember,
   emptyUsage,
-  getStarterBundle,
+  resolveStarterBundle,
   type PitTurn,
   type ParticipantConfig,
   type RunInput,
@@ -117,7 +117,7 @@ function readStarterBundleFromQuery() {
     return null;
   }
 
-  return getStarterBundle(bundleId) ?? null;
+  return resolveStarterBundle(bundleId) ?? null;
 }
 
 function buildInitialStudioState(): InitialStudioState {

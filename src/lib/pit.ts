@@ -100,6 +100,7 @@ export interface StarterBundle {
 export const DEFAULT_COORDINATOR_PRESET_ID = "jose-rodrigues-dos-santos";
 export const COORDINATOR_PRESET_ID = DEFAULT_COORDINATOR_PRESET_ID;
 export const US_COORDINATOR_PRESET_ID = "anderson-cooper";
+export const SILLIEST_STARTER_BUNDLE_ID = "ocean-democracy-meltdown";
 
 export const BALLOON_DELIMITER = "<<<BALLOON>>>";
 
@@ -226,6 +227,14 @@ export const STARTER_BUNDLES: StarterBundle[] = [
     memberPresetIds: ["homer-simpson", "rick-sanchez", "knight-who-says-ni"],
   },
   {
+    id: "toilet-paper-emergency",
+    name: "Toilet Paper Emergency",
+    prompt:
+      "Should governments maintain strategic toilet paper reserves for national emergencies, or is that proof civilization has already collapsed?",
+    moderatorPresetId: US_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["cornholio", "homer-simpson", "rick-sanchez"],
+  },
+  {
     id: "ocean-democracy-meltdown",
     name: "Ocean Democracy Meltdown",
     prompt: "Should dolphins get voting rights in coastal cities if they can consistently recognize corrupt politicians?",
@@ -236,6 +245,10 @@ export const STARTER_BUNDLES: StarterBundle[] = [
 
 const STARTER_BUNDLE_MAP = new Map(STARTER_BUNDLES.map((bundle) => [bundle.id, bundle] as const));
 const PARTICIPANT_PRESET_MAP = new Map(PARTICIPANT_PERSONA_PRESETS.map((preset) => [preset.id, preset] as const));
+
+const STARTER_BUNDLE_ALIAS_MAP = new Map<string, string>([
+  ["silliest", SILLIEST_STARTER_BUNDLE_ID],
+]);
 
 export function createCoordinatorFromPreset(presetId: string): ParticipantConfig {
   const preset = MODERATOR_PERSONA_PRESET_MAP.get(presetId) ?? MODERATOR_PERSONA_PRESET_MAP.get(DEFAULT_COORDINATOR_PRESET_ID)!;
@@ -304,6 +317,13 @@ export function pickRandomStarterBundle(excludingId?: string): StarterBundle {
 
 export function getStarterBundle(bundleId: string): StarterBundle | undefined {
   return STARTER_BUNDLE_MAP.get(bundleId);
+}
+
+export function resolveStarterBundle(bundleId: string): StarterBundle | undefined {
+  const normalizedId = bundleId.trim().toLowerCase();
+  const resolvedId = STARTER_BUNDLE_ALIAS_MAP.get(normalizedId) ?? normalizedId;
+
+  return getStarterBundle(resolvedId);
 }
 
 export function createInputFromStarterBundle(bundle: StarterBundle): RunInput {
