@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate:sitemap": "node --no-warnings --experimental-strip-types scripts/generate-sitemap.mjs",
+    "prepare": "node scripts/install-git-hooks.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^1.6.1",

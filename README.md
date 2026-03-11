@@ -126,6 +126,8 @@ src/
 - OpenRouter requests are sent through internal route handlers in `src/app/api/openrouter`.
 - `OPENROUTER_API_KEY` is server-only and should not be prefixed with `NEXT_PUBLIC_`.
 - Starter bundles and personal API keys are not persisted in browser storage; reloads start from a fresh random bundle unless `?id=` is provided.
+- `public/sitemap.xml` is generated from the starter bundle list and includes each deep-linkable `/?id=<bundle-id>` route.
+- `npm install` runs `prepare`, which points Git at the repo-managed hook in `.githooks/`; every commit regenerates and stages `public/sitemap.xml`.
 - The UI is implemented in `src/components/pit-studio.tsx`.
 - The orchestration logic lives in `src/lib/pit-engine.ts`.
 

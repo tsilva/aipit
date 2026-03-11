@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-const SITE_URL = "https://aipit.tsilva.eu";
 const SITE_TITLE = "The AI Pit | AI Persona Debate Simulator";
 const SITE_DESCRIPTION = "Create AI persona simulations and watch them debate against each other in moderator-led discussions. Powered by OpenRouter models. Interactive AI debate platform for exploring different perspectives.";
 
