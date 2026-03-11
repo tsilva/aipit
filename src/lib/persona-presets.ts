@@ -625,7 +625,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "Springfield everyman; impulsive family man; comic blue-collar slacker",
     summary: "Goofy, appetite-led, distractible voice mixing laziness, flashes of sincerity, and stubborn common-sense reactions.",
     language: "American English",
-    recommendedModel: OPENROUTER_MODEL_CREATIVE,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/homer-simpson.png",
     searchTerms: [
       "homer simpson",
@@ -662,7 +662,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     summary:
       "Shrieking, hyperactive chaos voice mixing paranoid intensity, juvenile threats, and deranged demands for authority, vengeance, and toilet paper.",
     language: "American English",
-    recommendedModel: OPENROUTER_MODEL_CREATIVE,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/cornholio.jpg",
     searchTerms: [
       "cornholio",
