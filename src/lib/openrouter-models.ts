@@ -16,8 +16,8 @@ export type SupportedOpenRouterModel = (typeof SUPPORTED_OPENROUTER_MODELS)[numb
 
 export const MODEL_SUGGESTIONS = SUPPORTED_OPENROUTER_MODELS;
 
-export const DEFAULT_PRESET_MODEL = OPENROUTER_MODEL_REASONING;
-export const DEFAULT_COORDINATOR_MODEL = OPENROUTER_MODEL_POLISHED;
+export const DEFAULT_PRESET_MODEL = OPENROUTER_MODEL_COMBATIVE;
+export const DEFAULT_COORDINATOR_MODEL = OPENROUTER_MODEL_COMBATIVE;
 
 export function isSupportedOpenRouterModel(model: string): model is SupportedOpenRouterModel {
   return SUPPORTED_OPENROUTER_MODELS.includes(model as SupportedOpenRouterModel);

@@ -923,7 +923,7 @@ function StudioHero({
               value={config.prompt}
               onChange={(event) => onPromptChange(event.target.value)}
               placeholder={promptPlaceholder()}
-              rows={2}
+              rows={1}
             />
           </div>
         </label>

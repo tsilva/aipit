@@ -913,7 +913,7 @@ select.field {
   display: block;
   width: 100%;
   max-width: 100%;
-  min-height: calc(2em + 2.4rem);
+  min-height: calc(1.4em + 2.4rem);
   padding: 1.2rem 1.15rem;
   font-size: 1.04rem;
   line-height: 1.4;

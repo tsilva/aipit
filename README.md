@@ -16,7 +16,7 @@
 - 🎬 **10 curated starter bundles** — cold-start debates seed a moderator, three debaters, and a high-friction topic in one click
 - 🏟️ **Structured debate flow** — opening → rounds → interventions → consensus
 - 🔗 **Persona relationships** — pairwise awareness so debaters know how to engage each other
-- 🤖 **Multi-model support via OpenRouter** — Claude, DeepSeek, Grok, Gemini, and more
+- 🤖 **Multi-model support via OpenRouter** — characters default to Grok 4.1 Fast, with other supported models still available in the editor
 - 🎛️ **Configurable parameters** — rounds, temperature, max tokens, shared directives
 - 💬 **Bubble-based playback** — conversation and transcript views
 - 📊 **Token and cost tracking** — per-debate usage summary

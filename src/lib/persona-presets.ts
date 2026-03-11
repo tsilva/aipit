@@ -1,9 +1,6 @@
 import { createPersonaProfile, type ParticipantPersonaProfile } from "@/lib/persona-profile";
 import {
   OPENROUTER_MODEL_COMBATIVE,
-  OPENROUTER_MODEL_CONVERSATIONAL,
-  OPENROUTER_MODEL_POLISHED,
-  OPENROUTER_MODEL_REASONING,
 } from "@/lib/openrouter-models";
 
 export interface ParticipantPersonaPreset {
@@ -191,7 +188,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "PSD leader; centre-right institutionalist; prime-ministerial cadence",
     summary: "Moderate reformist, pro-European, fiscally cautious, focused on governability and execution.",
     language: "European Portuguese first; competent English when needed",
-    recommendedModel: OPENROUTER_MODEL_POLISHED,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/luis-montenegro.jpg",
     searchTerms: [
       "luis montenegro",
@@ -231,7 +228,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "Bloco de Esquerda coordinator; democratic socialist; anti-austerity polemicist",
     summary: "Sharp, data-literate left voice focused on inequality, housing, labour, feminism, and finance.",
     language: "European Portuguese first; fluent English for international topics",
-    recommendedModel: OPENROUTER_MODEL_REASONING,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/mariana-mortagua.jpg",
     searchTerms: [
       "mariana mortagua",
@@ -308,7 +305,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "Senior PSD figure; commentator; moderate centre-right institutional pragmatist",
     summary: "Measured, insider-savvy, consensus-seeking conservative with television pundit precision.",
     language: "European Portuguese",
-    recommendedModel: OPENROUTER_MODEL_POLISHED,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/luis-marques-mendes.png",
     searchTerms: [
       "luis marques mendes",
@@ -346,7 +343,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "Admiral; public-service disciplinarian; non-partisan authority figure",
     summary: "Austere, duty-driven, competence-first voice focused on order, service, and national cohesion.",
     language: "European Portuguese; concise English when operational clarity matters",
-    recommendedModel: OPENROUTER_MODEL_POLISHED,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/henrique-gouveia-e-melo.jpg",
     searchTerms: [
       "henrique gouveia e melo",
@@ -384,7 +381,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "Iniciativa Liberal founder; classical liberal reformer; pro-market moderniser",
     summary: "Economically liberal, reformist, managerial voice focused on freedom, competition, and state efficiency.",
     language: "European Portuguese first; polished English for business or EU topics",
-    recommendedModel: OPENROUTER_MODEL_REASONING,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/joao-cotrim-de-figueiredo.jpg",
     searchTerms: [
       "joao cotrim de figueiredo",
@@ -423,7 +420,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "Former PS leader; moderate social democrat; conciliatory institutional centre-left",
     summary: "Serene, consensus-oriented social-democratic voice centred on cohesion, dignity, and democratic trust.",
     language: "European Portuguese; formal English when diplomacy requires it",
-    recommendedModel: OPENROUTER_MODEL_POLISHED,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/antonio-jose-seguro.png",
     searchTerms: [
       "antonio jose seguro",
@@ -503,7 +500,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     summary:
       "Soft-spoken, earnest interviewer mixing AI, science, history, and the human condition with patient, long-form curiosity.",
     language: "American English",
-    recommendedModel: OPENROUTER_MODEL_POLISHED,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/lex-fridman.png",
     searchTerms: [
       "lex fridman",
@@ -545,7 +542,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     summary:
       "High-energy, riff-heavy host blending comic instinct, outsider skepticism, fight-sport intensity, and fascination with unusual ideas.",
     language: "American English",
-    recommendedModel: OPENROUTER_MODEL_CONVERSATIONAL,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/joe-rogan.png",
     searchTerms: [
       "joe rogan",
@@ -741,7 +738,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     title: "Interdimensional super-scientist; nihilist genius; corrosive anti-authority provocateur",
     summary: "Hyper-intelligent, contemptuous, darkly funny voice driven by science, nihilism, ego, and impatience with sentimentality.",
     language: "American English",
-    recommendedModel: OPENROUTER_MODEL_REASONING,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/rick-sanchez.png",
     searchTerms: [
       "rick sanchez",
