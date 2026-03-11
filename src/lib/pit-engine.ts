@@ -81,6 +81,8 @@ type OpenRouterContent = string | OpenRouterContentPart[] | undefined;
 const OPENROUTER_MAX_RETRIES = 3;
 const OPENROUTER_MAX_COMPLETION_TOKENS = 4000;
 const OPENROUTER_RETRY_DELAY_MS = 350;
+const PARTICIPANT_RESPONSE_TIMEOUT_MS = 30_000;
+const PARTICIPANT_RESPONSE_TIMEOUT_FALLBACK = "Err... I don't know what to say...";
 
 interface PromptFrame {
   objective: string;
@@ -298,10 +300,48 @@ function delayWithSignal(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException
+    ? error.name === "AbortError"
+    : error instanceof Error && error.name === "AbortError";
+}
+
 function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted) {
     throw new DOMException("The operation was aborted.", "AbortError");
   }
+}
+
+function createTurnAbortController(signal?: AbortSignal, timeoutMs = PARTICIPANT_RESPONSE_TIMEOUT_MS) {
+  const controller = new AbortController();
+  let didTimeout = false;
+  let didParentAbort = false;
+
+  const timeoutId = globalThis.setTimeout(() => {
+    didTimeout = true;
+    controller.abort(new DOMException("The operation timed out.", "AbortError"));
+  }, timeoutMs);
+
+  const abortFromParent = () => {
+    didParentAbort = true;
+    controller.abort(signal?.reason);
+  };
+
+  if (signal?.aborted) {
+    abortFromParent();
+  } else {
+    signal?.addEventListener("abort", abortFromParent, { once: true });
+  }
+
+  return {
+    signal: controller.signal,
+    didTimeout: () => didTimeout,
+    didParentAbort: () => didParentAbort,
+    cleanup: () => {
+      globalThis.clearTimeout(timeoutId);
+      signal?.removeEventListener("abort", abortFromParent);
+    },
+  };
 }
 
 function emitWarning(execution: RunExecutionOptions, warnings: string[], warning: string): void {
@@ -343,7 +383,6 @@ async function callOpenRouter(
 ): Promise<{ content: string; usage: UsageSummary; resolvedModel: string; rawPrompt: string }> {
   const apiKey = execution.apiKey?.trim();
   const resolvedModel = resolveOpenRouterModel(participant.model, apiKey);
-
   const siteUrl = execution.siteUrl || resolveSiteUrl();
   const requestMessages: ChatMessage[] = [
     {
@@ -354,99 +393,120 @@ async function callOpenRouter(
   ];
   let maxCompletionTokens = input.maxCompletionTokens;
   let lastEmptyContentMessage = `OpenRouter returned no visible text for ${participant.name}.`;
+  const turnAbort = createTurnAbortController(execution.signal);
 
-  for (let attempt = 1; attempt <= OPENROUTER_MAX_RETRIES; attempt += 1) {
-    throwIfAborted(execution.signal);
+  try {
+    for (let attempt = 1; attempt <= OPENROUTER_MAX_RETRIES; attempt += 1) {
+      throwIfAborted(turnAbort.signal);
 
-    const response = await postOpenRouterProxyRequest({
-      path: OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH,
-      apiKey,
-      siteUrl,
-      signal: execution.signal,
-      body: {
-        model: resolvedModel,
-        messages: requestMessages,
-        temperature: input.temperature,
-        max_completion_tokens: maxCompletionTokens,
-        session_id: sessionId,
-      },
-    });
+      const response = await postOpenRouterProxyRequest({
+        path: OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH,
+        apiKey,
+        siteUrl,
+        signal: turnAbort.signal,
+        body: {
+          model: resolvedModel,
+          messages: requestMessages,
+          temperature: input.temperature,
+          max_completion_tokens: maxCompletionTokens,
+          session_id: sessionId,
+        },
+      });
 
-    if (!response.ok) {
-      const text = await response.text();
-      const detail = extractOpenRouterErrorMessage(text);
-      const canRetry = attempt < OPENROUTER_MAX_RETRIES && shouldRetryOpenRouterRequest(response.status, detail);
+      if (!response.ok) {
+        const text = await response.text();
+        const detail = extractOpenRouterErrorMessage(text);
+        const canRetry = attempt < OPENROUTER_MAX_RETRIES && shouldRetryOpenRouterRequest(response.status, detail);
+
+        if (canRetry) {
+          emitWarning(
+            execution,
+            warnings,
+            `${participant.name} hit an OpenRouter provider error (${detail}). Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
+          );
+          await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, turnAbort.signal);
+          continue;
+        }
+
+        throw new Error(`OpenRouter error for ${participant.name}: ${detail}`);
+      }
+
+      const payload = (await response.json()) as OpenRouterResponse;
+      const firstChoice = payload.choices?.[0];
+      const content =
+        extractContent(firstChoice?.message?.content) ||
+        extractContent(firstChoice?.text) ||
+        extractContent(firstChoice?.message?.refusal);
+
+      if (content) {
+        return {
+          content,
+          rawPrompt: formatRawPrompt(requestMessages),
+          resolvedModel: payload.model || resolvedModel,
+          usage: {
+            promptTokens: payload.usage?.prompt_tokens ?? 0,
+            completionTokens: payload.usage?.completion_tokens ?? 0,
+            totalTokens: payload.usage?.total_tokens ?? 0,
+            cost: payload.usage?.cost ?? 0,
+          },
+        };
+      }
+
+      const finishReason = firstChoice?.finish_reason ?? undefined;
+      const hasToolCalls = Boolean(firstChoice?.message?.tool_calls && firstChoice.message.tool_calls.length > 0);
+      const finishReasonText = finishReason ? ` Finish reason: ${finishReason}.` : "";
+      const toolCallNote = hasToolCalls ? " The model returned tool calls, which this app does not support yet." : "";
+
+      lastEmptyContentMessage = `OpenRouter returned no visible text for ${participant.name}.${finishReasonText}${toolCallNote}`;
+
+      if (hasToolCalls) {
+        break;
+      }
+
+      const canRetry = attempt < OPENROUTER_MAX_RETRIES;
+
+      if (finishReason === "length" && canRetry && maxCompletionTokens < OPENROUTER_MAX_COMPLETION_TOKENS) {
+        const nextTokens = nextMaxCompletionTokens(maxCompletionTokens);
+        emitWarning(
+          execution,
+          warnings,
+          `${participant.name} returned no visible text after hitting the token limit. Retrying with a larger completion budget (${maxCompletionTokens} -> ${nextTokens}).`,
+        );
+        maxCompletionTokens = nextTokens;
+        await delayWithSignal(OPENROUTER_RETRY_DELAY_MS, turnAbort.signal);
+        continue;
+      }
 
       if (canRetry) {
         emitWarning(
           execution,
           warnings,
-          `${participant.name} hit an OpenRouter provider error (${detail}). Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
+          `${participant.name} returned no visible text${finishReason ? ` (finish reason: ${finishReason})` : ""}. Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
         );
-        await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, execution.signal);
+        await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, turnAbort.signal);
         continue;
       }
 
-      throw new Error(`OpenRouter error for ${participant.name}: ${detail}`);
+      break;
     }
-
-    const payload = (await response.json()) as OpenRouterResponse;
-    const firstChoice = payload.choices?.[0];
-    const content =
-      extractContent(firstChoice?.message?.content) ||
-      extractContent(firstChoice?.text) ||
-      extractContent(firstChoice?.message?.refusal);
-
-    if (content) {
+  } catch (error) {
+    if (isAbortError(error) && turnAbort.didTimeout() && !turnAbort.didParentAbort()) {
+      emitWarning(
+        execution,
+        warnings,
+        `${participant.name} took too long to respond. Using fallback text instead.`,
+      );
       return {
-        content,
+        content: PARTICIPANT_RESPONSE_TIMEOUT_FALLBACK,
         rawPrompt: formatRawPrompt(requestMessages),
-        resolvedModel: payload.model || resolvedModel,
-        usage: {
-          promptTokens: payload.usage?.prompt_tokens ?? 0,
-          completionTokens: payload.usage?.completion_tokens ?? 0,
-          totalTokens: payload.usage?.total_tokens ?? 0,
-          cost: payload.usage?.cost ?? 0,
-        },
+        resolvedModel,
+        usage: emptyUsage(),
       };
     }
 
-    const finishReason = firstChoice?.finish_reason ?? undefined;
-    const hasToolCalls = Boolean(firstChoice?.message?.tool_calls && firstChoice.message.tool_calls.length > 0);
-    const finishReasonText = finishReason ? ` Finish reason: ${finishReason}.` : "";
-    const toolCallNote = hasToolCalls ? " The model returned tool calls, which this app does not support yet." : "";
-
-    lastEmptyContentMessage = `OpenRouter returned no visible text for ${participant.name}.${finishReasonText}${toolCallNote}`;
-
-    if (hasToolCalls) {
-      break;
-    }
-
-    const canRetry = attempt < OPENROUTER_MAX_RETRIES;
-
-    if (finishReason === "length" && canRetry && maxCompletionTokens < OPENROUTER_MAX_COMPLETION_TOKENS) {
-      const nextTokens = nextMaxCompletionTokens(maxCompletionTokens);
-      emitWarning(
-        execution,
-        warnings,
-        `${participant.name} returned no visible text after hitting the token limit. Retrying with a larger completion budget (${maxCompletionTokens} -> ${nextTokens}).`,
-      );
-      maxCompletionTokens = nextTokens;
-      await delayWithSignal(OPENROUTER_RETRY_DELAY_MS, execution.signal);
-      continue;
-    }
-
-    if (canRetry) {
-      emitWarning(
-        execution,
-        warnings,
-        `${participant.name} returned no visible text${finishReason ? ` (finish reason: ${finishReason})` : ""}. Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
-      );
-      await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, execution.signal);
-      continue;
-    }
-
-    break;
+    throw error;
+  } finally {
+    turnAbort.cleanup();
   }
 
   throw new Error(lastEmptyContentMessage);
