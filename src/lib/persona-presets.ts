@@ -2,7 +2,6 @@ import { createPersonaProfile, type ParticipantPersonaProfile } from "@/lib/pers
 import {
   OPENROUTER_MODEL_COMBATIVE,
   OPENROUTER_MODEL_CONVERSATIONAL,
-  OPENROUTER_MODEL_CREATIVE,
   OPENROUTER_MODEL_POLISHED,
   OPENROUTER_MODEL_REASONING,
 } from "@/lib/openrouter-models";
@@ -701,7 +700,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
     summary:
       "Theatrical, impossible-to-please chaos agent who derails serious arguments with ceremonial demands, invented rules, and shrubbery-based authority.",
     language: "British English",
-    recommendedModel: OPENROUTER_MODEL_CREATIVE,
+    recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/knight-who-says-ni.jpg",
     searchTerms: [
       "knight who says ni",
