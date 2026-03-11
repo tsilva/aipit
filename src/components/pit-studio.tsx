@@ -589,7 +589,7 @@ function FieldShell({
 }
 
 function resizeTextarea(textarea: HTMLTextAreaElement) {
-  textarea.style.height = "0px";
+  textarea.style.height = "auto";
   textarea.style.overflowY = "hidden";
   textarea.style.height = `${textarea.scrollHeight}px`;
 }
@@ -597,6 +597,7 @@ function resizeTextarea(textarea: HTMLTextAreaElement) {
 function AutoSizeTextarea({
   className,
   onChange,
+  style,
   ...props
 }: ComponentPropsWithoutRef<"textarea">) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -633,7 +634,8 @@ function AutoSizeTextarea({
     <textarea
       {...props}
       ref={textareaRef}
-      className={className}
+      className={className ? `${className} auto-size-textarea` : "auto-size-textarea"}
+      style={style}
       onChange={(event) => {
         resizeTextarea(event.currentTarget);
         onChange?.(event);
