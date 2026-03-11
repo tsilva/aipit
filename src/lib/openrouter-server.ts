@@ -44,6 +44,10 @@ function resolveServerApiKey(): string | undefined {
   return configuredKey || undefined;
 }
 
+export function hasServerOpenRouterKey(): boolean {
+  return resolveServerApiKey() !== undefined;
+}
+
 export function isServerOpenRouterKeyRequest(apiKey?: string): boolean {
   return !apiKey?.trim();
 }

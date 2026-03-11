@@ -21,6 +21,7 @@
 - 💬 **Bubble-based playback** — conversation and transcript views
 - 📊 **Token and cost tracking** — per-debate usage summary
 - 🐛 **Raw prompt debug mode** — inspect exactly what each model receives
+- ⚡ **Server-rendered setup view** — the initial bundle, roster, and hosted-key availability are rendered on the server to reduce first-load flicker
 - 🔐 **Server-side OpenRouter proxy** — requests flow through Next.js route handlers, with optional Vercel-hosted API key
 - 🛡️ **Hosted-key abuse guardrails** — same-origin enforcement, per-IP rate limits, model allowlisting, payload caps, and no server-key metadata exposure
 
@@ -31,7 +32,7 @@
 3. **Rounds** — Each debater argues in sequence for N rounds. The moderator intervenes between rounds to sharpen the discussion.
 4. **Consensus** — The moderator closes with a balanced wrap-up synthesizing the key arguments.
 
-Each fresh page load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`, for example `http://localhost:3000/?id=ai-liability-meltdown`. If you want the dumbest possible cold open, `?id=silliest` resolves to `ocean-democracy-meltdown`.
+Each fresh page load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`, for example `http://localhost:3000/?id=ai-liability-meltdown`. That starter bundle is now resolved on the server so the first HTML already contains the real setup UI instead of a client-side loading shell. If you want the dumbest possible cold open, `?id=silliest` resolves to `ocean-democracy-meltdown`.
 
 The orchestration engine lives in [`pit-engine.ts`](src/lib/pit-engine.ts) and the full UI in [`pit-studio.tsx`](src/components/pit-studio.tsx).
 

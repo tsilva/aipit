@@ -37,13 +37,11 @@ import {
   MODEL_SUGGESTIONS,
   PIT_RUN_DEFAULTS,
   addUsage,
-  createInputFromStarterBundle,
   createRosterSnapshot,
   createDefaultInput,
   createRandomStarterInput,
   createMember,
   emptyUsage,
-  resolveStarterBundle,
   type PitTurn,
   type ParticipantConfig,
   type RunInput,
@@ -57,7 +55,7 @@ import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
 import { buildPersonaProfilePreview } from "@/lib/persona-profile";
 import type { ParticipantPersonaPreset } from "@/lib/persona-presets";
 
-type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
+export type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
 
 const TranscriptMarkdownContent = dynamic(() => import("@/components/transcript-markdown"), {
   loading: () => <p className="transcript-markdown-p">Loading transcript...</p>,
@@ -91,15 +89,11 @@ function syncLineupOrder(lineupOrder: string[], roster: ParticipantConfig[]): st
   return arraysEqual(lineupOrder, nextOrder) ? lineupOrder : nextOrder;
 }
 
-function emptyApiKeyStatusMessage(): string {
-  return "Usage will be limited if no key is provided.";
-}
-
 function unresolvedApiKeyStatusMessage(): string {
   return "API key changed. Confirm it to validate before starting.";
 }
 
-type InitialStudioState = {
+export type InitialStudioState = {
   config: RunInput;
   lineupOrder: string[];
   starterBundleId?: string;
@@ -108,50 +102,6 @@ type InitialStudioState = {
   apiKeyStatusMessage: string;
   draftApiKey: string;
 };
-
-function readStarterBundleFromQuery() {
-  const params = new URLSearchParams(window.location.search);
-  const bundleId = params.get("id")?.trim();
-
-  if (!bundleId) {
-    return null;
-  }
-
-  return resolveStarterBundle(bundleId) ?? null;
-}
-
-function buildInitialStudioState(): InitialStudioState {
-  const defaultStarter = createRandomStarterInput();
-  const defaultInput = defaultStarter.input;
-  const defaultLineupOrder = syncLineupOrder([], [defaultInput.coordinator, ...defaultInput.members]);
-
-  if (typeof window === "undefined") {
-    return {
-      config: defaultInput,
-      lineupOrder: defaultLineupOrder,
-      starterBundleId: defaultStarter.bundle.id,
-      apiKey: "",
-      apiKeyStatus: "empty",
-      apiKeyStatusMessage: emptyApiKeyStatusMessage(),
-      draftApiKey: "",
-    };
-  }
-
-  const queryStarterBundle = readStarterBundleFromQuery();
-  const config = queryStarterBundle ? createInputFromStarterBundle(queryStarterBundle) : defaultInput;
-  const lineupOrder = syncLineupOrder([], [config.coordinator, ...config.members]);
-  const starterBundleId = queryStarterBundle?.id ?? defaultStarter.bundle.id;
-
-  return {
-    config,
-    lineupOrder,
-    starterBundleId,
-    apiKey: "",
-    apiKeyStatus: "checking",
-    apiKeyStatusMessage: "Checking for a server-side OpenRouter key...",
-    draftApiKey: "",
-  };
-}
 
 async function validateApiKey({
   nextApiKey,
@@ -2267,13 +2217,12 @@ function ChamberStage({
   );
 }
 
-export function PitStudio() {
-  const initialStudioStateRef = useRef<InitialStudioState | null>(null);
-
-  if (initialStudioStateRef.current === null) {
-    initialStudioStateRef.current = buildInitialStudioState();
-  }
-
+export function PitStudio({
+  initialState,
+}: {
+  initialState: InitialStudioState;
+}) {
+  const initialStudioStateRef = useRef(initialState);
   const initialStudioState = initialStudioStateRef.current;
   const [config, setConfig] = useState<RunInput>(initialStudioState.config);
   const [lineupOrder, setLineupOrder] = useState<string[]>(initialStudioState.lineupOrder);
@@ -2335,16 +2284,6 @@ export function PitStudio() {
   const displayedBubbleContent = currentFrame
     ? currentFrame.bubbleContent.slice(0, Math.min(revealedBubbleChars, currentFrame.bubbleContent.length))
     : "";
-
-  useEffect(() => {
-    void validateApiKey({
-      nextApiKey: initialStudioState.apiKey,
-      requestIdRef: keyValidationRequestIdRef,
-      siteUrl: window.location.origin,
-      setApiKeyStatus,
-      setApiKeyStatusMessage,
-    });
-  }, [initialStudioState.apiKey]);
 
   useEffect(() => {
     const currentRoster = [config.coordinator, ...config.members];
