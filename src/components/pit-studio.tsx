@@ -54,6 +54,7 @@ import {
 import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
 import { buildPersonaProfilePreview } from "@/lib/persona-profile";
 import type { ParticipantPersonaPreset } from "@/lib/persona-presets";
+import { trackEvent } from "@/lib/google-analytics";
 
 export type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
 
@@ -1727,11 +1728,14 @@ function TranscriptPanel({
   const handleCopyMarkdown = useCallback(async () => {
     try {
       await copyTextToClipboard(markdown);
+      trackEvent("transcript_copy", {
+        turn_count: turnCount,
+      });
       setCopyFeedback("copied");
     } catch {
       setCopyFeedback("error");
     }
-  }, [markdown, setCopyFeedback]);
+  }, [markdown, setCopyFeedback, turnCount]);
 
   useEffect(() => {
     return () => {
@@ -2425,6 +2429,9 @@ export function PitStudio({
     const nextStarter = createRandomStarterInput(starterBundleId);
     setStarterBundleId(nextStarter.bundle.id);
     setConfig(nextStarter.input);
+    trackEvent("starter_bundle_reroll", {
+      starter_bundle_id: nextStarter.bundle.id,
+    });
   }
 
   async function saveApiKey() {
@@ -2526,11 +2533,21 @@ export function PitStudio({
   }, []);
 
   const exitSimulation = useCallback(() => {
+    const activeResult = result;
+    const activeConfig = config;
+
+    if (isRunning) {
+      trackEvent("pit_cancel", {
+        debater_count: activeConfig.members.length,
+        completed_turn_count: flattenTurns(activeResult).length,
+      });
+    }
+
     activeRunIdRef.current += 1;
     runAbortControllerRef.current?.abort();
     runAbortControllerRef.current = null;
     resetSimulationState();
-  }, [resetSimulationState]);
+  }, [config, isRunning, resetSimulationState, result]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -2569,6 +2586,14 @@ export function PitStudio({
       members: shuffleParticipants(config.members),
     };
 
+    trackEvent("pit_start", {
+      starter_bundle_id: starterBundleId,
+      debater_count: payload.members.length,
+      round_count: payload.rounds,
+      moderator_model: payload.coordinator.model,
+      uses_personal_key: apiKey ? 1 : 0,
+    });
+
     setResult({
       mode: payload.mode,
       prompt: payload.prompt,
@@ -2594,12 +2619,21 @@ export function PitStudio({
 
       if (activeRunIdRef.current === runId) {
         setResult(resultPayload);
+        trackEvent("pit_complete", {
+          debater_count: resultPayload.roster.length - 1,
+          turn_count: flattenTurns(resultPayload).length,
+          total_tokens: resultPayload.usage.totalTokens,
+          total_cost_usd: Number(resultPayload.usage.cost.toFixed(4)),
+        });
       }
     } catch (submissionError) {
       if (activeRunIdRef.current !== runId || isAbortError(submissionError)) {
         return;
       }
 
+      trackEvent("pit_error", {
+        debater_count: config.members.length,
+      });
       setError(submissionError instanceof Error ? submissionError.message : "The AI Pit run failed.");
     } finally {
       if (activeRunIdRef.current === runId) {
@@ -2817,6 +2851,10 @@ export function PitStudio({
         <PersonaSelectorModal
           onClose={() => setShowPersonaSelectorModal(false)}
           onSelectPreset={(preset) => {
+            trackEvent("persona_added", {
+              preset_id: preset.id,
+              debater_count: roster.length,
+            });
             addMemberFromPreset(preset);
             setShowPersonaSelectorModal(false);
           }}

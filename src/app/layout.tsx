@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { Suspense } from "react";
+import { GoogleAnalytics } from "@/components/google-analytics";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -101,7 +103,12 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${displayFont.variable} ${monoFont.variable} antialiased`}>{children}</body>
+      <body className={`${displayFont.variable} ${monoFont.variable} antialiased`}>
+        <Suspense fallback={null}>
+          <GoogleAnalytics />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }

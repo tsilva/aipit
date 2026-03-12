@@ -75,7 +75,10 @@ If `OPENROUTER_API_KEY` is configured on the server, the proxy uses that key whe
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_OPENROUTER_APP_NAME` | No | OpenRouter attribution title for client-side requests |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | Google Analytics 4 measurement ID used to enable pageviews and debate usage events |
 | `OPENROUTER_API_KEY` | No | Server-side OpenRouter API key used by the internal proxy when present |
+
+If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, the app loads the GA4 tag and emits events for page views, starter bundle rerolls, persona additions, debate starts, debate completions, debate cancellations, debate failures, and transcript copies.
 
 ## ☁️ Deploy to Vercel
 
