@@ -22,19 +22,6 @@ function normalizeParams(params: AnalyticsParams): Record<string, AnalyticsValue
   );
 }
 
-export function trackPageView(path: string): void {
-  if (!analyticsEnabled()) {
-    return;
-  }
-
-  window.gtag?.("event", "page_view", {
-    page_location: `${window.location.origin}${path}`,
-    page_path: path,
-    page_title: document.title,
-    send_to: GA_MEASUREMENT_ID,
-  });
-}
-
 export function trackEvent(name: string, params: AnalyticsParams = {}): void {
   if (!analyticsEnabled()) {
     return;
