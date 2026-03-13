@@ -3121,6 +3121,7 @@ select.field {
   }
 
   .timeline-shell {
+    display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 0.75rem;
   }
