@@ -1,13 +1,13 @@
 import { DEFAULT_COORDINATOR_MODEL, DEFAULT_PRESET_MODEL } from "@/lib/openrouter-models";
-import { PARTICIPANT_PERSONA_PRESETS } from "@/lib/persona-presets";
+import { PARTICIPANT_CHARACTER_PRESETS } from "@/lib/character-presets";
 import {
-  buildPersonaProfileSummary,
-  clonePersonaProfile,
-  createPersonaProfile,
-  hasPersonaProfileContent,
-  normalizePersonaProfile,
-  type ParticipantPersonaProfile,
-} from "@/lib/persona-profile";
+  buildCharacterProfileSummary,
+  cloneCharacterProfile,
+  createCharacterProfile,
+  hasCharacterProfileContent,
+  normalizeCharacterProfile,
+  type ParticipantCharacterProfile,
+} from "@/lib/character-profile";
 import {
   DEFAULT_COORDINATOR_PRESET_ID,
   STARTER_BUNDLE_ALIAS_MAP,
@@ -43,7 +43,7 @@ export interface ParticipantConfig {
   name: string;
   model: string;
   presetId?: string;
-  personaProfile: ParticipantPersonaProfile;
+  characterProfile: ParticipantCharacterProfile;
   avatarUrl?: string;
 }
 
@@ -72,7 +72,7 @@ export interface PitTurn {
   speakerId: string;
   speakerName: string;
   model: string;
-  persona: string;
+  character: string;
   content: string;
   bubbles: TurnBubble[];
   rawPrompt: string;
@@ -96,18 +96,18 @@ export interface RunResult {
   warnings: string[];
 }
 
-export interface ModeratorPersonaPreset {
+export interface ModeratorCharacterPreset {
   id: string;
   name: string;
   avatarUrl?: string;
-  personaProfile: ParticipantPersonaProfile;
+  characterProfile: ParticipantCharacterProfile;
 }
 
 export type StarterBundle = StarterBundleDefinition;
 
 export const BALLOON_DELIMITER = "<<<BALLOON>>>";
 
-export const DEFAULT_SHARED_DIRECTIVE = `Persona-vs-persona debate. Defend your persona's instincts, style, and worldview with full conviction — let the persona's natural temperament drive tone and intensity. Engage the strongest opposing points; respond to what was actually said, never repeat a stump speech. Hold your position but acknowledge stronger objections when they matter. Stay concrete, argumentative, conversational — not essayistic.`;
+export const DEFAULT_SHARED_DIRECTIVE = `Character-vs-character debate. Defend your character's instincts, style, and worldview with full conviction — let the character's natural temperament drive tone and intensity. Engage the strongest opposing points; respond to what was actually said, never repeat a stump speech. Hold your position but acknowledge stronger objections when they matter. Stay concrete, argumentative, conversational — not essayistic.`;
 export const PIT_RUN_DEFAULTS = {
   sharedDirective: DEFAULT_SHARED_DIRECTIVE,
   rounds: 2,
@@ -123,12 +123,12 @@ function makeId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-const MODERATOR_PERSONA_PRESETS: ModeratorPersonaPreset[] = [
+const MODERATOR_CHARACTER_PRESETS: ModeratorCharacterPreset[] = [
   {
     id: DEFAULT_COORDINATOR_PRESET_ID,
     name: "José Rodrigues dos Santos",
     avatarUrl: "/avatars/presets/jose-rodrigues-dos-santos.jpg",
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Veteran Portuguese television journalist serving as impartial moderator and truth arbiter of the debate",
       personality: "Composed, authoritative, synthesis-driven, rigorously impartial, and impatient with vague or unsupported answers",
       perspective:
@@ -150,7 +150,7 @@ const MODERATOR_PERSONA_PRESETS: ModeratorPersonaPreset[] = [
     id: US_COORDINATOR_PRESET_ID,
     name: "Anderson Cooper",
     avatarUrl: "/avatars/presets/anderson-cooper.jpg",
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "American television journalist serving as an impartial live-debate moderator and fact-focused anchor",
       personality: "Measured, incisive, calm under pressure, rigorously neutral, and fluent at keeping heated guests legible",
       perspective:
@@ -170,20 +170,20 @@ const MODERATOR_PERSONA_PRESETS: ModeratorPersonaPreset[] = [
   },
 ];
 
-const MODERATOR_PERSONA_PRESET_MAP = new Map(MODERATOR_PERSONA_PRESETS.map((preset) => [preset.id, preset] as const));
+const MODERATOR_CHARACTER_PRESET_MAP = new Map(MODERATOR_CHARACTER_PRESETS.map((preset) => [preset.id, preset] as const));
 
 const STARTER_BUNDLE_MAP = new Map(STARTER_BUNDLES.map((bundle) => [bundle.id, bundle] as const));
-const PARTICIPANT_PRESET_MAP = new Map(PARTICIPANT_PERSONA_PRESETS.map((preset) => [preset.id, preset] as const));
+const PARTICIPANT_PRESET_MAP = new Map(PARTICIPANT_CHARACTER_PRESETS.map((preset) => [preset.id, preset] as const));
 
 export function createCoordinatorFromPreset(presetId: string): ParticipantConfig {
-  const preset = MODERATOR_PERSONA_PRESET_MAP.get(presetId) ?? MODERATOR_PERSONA_PRESET_MAP.get(DEFAULT_COORDINATOR_PRESET_ID)!;
+  const preset = MODERATOR_CHARACTER_PRESET_MAP.get(presetId) ?? MODERATOR_CHARACTER_PRESET_MAP.get(DEFAULT_COORDINATOR_PRESET_ID)!;
 
   return {
     id: makeId("coordinator"),
     name: preset.name,
     model: DEFAULT_COORDINATOR_MODEL,
     presetId: preset.id,
-    personaProfile: clonePersonaProfile(preset.personaProfile),
+    characterProfile: cloneCharacterProfile(preset.characterProfile),
     avatarUrl: preset.avatarUrl,
   };
 }
@@ -197,15 +197,15 @@ export function createMember(index: number): ParticipantConfig {
     id: makeId(`member-${index}`),
     name: `Debater ${index}`,
     model: DEFAULT_PRESET_MODEL,
-    personaProfile:
+    characterProfile:
       index % 2 === 0
-        ? createPersonaProfile({
+        ? createCharacterProfile({
             role: "Analytical pragmatist",
             personality: "Evidence-driven, practical, and focused on tradeoffs",
             perspective: "Evaluates proposals through tradeoffs, evidence, and practical execution.",
             debateStyle: "Prioritize concrete tradeoffs, operational constraints, and implementation realism.",
           })
-        : createPersonaProfile({
+        : createCharacterProfile({
             role: "Skeptical strategist",
             personality: "Critical, risk-aware, and focused on second-order effects",
             perspective: "Assumes incentives matter and looks for fragility, hidden costs, and downstream consequences.",
@@ -226,7 +226,7 @@ function createMemberFromPresetId(presetId: string, index: number): ParticipantC
     name: preset.name,
     model: preset.recommendedModel,
     presetId: preset.id,
-    personaProfile: clonePersonaProfile(preset.personaProfile),
+    characterProfile: cloneCharacterProfile(preset.characterProfile),
     avatarUrl: preset.avatarUrl,
   };
 }
@@ -295,7 +295,7 @@ function normalizeParticipant(value: unknown, fallbackName: string): Participant
     name: normalizeText(raw.name, fallbackName),
     model: normalizeText(raw.model),
     presetId: normalizeOptionalText(raw.presetId),
-    personaProfile: normalizePersonaProfile(raw.personaProfile, normalizeText(raw.persona)),
+    characterProfile: normalizeCharacterProfile(raw.characterProfile, normalizeText(raw.character)),
     avatarUrl: normalizeOptionalText(raw.avatarUrl),
   };
 }
@@ -325,8 +325,8 @@ export function normalizeRunInput(value: unknown): RunInput {
     throw new Error("Moderator model is required.");
   }
 
-  if (!hasPersonaProfileContent(input.coordinator.personaProfile)) {
-    throw new Error("Moderator persona details are required.");
+  if (!hasCharacterProfileContent(input.coordinator.characterProfile)) {
+    throw new Error("Moderator character details are required.");
   }
 
   if (input.members.length < 2) {
@@ -338,8 +338,8 @@ export function normalizeRunInput(value: unknown): RunInput {
       throw new Error(`Model is required for ${member.name || "a debater"}.`);
     }
 
-    if (!hasPersonaProfileContent(member.personaProfile)) {
-      throw new Error(`Persona details are required for ${member.name || "a debater"}.`);
+    if (!hasCharacterProfileContent(member.characterProfile)) {
+      throw new Error(`Character details are required for ${member.name || "a debater"}.`);
     }
   }
 
@@ -371,7 +371,7 @@ export function addUsage(target: UsageSummary, delta?: Partial<UsageSummary> | n
 export function createRosterSnapshot(input: RunInput): ParticipantConfig[] {
   return [input.coordinator, ...input.members].map((participant) => ({
     ...participant,
-    personaProfile: clonePersonaProfile(participant.personaProfile),
+    characterProfile: cloneCharacterProfile(participant.characterProfile),
   }));
 }
 
@@ -416,7 +416,7 @@ export function createTurn({
     speakerId: participant.id,
     speakerName: participant.name,
     model,
-    persona: buildPersonaProfileSummary(participant.personaProfile),
+    character: buildCharacterProfileSummary(participant.characterProfile),
     content: normalized,
     bubbles: parseTurnBubbles(normalized),
     rawPrompt: rawPrompt?.trim() ?? "",

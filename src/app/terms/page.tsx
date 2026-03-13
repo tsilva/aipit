@@ -18,7 +18,7 @@ export default function TermsPage() {
             changed, or removed without notice.
           </p>
           <p>
-            You are responsible for the prompts and persona configurations you run. Do not use the app to submit
+            You are responsible for the prompts and character configurations you run. Do not use the app to submit
             unlawful content, abuse upstream providers, or violate third-party rights.
           </p>
           <p>

@@ -1,9 +1,9 @@
-import { createPersonaProfile, type ParticipantPersonaProfile } from "@/lib/persona-profile";
+import { createCharacterProfile, type ParticipantCharacterProfile } from "@/lib/character-profile";
 import {
   OPENROUTER_MODEL_COMBATIVE,
 } from "@/lib/openrouter-models";
 
-export interface ParticipantPersonaPreset {
+export interface ParticipantCharacterPreset {
   id: string;
   name: string;
   title: string;
@@ -13,7 +13,7 @@ export interface ParticipantPersonaPreset {
   relationships?: Record<string, string>;
   avatarUrl?: string;
   searchText: string;
-  personaProfile: ParticipantPersonaProfile;
+  characterProfile: ParticipantCharacterProfile;
 }
 
 function normalizeSearchText(value: string): string {
@@ -23,7 +23,7 @@ function normalizeSearchText(value: string): string {
     .toLowerCase();
 }
 
-export const PARTICIPANT_PERSONA_RELATIONSHIPS: Record<string, Record<string, string>> = {
+export const PARTICIPANT_CHARACTER_RELATIONSHIPS: Record<string, Record<string, string>> = {
   "luis-montenegro": {
     "mariana-mortagua":
       "Treat her as a serious parliamentary opponent from the left: sharp, substantive, and ideologically committed.",
@@ -145,43 +145,43 @@ export const PARTICIPANT_PERSONA_RELATIONSHIPS: Record<string, Record<string, st
 function definePreset({
   searchTerms,
   ...preset
-}: Omit<ParticipantPersonaPreset, "searchText"> & { searchTerms: string[] }): ParticipantPersonaPreset {
+}: Omit<ParticipantCharacterPreset, "searchText"> & { searchTerms: string[] }): ParticipantCharacterPreset {
   return {
     ...preset,
-    relationships: preset.relationships ?? PARTICIPANT_PERSONA_RELATIONSHIPS[preset.id] ?? {},
+    relationships: preset.relationships ?? PARTICIPANT_CHARACTER_RELATIONSHIPS[preset.id] ?? {},
     searchText: normalizeSearchText([
       preset.name,
       preset.title,
       preset.summary,
       preset.language,
-      preset.personaProfile.role,
-      preset.personaProfile.personality,
-      preset.personaProfile.perspective,
-      preset.personaProfile.temperament,
-      preset.personaProfile.debateStyle,
-      preset.personaProfile.speechStyle,
-      preset.personaProfile.guardrails,
-      preset.personaProfile.language,
-      preset.personaProfile.gender,
-      preset.personaProfile.nationality,
-      preset.personaProfile.birthDate,
-      preset.personaProfile.promptNotes,
+      preset.characterProfile.role,
+      preset.characterProfile.personality,
+      preset.characterProfile.perspective,
+      preset.characterProfile.temperament,
+      preset.characterProfile.debateStyle,
+      preset.characterProfile.speechStyle,
+      preset.characterProfile.guardrails,
+      preset.characterProfile.language,
+      preset.characterProfile.gender,
+      preset.characterProfile.nationality,
+      preset.characterProfile.birthDate,
+      preset.characterProfile.promptNotes,
       ...searchTerms,
     ].join(" ")),
   };
 }
 
-export function filterParticipantPersonaPresets(query: string): ParticipantPersonaPreset[] {
+export function filterParticipantCharacterPresets(query: string): ParticipantCharacterPreset[] {
   const normalizedQuery = normalizeSearchText(query.trim());
 
   if (!normalizedQuery) {
-    return PARTICIPANT_PERSONA_PRESETS;
+    return PARTICIPANT_CHARACTER_PRESETS;
   }
 
-  return PARTICIPANT_PERSONA_PRESETS.filter((preset) => preset.searchText.includes(normalizedQuery));
+  return PARTICIPANT_CHARACTER_PRESETS.filter((preset) => preset.searchText.includes(normalizedQuery));
 }
 
-export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
+export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
   definePreset({
     id: "luis-montenegro",
     name: "Luís Montenegro",
@@ -203,7 +203,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "institutionalist",
       "moderate conservative",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "PSD leader and centre-right institutionalist",
       personality: "Moderate reformist, fiscally cautious, focused on governability and execution",
       perspective:
@@ -242,7 +242,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "feminist",
       "tax justice",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Bloco de Esquerda coordinator and democratic-socialist parliamentarian",
       personality: "Sharp, data-literate, combative, and focused on inequality, housing, labour, and finance",
       perspective:
@@ -280,7 +280,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "immigration",
       "security",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Chega leader and nationalist right-populist opposition figure",
       personality: "Combative, polarising, media-savvy, and focused on security, corruption, identity, and order",
       perspective:
@@ -318,7 +318,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "institutionalist",
       "television analyst",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Senior PSD figure, commentator, and moderate centre-right institutional pragmatist",
       personality: "Measured, insider-savvy, consensus-seeking, and television-polished",
       perspective:
@@ -356,7 +356,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "national cohesion",
       "independent",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Admiral and non-partisan public-service authority figure",
       personality: "Austere, duty-driven, competence-first, and focused on order, service, and national cohesion",
       perspective:
@@ -395,7 +395,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "market reform",
       "individual freedom",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Iniciativa Liberal founder and classical liberal reformer",
       personality: "Polished, managerial, economically liberal, and focused on freedom, competition, and state efficiency",
       perspective:
@@ -433,7 +433,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "consensus",
       "institutional trust",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Former PS leader and conciliatory social-democratic statesman",
       personality: "Serene, consensus-oriented, and focused on cohesion, dignity, and democratic trust",
       perspective:
@@ -472,7 +472,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "broadcast",
       "radio host",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Infowars host and conspiratorial anti-establishment broadcaster",
       personality: "Volcanic, distrustful, apocalyptic, improvisational, and theatrically certain",
       perspective:
@@ -514,7 +514,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "artificial intelligence",
       "robotics",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "MIT research scientist and host of the Lex Fridman Podcast",
       personality: "Calm, earnest, intellectually curious, patient, and quietly techno-philosophical",
       perspective:
@@ -556,7 +556,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "outsider",
       "bro science",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Comedian, UFC commentator, and host of The Joe Rogan Experience",
       personality: "Curious, blunt, excitable, informal, skeptical of institutions, and highly conversational",
       perspective:
@@ -596,7 +596,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "dealmaker",
       "nationalist",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "American right-populist political leader and media-dominant campaign figure",
       personality: "Combative, theatrical, status-conscious, grievance-driven, and relentlessly focused on winning",
       perspective:
@@ -633,7 +633,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "cartoon",
       "comedy",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Springfield nuclear plant employee and accident-prone suburban father",
       personality: "Goofy, impulsive, pleasure-seeking, distractible, but occasionally sincere and unexpectedly heartfelt",
       perspective:
@@ -671,7 +671,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "chaos",
       "absurdist",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Manic alter ego who treats every conversation like a shrieking emergency and power struggle",
       personality: "Unhinged, hyperactive, paranoid, juvenile, aggressive, and wildly distractible",
       perspective:
@@ -711,7 +711,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "ritual",
       "nonsense",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Absurdist woodland gatekeeper who imposes ceremonial nonsense with total conviction",
       personality:
         "Arbitrary, theatrical, imperious, easily offended by trivial breaches, and delighted by forcing others into impossible compliance",
@@ -750,7 +750,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "genius",
       "sci-fi",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Interdimensional scientist and anti-authority genius operating far beyond normal human constraints",
       personality: "Hyper-intelligent, cynical, abrasive, darkly funny, ego-driven, and deeply impatient with sentimentality",
       perspective:
@@ -788,7 +788,7 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
       "mars",
       "ai",
     ],
-    personaProfile: createPersonaProfile({
+    characterProfile: createCharacterProfile({
       role: "Tech industrialist and engineering-driven builder focused on large-scale future-oriented bets",
       personality: "Restless, contrarian, engineering-first, highly ambitious, and prone to mixing technical detail with internet-provocateur instincts",
       perspective:
@@ -809,6 +809,6 @@ export const PARTICIPANT_PERSONA_PRESETS: ParticipantPersonaPreset[] = [
   }),
 ];
 
-export const PARTICIPANT_PERSONA_PRESET_MAP = new Map(
-  PARTICIPANT_PERSONA_PRESETS.map((preset) => [preset.id, preset] as const),
+export const PARTICIPANT_CHARACTER_PRESET_MAP = new Map(
+  PARTICIPANT_CHARACTER_PRESETS.map((preset) => [preset.id, preset] as const),
 );

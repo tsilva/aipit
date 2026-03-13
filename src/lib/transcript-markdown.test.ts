@@ -13,7 +13,7 @@ function createTurn(overrides: Partial<PitTurn> = {}): PitTurn {
     speakerId: "speaker-1",
     speakerName: "Speaker",
     model: "model-name",
-    persona: "Persona",
+    character: "Character",
     content: "Fallback content",
     bubbles: [{ id: "bubble-1", content: "Bubble content" }],
     rawPrompt: "Raw prompt",

@@ -53,8 +53,8 @@ import {
   validateOpenRouterKey,
 } from "@/lib/openrouter";
 import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
-import { buildPersonaProfilePreview } from "@/lib/persona-profile";
-import type { ParticipantPersonaPreset } from "@/lib/persona-presets";
+import { buildCharacterProfilePreview } from "@/lib/character-profile";
+import type { ParticipantCharacterPreset } from "@/lib/character-presets";
 import { buildTranscriptMarkdown } from "@/lib/transcript-markdown";
 import { trackEvent } from "@/lib/google-analytics";
 
@@ -154,7 +154,7 @@ type PlaybackFrame = {
   kind: PitTurn["kind"];
   round?: number;
   model: string;
-  persona: string;
+  character: string;
   bubbleId: string;
   bubbleContent: string;
   bubbleIndex: number;
@@ -297,7 +297,7 @@ function buildPlaybackTimeline(result: RunResult | null): {
         kind: turn.kind,
         round: turn.round,
         model: turn.model,
-        persona: turn.persona,
+        character: turn.character,
         bubbleId: bubble.id,
         bubbleContent: bubble.content,
         bubbleIndex,
@@ -648,20 +648,20 @@ function AutoSizeTextarea({
 }
 
 function promptPlaceholder(): string {
-  return "What should these personas fight out in The AI Pit?";
+  return "What should these characters fight out in The AI Pit?";
 }
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
 }
 
-function buildPresetParticipant(preset: ParticipantPersonaPreset, index: number): ParticipantConfig {
+function buildPresetParticipant(preset: ParticipantCharacterPreset, index: number): ParticipantConfig {
   return {
     ...createMember(index),
     name: preset.name,
     model: preset.recommendedModel,
     presetId: preset.id,
-    personaProfile: { ...preset.personaProfile },
+    characterProfile: { ...preset.characterProfile },
     avatarUrl: preset.avatarUrl,
   };
 }
@@ -684,7 +684,7 @@ function promoteParticipantToModerator(input: RunInput, participantId: string): 
   };
 }
 
-function addParticipantToLineup(input: RunInput, preset: ParticipantPersonaPreset): RunInput {
+function addParticipantToLineup(input: RunInput, preset: ParticipantCharacterPreset): RunInput {
   const incomingParticipant = buildPresetParticipant(preset, input.members.length + 1);
 
   if (input.members.length === 0) {
@@ -736,7 +736,7 @@ function SetupParticipantCard({
   onEdit: () => void;
 }) {
   const moderatorActionId = useId();
-  const personaPreview = buildPersonaProfilePreview(participant.personaProfile).trim().replace(/\s+/g, " ");
+  const characterPreview = buildCharacterProfilePreview(participant.characterProfile).trim().replace(/\s+/g, " ");
 
   return (
     <div className={`hero-roster-card ${isModerator ? "hero-roster-card-active" : ""}`}>
@@ -765,10 +765,10 @@ function SetupParticipantCard({
           </div>
         </div>
 
-        <p className="hero-roster-persona">
-          {personaPreview
-            ? `${personaPreview.slice(0, 180)}${personaPreview.length > 180 ? "..." : ""}`
-            : "Add a persona to shape this voice in the room."}
+        <p className="hero-roster-character">
+          {characterPreview
+            ? `${characterPreview.slice(0, 180)}${characterPreview.length > 180 ? "..." : ""}`
+            : "Add a character to shape this voice in the room."}
         </p>
         <span id={moderatorActionId} className="sr-only">
           {isModerator ? `${participant.name} is currently the moderator.` : `Select ${participant.name} as the moderator.`}
@@ -1055,15 +1055,15 @@ function StudioHero({
   );
 }
 
-function PersonaSelectorModal({
+function CharacterSelectorModal({
   onClose,
   onSelectPreset,
 }: {
   onClose: () => void;
-  onSelectPreset: (preset: ParticipantPersonaPreset) => void;
+  onSelectPreset: (preset: ParticipantCharacterPreset) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [filterPresets, setFilterPresets] = useState<((query: string) => ParticipantPersonaPreset[]) | null>(null);
+  const [filterPresets, setFilterPresets] = useState<((query: string) => ParticipantCharacterPreset[]) | null>(null);
   const [didPresetLoadFail, setDidPresetLoadFail] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const presets = filterPresets ? filterPresets(deferredQuery) : [];
@@ -1071,13 +1071,13 @@ function PersonaSelectorModal({
   useEffect(() => {
     let isMounted = true;
 
-    void import("@/lib/persona-presets")
-      .then(({ filterParticipantPersonaPresets }) => {
+    void import("@/lib/character-presets")
+      .then(({ filterParticipantCharacterPresets }) => {
         if (!isMounted) {
           return;
         }
 
-        setFilterPresets(() => filterParticipantPersonaPresets);
+        setFilterPresets(() => filterParticipantCharacterPresets);
       })
       .catch(() => {
         if (!isMounted) {
@@ -1094,71 +1094,71 @@ function PersonaSelectorModal({
 
   return (
     <div className="settings-modal-backdrop">
-      <button type="button" className="settings-modal-dismiss" aria-label="Close persona selector" onClick={onClose} />
+      <button type="button" className="settings-modal-dismiss" aria-label="Close character selector" onClick={onClose} />
 
-      <section className="settings-sheet persona-selector-modal-panel w-full max-w-3xl p-6 sm:p-7">
+      <section className="settings-sheet character-selector-modal-panel w-full max-w-3xl p-6 sm:p-7">
         <div className="settings-modal-header">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted)]">Pit Lineup</p>
-            <p className="hero-panel-copy">Choose a preset persona to quickly populate this seat in the debate.</p>
+            <p className="hero-panel-copy">Choose a preset character to quickly populate this seat in the debate.</p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close persona selector"
-            className="icon-circle-button persona-selector-modal-close"
+            aria-label="Close character selector"
+            className="icon-circle-button character-selector-modal-close"
           >
             <CloseGlyph />
           </button>
         </div>
 
-        <div className="persona-selector-modal-stack">
+        <div className="character-selector-modal-stack">
           <input
             className="field"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search personas"
+            placeholder="Search characters"
           />
 
-          <div className="persona-preset-list persona-selector-modal-list" role="list" aria-label="Persona presets">
+          <div className="character-preset-list character-selector-modal-list" role="list" aria-label="Character presets">
             {filterPresets === null && !didPresetLoadFail ? (
-              <div className="persona-preset-empty" role="status" aria-live="polite">
-                Loading personas...
+              <div className="character-preset-empty" role="status" aria-live="polite">
+                Loading characters...
               </div>
             ) : didPresetLoadFail ? (
-              <div className="persona-preset-empty" role="status">
-                Persona presets failed to load. Close and reopen the picker to try again.
+              <div className="character-preset-empty" role="status">
+                Character presets failed to load. Close and reopen the picker to try again.
               </div>
             ) : presets.length > 0 ? (
               presets.map((preset) => (
                 <button
                   key={preset.id}
                   type="button"
-                  className="persona-preset-card"
+                  className="character-preset-card"
                   onClick={() => onSelectPreset(preset)}
                 >
-                  <span className="persona-preset-card-top">
+                  <span className="character-preset-card-top">
                     <ParticipantAvatar
                       name={preset.name}
                       avatarUrl={preset.avatarUrl}
-                      className="persona-preset-avatar"
-                      fallbackClassName="persona-preset-avatar-fallback"
+                      className="character-preset-avatar"
+                      fallbackClassName="character-preset-avatar-fallback"
                       imageClassName="avatar-image"
                       sizes="48px"
                     />
-                    <span className="persona-preset-card-copy">
-                      <span className="persona-preset-card-header">
-                        <span className="persona-preset-card-name">{preset.name}</span>
+                    <span className="character-preset-card-copy">
+                      <span className="character-preset-card-header">
+                        <span className="character-preset-card-name">{preset.name}</span>
                       </span>
-                      <span className="persona-preset-card-title">{preset.title}</span>
-                      <span className="persona-preset-card-summary">{preset.summary}</span>
+                      <span className="character-preset-card-title">{preset.title}</span>
+                      <span className="character-preset-card-summary">{preset.summary}</span>
                     </span>
                   </span>
                 </button>
               ))
             ) : (
-              <div className="persona-preset-empty">
+              <div className="character-preset-empty">
                 No presets match that search yet. Try a name, party, or ideology keyword.
               </div>
             )}
@@ -1249,12 +1249,12 @@ function ParticipantSettingsSheet({
     setIsEditingName(false);
   }
 
-  function updatePersonaProfile(
-    patch: Partial<ParticipantConfig["personaProfile"]>,
+  function updateCharacterProfile(
+    patch: Partial<ParticipantConfig["characterProfile"]>,
   ) {
     onChange({
-      personaProfile: {
-        ...participant.personaProfile,
+      characterProfile: {
+        ...participant.characterProfile,
         ...patch,
       },
     });
@@ -1468,8 +1468,8 @@ function ParticipantSettingsSheet({
             <FieldShell label="Role">
               <input
                 className="field"
-                value={participant.personaProfile.role}
-                onChange={(event) => updatePersonaProfile({ role: event.target.value })}
+                value={participant.characterProfile.role}
+                onChange={(event) => updateCharacterProfile({ role: event.target.value })}
                 placeholder="Economist, journalist, minister..."
               />
             </FieldShell>
@@ -1477,8 +1477,8 @@ function ParticipantSettingsSheet({
             <FieldShell label="Personality">
               <input
                 className="field"
-                value={participant.personaProfile.personality}
-                onChange={(event) => updatePersonaProfile({ personality: event.target.value })}
+                value={participant.characterProfile.personality}
+                onChange={(event) => updateCharacterProfile({ personality: event.target.value })}
                 placeholder="Calm, confrontational, analytical..."
               />
             </FieldShell>
@@ -1487,8 +1487,8 @@ function ParticipantSettingsSheet({
               <FieldShell label="Language">
                 <input
                   className="field"
-                  value={participant.personaProfile.language}
-                  onChange={(event) => updatePersonaProfile({ language: event.target.value })}
+                  value={participant.characterProfile.language}
+                  onChange={(event) => updateCharacterProfile({ language: event.target.value })}
                   placeholder="European Portuguese"
                 />
               </FieldShell>
@@ -1496,8 +1496,8 @@ function ParticipantSettingsSheet({
               <FieldShell label="Gender">
                 <input
                   className="field"
-                  value={participant.personaProfile.gender}
-                  onChange={(event) => updatePersonaProfile({ gender: event.target.value })}
+                  value={participant.characterProfile.gender}
+                  onChange={(event) => updateCharacterProfile({ gender: event.target.value })}
                   placeholder="Optional"
                 />
               </FieldShell>
@@ -1505,8 +1505,8 @@ function ParticipantSettingsSheet({
               <FieldShell label="Nationality">
                 <input
                   className="field"
-                  value={participant.personaProfile.nationality}
-                  onChange={(event) => updatePersonaProfile({ nationality: event.target.value })}
+                  value={participant.characterProfile.nationality}
+                  onChange={(event) => updateCharacterProfile({ nationality: event.target.value })}
                   placeholder="Optional"
                 />
               </FieldShell>
@@ -1515,8 +1515,8 @@ function ParticipantSettingsSheet({
                 <input
                   type="date"
                   className="field"
-                  value={participant.personaProfile.birthDate}
-                  onChange={(event) => updatePersonaProfile({ birthDate: event.target.value })}
+                  value={participant.characterProfile.birthDate}
+                  onChange={(event) => updateCharacterProfile({ birthDate: event.target.value })}
                 />
               </FieldShell>
             </div>
@@ -1524,8 +1524,8 @@ function ParticipantSettingsSheet({
             <FieldShell label="Perspective">
               <AutoSizeTextarea
                 className="field min-h-24 resize-none overflow-hidden"
-                value={participant.personaProfile.perspective}
-                onChange={(event) => updatePersonaProfile({ perspective: event.target.value })}
+                value={participant.characterProfile.perspective}
+                onChange={(event) => updateCharacterProfile({ perspective: event.target.value })}
                 placeholder="Core worldview, mission, or governing perspective..."
               />
             </FieldShell>
@@ -1533,8 +1533,8 @@ function ParticipantSettingsSheet({
             <FieldShell label="Temperament">
               <input
                 className="field"
-                value={participant.personaProfile.temperament}
-                onChange={(event) => updatePersonaProfile({ temperament: event.target.value })}
+                value={participant.characterProfile.temperament}
+                onChange={(event) => updateCharacterProfile({ temperament: event.target.value })}
                 placeholder="Measured, combative, playful, severe..."
               />
             </FieldShell>
@@ -1542,8 +1542,8 @@ function ParticipantSettingsSheet({
             <FieldShell label="Debate Style">
               <AutoSizeTextarea
                 className="field min-h-24 resize-none overflow-hidden"
-                value={participant.personaProfile.debateStyle}
-                onChange={(event) => updatePersonaProfile({ debateStyle: event.target.value })}
+                value={participant.characterProfile.debateStyle}
+                onChange={(event) => updateCharacterProfile({ debateStyle: event.target.value })}
                 placeholder="How this person argues, presses points, and responds..."
               />
             </FieldShell>
@@ -1551,8 +1551,8 @@ function ParticipantSettingsSheet({
             <FieldShell label="Speech Style">
               <AutoSizeTextarea
                 className="field min-h-24 resize-none overflow-hidden"
-                value={participant.personaProfile.speechStyle}
-                onChange={(event) => updatePersonaProfile({ speechStyle: event.target.value })}
+                value={participant.characterProfile.speechStyle}
+                onChange={(event) => updateCharacterProfile({ speechStyle: event.target.value })}
                 placeholder="Sentence rhythm, vocabulary, tone, delivery..."
               />
             </FieldShell>
@@ -1560,8 +1560,8 @@ function ParticipantSettingsSheet({
             <FieldShell label="Guardrails">
               <AutoSizeTextarea
                 className="field min-h-24 resize-none overflow-hidden"
-                value={participant.personaProfile.guardrails}
-                onChange={(event) => updatePersonaProfile({ guardrails: event.target.value })}
+                value={participant.characterProfile.guardrails}
+                onChange={(event) => updateCharacterProfile({ guardrails: event.target.value })}
                 placeholder="What this person should avoid sounding like or doing..."
               />
             </FieldShell>
@@ -1569,12 +1569,12 @@ function ParticipantSettingsSheet({
 
           <FieldShell label="Additional Guidance">
             <span className="mb-2 block text-sm text-[color:var(--muted)]">
-              Use only for instructions that do not fit the structured persona fields above.
+              Use only for instructions that do not fit the structured character fields above.
             </span>
             <AutoSizeTextarea
-              className="field min-h-28 resize-none overflow-hidden participant-persona-input"
-              value={participant.personaProfile.promptNotes}
-              onChange={(event) => updatePersonaProfile({ promptNotes: event.target.value })}
+              className="field min-h-28 resize-none overflow-hidden participant-character-input"
+              value={participant.characterProfile.promptNotes}
+              onChange={(event) => updateCharacterProfile({ promptNotes: event.target.value })}
               placeholder="Anything still not captured by role, perspective, style, or guardrails..."
             />
           </FieldShell>
@@ -1805,7 +1805,7 @@ function RawPromptModal({
           </div>
           <button
             type="button"
-            className="icon-circle-button persona-selector-modal-close"
+            className="icon-circle-button character-selector-modal-close"
             aria-label="Close raw prompt"
             onClick={onClose}
           >
@@ -2208,7 +2208,7 @@ export function PitStudio({
   const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>(initialStudioState.apiKeyStatus);
   const [apiKeyStatusMessage, setApiKeyStatusMessage] = useState(initialStudioState.apiKeyStatusMessage);
   const [draftApiKey, setDraftApiKey] = useState(initialStudioState.draftApiKey);
-  const [showPersonaSelectorModal, setShowPersonaSelectorModal] = useState(false);
+  const [showCharacterSelectorModal, setShowCharacterSelectorModal] = useState(false);
   const [studioView, setStudioView] = useState<StudioView>("setup");
   const [panelMode, setPanelMode] = useState<StagePanelMode>("conversation");
   const [activeEditorId, setActiveEditorId] = useState<string | null>(null);
@@ -2375,7 +2375,7 @@ export function PitStudio({
     }));
   }
 
-  function addMemberFromPreset(preset: ParticipantPersonaPreset) {
+  function addMemberFromPreset(preset: ParticipantCharacterPreset) {
     setStarterBundleId(undefined);
     setConfig((current) => addParticipantToLineup(current, preset));
   }
@@ -2787,7 +2787,7 @@ export function PitStudio({
             onSaveApiKey={saveApiKey}
             onPromptChange={(prompt) => setConfig((current) => ({ ...current, prompt }))}
             onRerollStarterBundle={rerollStarterBundle}
-            onAddMember={() => setShowPersonaSelectorModal(true)}
+            onAddMember={() => setShowCharacterSelectorModal(true)}
             onSelectModerator={selectModerator}
             onOpenParticipant={openParticipantEditor}
           />
@@ -2826,16 +2826,16 @@ export function PitStudio({
         )}
       </form>
 
-      {showPersonaSelectorModal ? (
-        <PersonaSelectorModal
-          onClose={() => setShowPersonaSelectorModal(false)}
+      {showCharacterSelectorModal ? (
+        <CharacterSelectorModal
+          onClose={() => setShowCharacterSelectorModal(false)}
           onSelectPreset={(preset) => {
-            trackEvent("persona_added", {
+            trackEvent("character_added", {
               preset_id: preset.id,
               debater_count: roster.length,
             });
             addMemberFromPreset(preset);
-            setShowPersonaSelectorModal(false);
+            setShowCharacterSelectorModal(false);
           }}
         />
       ) : null}

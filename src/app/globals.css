@@ -201,7 +201,7 @@ select.field {
   color: var(--foreground);
 }
 
-.persona-preset-list {
+.character-preset-list {
   display: grid;
   gap: 0.7rem;
   max-height: 19rem;
@@ -212,7 +212,7 @@ select.field {
   scrollbar-gutter: stable;
 }
 
-.persona-preset-card {
+.character-preset-card {
   display: grid;
   gap: 0.45rem;
   width: 100%;
@@ -230,8 +230,8 @@ select.field {
     box-shadow 180ms ease;
 }
 
-.persona-preset-card:hover,
-.persona-preset-card:focus-visible {
+.character-preset-card:hover,
+.character-preset-card:focus-visible {
   transform: translateY(-1px);
   border-color: rgba(240, 171, 105, 0.4);
   background:
@@ -242,22 +242,22 @@ select.field {
     0 0.9rem 1.6rem rgba(2, 5, 8, 0.16);
 }
 
-.persona-preset-card:focus-visible {
+.character-preset-card:focus-visible {
   outline: none;
 }
 
-.persona-preset-card:active {
+.character-preset-card:active {
   transform: translateY(0);
 }
 
-.persona-preset-card-top {
+.character-preset-card-top {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
   gap: 0.8rem;
 }
 
-.persona-preset-avatar {
+.character-preset-avatar {
   display: grid;
   place-items: center;
   width: 3rem;
@@ -272,7 +272,7 @@ select.field {
     0 0.75rem 1.2rem rgba(2, 5, 8, 0.18);
 }
 
-.persona-preset-avatar-fallback {
+.character-preset-avatar-fallback {
   display: grid;
   place-items: center;
   width: 100%;
@@ -283,13 +283,13 @@ select.field {
   letter-spacing: 0.08em;
 }
 
-.persona-preset-card-copy {
+.character-preset-card-copy {
   display: grid;
   gap: 0.45rem;
   min-width: 0;
 }
 
-.persona-preset-card.is-applied {
+.character-preset-card.is-applied {
   border-color: rgba(240, 171, 105, 0.42);
   background:
     linear-gradient(180deg, rgba(216, 122, 59, 0.16), rgba(255, 248, 237, 0.04)),
@@ -297,7 +297,7 @@ select.field {
   box-shadow: inset 0 0 0 1px rgba(240, 171, 105, 0.16);
 }
 
-.persona-preset-card-header {
+.character-preset-card-header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -463,7 +463,7 @@ select.field {
   gap: 0.55rem;
 }
 
-.participant-persona-input {
+.participant-character-input {
   min-height: 10rem;
 }
 
@@ -544,13 +544,13 @@ select.field {
   overscroll-behavior: contain;
 }
 
-.persona-preset-card-name {
+.character-preset-card-name {
   font-size: 0.92rem;
   font-weight: 700;
   color: var(--foreground);
 }
 
-.persona-preset-card-language {
+.character-preset-card-language {
   color: var(--accent-strong);
   font-size: 0.66rem;
   font-weight: 700;
@@ -558,19 +558,19 @@ select.field {
   text-transform: uppercase;
 }
 
-.persona-preset-card-title {
+.character-preset-card-title {
   color: var(--ink-soft);
   font-size: 0.76rem;
   line-height: 1.45;
 }
 
-.persona-preset-card-summary {
+.character-preset-card-summary {
   color: var(--foreground);
   font-size: 0.82rem;
   line-height: 1.5;
 }
 
-.persona-preset-empty {
+.character-preset-empty {
   border-radius: 1rem;
   border: 1px dashed rgba(255, 231, 198, 0.16);
   background: rgba(255, 248, 237, 0.03);
@@ -1220,7 +1220,7 @@ select.field {
   color: #90f0af;
 }
 
-.hero-roster-persona {
+.hero-roster-character {
   margin: 0;
   color: var(--ink-soft);
   font-size: 0.84rem;
@@ -2994,21 +2994,21 @@ select.field {
   overflow-y: auto;
 }
 
-.persona-selector-modal-panel {
+.character-selector-modal-panel {
   position: relative;
 }
 
-.persona-selector-modal-close {
+.character-selector-modal-close {
   flex-shrink: 0;
 }
 
-.persona-selector-modal-stack {
+.character-selector-modal-stack {
   display: grid;
   gap: 1rem;
   margin-top: 1.5rem;
 }
 
-.persona-selector-modal-list {
+.character-selector-modal-list {
   max-height: min(58vh, 30rem);
 }
 
@@ -3433,7 +3433,7 @@ select.field {
     font-size: 0.94rem;
   }
 
-  .hero-roster-persona {
+  .hero-roster-character {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
@@ -3663,7 +3663,7 @@ select.field {
   }
 
   .settings-modal-panel,
-  .persona-selector-modal-panel,
+  .character-selector-modal-panel,
   .participant-modal-panel,
   .raw-prompt-modal-panel {
     max-height: calc(100dvh - 1.5rem);
@@ -3828,7 +3828,7 @@ select.field {
   }
 
   .settings-modal-panel,
-  .persona-selector-modal-panel,
+  .character-selector-modal-panel,
   .participant-modal-panel,
   .raw-prompt-modal-panel {
     max-height: calc(100dvh - 2rem);

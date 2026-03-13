@@ -7,7 +7,7 @@ const HOSTED_KEY_RATE_LIMIT_WINDOW_MS = 60_000;
 const HOSTED_KEY_ROUTE_LIMIT = 10;
 const HOSTED_CHAT_ROUTE_LIMIT = 30;
 const HOSTED_MAX_MESSAGES = 24;
-// Debate runs carry persona setup plus rolling transcript context in the system prompt,
+// Debate runs carry character setup plus rolling transcript context in the system prompt,
 // so the hosted proxy needs room for larger single-message payloads than a generic chat UI.
 const HOSTED_MAX_MESSAGE_CHARS = 48_000;
 const HOSTED_MAX_TOTAL_MESSAGE_CHARS = 180_000;

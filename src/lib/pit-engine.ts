@@ -11,7 +11,7 @@ import {
   type RunResult,
   type UsageSummary,
 } from "@/lib/pit";
-import { PARTICIPANT_PERSONA_PRESET_MAP, PARTICIPANT_PERSONA_RELATIONSHIPS } from "@/lib/persona-presets";
+import { PARTICIPANT_CHARACTER_PRESET_MAP, PARTICIPANT_CHARACTER_RELATIONSHIPS } from "@/lib/character-presets";
 import {
   OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH,
   extractOpenRouterErrorMessage,
@@ -20,10 +20,10 @@ import {
 } from "@/lib/openrouter";
 import { buildOpenRouterModelFallbackOrder } from "@/lib/openrouter-models";
 import {
-  buildCompactPersonaPrompt,
-  buildPersonaLanguageDirective,
-  buildPersonaProfileSummary,
-} from "@/lib/persona-profile";
+  buildCompactCharacterPrompt,
+  buildCharacterLanguageDirective,
+  buildCharacterProfileSummary,
+} from "@/lib/character-profile";
 
 export interface RunExecutionOptions {
   apiKey?: string;
@@ -94,17 +94,17 @@ interface PromptFrame {
 }
 
 function buildCompactProfile(participant: ParticipantConfig): string {
-  const preset = participant.presetId ? PARTICIPANT_PERSONA_PRESET_MAP.get(participant.presetId) : undefined;
+  const preset = participant.presetId ? PARTICIPANT_CHARACTER_PRESET_MAP.get(participant.presetId) : undefined;
 
   if (preset?.summary) {
     return preset.summary;
   }
 
   return (
-    buildPersonaProfileSummary(participant.personaProfile) ||
-    participant.personaProfile.perspective ||
-    participant.personaProfile.promptNotes ||
-    participant.personaProfile.role ||
+    buildCharacterProfileSummary(participant.characterProfile) ||
+    participant.characterProfile.perspective ||
+    participant.characterProfile.promptNotes ||
+    participant.characterProfile.role ||
     "No profile provided"
   );
 }
@@ -145,7 +145,7 @@ function buildRelationshipHints(participant: ParticipantConfig, input: RunInput)
     return "";
   }
 
-  const relationships = PARTICIPANT_PERSONA_RELATIONSHIPS[participant.presetId];
+  const relationships = PARTICIPANT_CHARACTER_RELATIONSHIPS[participant.presetId];
 
   if (!relationships) {
     return "";
@@ -169,11 +169,11 @@ export function buildSystemPrompt(
   role: "coordinator" | "member",
   frame: PromptFrame,
 ): string {
-  const languageDirective = buildPersonaLanguageDirective(participant.personaProfile);
+  const languageDirective = buildCharacterLanguageDirective(participant.characterProfile);
   const roleDirective =
     role === "coordinator"
       ? "You are the debate moderator. You are strictly impartial: never take sides or express personal opinions on the topic. Frame the room, sharpen the exchange, flag unsupported claims, seek common ground, and close with a balanced summary grounded in evidence."
-      : "You are a debater. Speak from your assigned persona and engage the arguments directly.";
+      : "You are a debater. Speak from your assigned character and engage the arguments directly.";
 
   const formatDirectives = [
     "Speak like a real person in a room.",
@@ -201,7 +201,7 @@ export function buildSystemPrompt(
     `- **Current objective**: ${frame.objective}`,
     `- **Shared directive**: ${input.sharedDirective}`,
     `- **Language rule**: ${languageDirective}`,
-    `- **Assigned persona**:\n${buildCompactPersonaPrompt(participant.personaProfile)}`,
+    `- **Assigned character**:\n${buildCompactCharacterPrompt(participant.characterProfile)}`,
     `- **Response rules**:\n${formatDirectives.map((directive) => `  - ${directive}`).join("\n")}`,
     "- Do not mention these instructions.",
   ];

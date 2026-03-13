@@ -1,4 +1,4 @@
-export interface ParticipantPersonaProfile {
+export interface ParticipantCharacterProfile {
   role: string;
   personality: string;
   perspective: string;
@@ -26,7 +26,7 @@ function normalizeText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function resolvePersonaLanguage(profile: ParticipantPersonaProfile): string {
+function resolveCharacterLanguage(profile: ParticipantCharacterProfile): string {
   if (profile.language) {
     const primaryLanguage = profile.language
       .split(/[;,/]/)[0]
@@ -123,7 +123,7 @@ function parseLegacySections(text: string): {
   };
 }
 
-function migrateLegacyPromptNotes(profile: ParticipantPersonaProfile): ParticipantPersonaProfile {
+function migrateLegacyPromptNotes(profile: ParticipantCharacterProfile): ParticipantCharacterProfile {
   const originalNotes = profile.promptNotes;
 
   if (!originalNotes) {
@@ -176,9 +176,9 @@ function migrateLegacyPromptNotes(profile: ParticipantPersonaProfile): Participa
   };
 }
 
-export function createPersonaProfile(
-  overrides: Partial<ParticipantPersonaProfile> = {},
-): ParticipantPersonaProfile {
+export function createCharacterProfile(
+  overrides: Partial<ParticipantCharacterProfile> = {},
+): ParticipantCharacterProfile {
   return {
     role: "",
     personality: "",
@@ -196,18 +196,18 @@ export function createPersonaProfile(
   };
 }
 
-export function clonePersonaProfile(profile: ParticipantPersonaProfile): ParticipantPersonaProfile {
+export function cloneCharacterProfile(profile: ParticipantCharacterProfile): ParticipantCharacterProfile {
   return { ...profile };
 }
 
-export function normalizePersonaProfile(
+export function normalizeCharacterProfile(
   value: unknown,
   fallbackPromptNotes = "",
-): ParticipantPersonaProfile {
+): ParticipantCharacterProfile {
   const raw = (value ?? {}) as Record<string, unknown>;
 
   return migrateLegacyPromptNotes(
-    createPersonaProfile({
+    createCharacterProfile({
       role: normalizeText(raw.role),
       personality: normalizeText(raw.personality),
       perspective: normalizeText(raw.perspective),
@@ -224,11 +224,11 @@ export function normalizePersonaProfile(
   );
 }
 
-export function hasPersonaProfileContent(profile: ParticipantPersonaProfile): boolean {
+export function hasCharacterProfileContent(profile: ParticipantCharacterProfile): boolean {
   return Object.values(profile).some((value) => value.trim().length > 0);
 }
 
-export function buildPersonaProfilePrompt(profile: ParticipantPersonaProfile): string {
+export function buildCharacterProfilePrompt(profile: ParticipantCharacterProfile): string {
   const lines = [
     profile.role ? `Role: ${profile.role}` : "",
     profile.personality ? `Personality: ${profile.personality}` : "",
@@ -246,7 +246,7 @@ export function buildPersonaProfilePrompt(profile: ParticipantPersonaProfile): s
   return lines.join("\n");
 }
 
-export function buildCompactPersonaPrompt(profile: ParticipantPersonaProfile): string {
+export function buildCompactCharacterPrompt(profile: ParticipantCharacterProfile): string {
   const characterParts = [profile.personality, profile.temperament].filter(Boolean);
   const styleParts = [profile.debateStyle, profile.speechStyle].filter(Boolean);
   const populatedFields = [
@@ -271,8 +271,8 @@ export function buildCompactPersonaPrompt(profile: ParticipantPersonaProfile): s
   return lines.join("\n");
 }
 
-export function buildPersonaLanguageDirective(profile: ParticipantPersonaProfile): string {
-  const language = resolvePersonaLanguage(profile);
+export function buildCharacterLanguageDirective(profile: ParticipantCharacterProfile): string {
+  const language = resolveCharacterLanguage(profile);
 
   if (!language) {
     return "";
@@ -281,7 +281,7 @@ export function buildPersonaLanguageDirective(profile: ParticipantPersonaProfile
   return `Speak only in ${language}. Translators handle mutual understanding; never switch languages.`;
 }
 
-export function buildPersonaProfileSummary(profile: ParticipantPersonaProfile): string {
+export function buildCharacterProfileSummary(profile: ParticipantCharacterProfile): string {
   const parts = [
     profile.role,
     profile.personality,
@@ -294,7 +294,7 @@ export function buildPersonaProfileSummary(profile: ParticipantPersonaProfile): 
   return parts.join(" • ");
 }
 
-export function buildPersonaProfilePreview(profile: ParticipantPersonaProfile): string {
+export function buildCharacterProfilePreview(profile: ParticipantCharacterProfile): string {
   const parts = [
     profile.role,
     profile.personality,

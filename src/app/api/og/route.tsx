@@ -28,7 +28,7 @@ export function GET(request: Request) {
   const title = clamp(searchParams.get("title"), "The AI Pit", 90);
   const subtitle = clamp(
     searchParams.get("subtitle"),
-    "Pit AI personas against each other in live, moderator-led debates.",
+    "Pit AI characters against each other in live, moderator-led debates.",
     140,
   );
 
@@ -132,7 +132,7 @@ export function GET(request: Request) {
             <div style={{ display: "flex", gap: 14 }}>
               <span>Moderator-led</span>
               <span>•</span>
-              <span>Persona vs persona</span>
+              <span>Character vs character</span>
               <span>•</span>
               <span>Shareable scenarios</span>
             </div>

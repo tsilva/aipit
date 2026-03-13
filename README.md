@@ -3,19 +3,19 @@
 
   # aipit
 
-  🔥 Where AI personas clash in moderator-led debates 🔥
+  🔥 Where AI characters clash in moderator-led debates 🔥
 
-  A Next.js app that throws richly profiled AI personas against each other in structured, moderator-led debates powered by [OpenRouter](https://openrouter.ai/).
+  A Next.js app that throws richly profiled AI characters against each other in structured, moderator-led debates powered by [OpenRouter](https://openrouter.ai/).
 
 </div>
 
 ## ✨ Features
 
-- 🎭 **Rich persona profiles** — 12-field character sheets (role, personality, perspective, temperament, debate style, speech style, guardrails, language, gender, nationality, birth date, prompt notes)
+- 🎭 **Rich character profiles** — 12-field character sheets (role, personality, perspective, temperament, debate style, speech style, guardrails, language, gender, nationality, birth date, prompt notes)
 - 👥 **16 built-in debater presets** — Portuguese political figures (Montenegro, Mortágua, Ventura, Marques Mendes, Gouveia e Melo, Cotrim de Figueiredo, Seguro) + international media & pop-culture voices (Alex Jones, Lex Fridman, Joe Rogan, Donald Trump, Elon Musk, Homer Simpson, Cornholio, Rick Sanchez, The Knight Who Says "Ni")
 - 🎬 **10 curated starter bundles** — cold-start debates seed a moderator, three debaters, and a high-friction topic in one click
 - 🏟️ **Structured debate flow** — opening → rounds → interventions → consensus
-- 🔗 **Persona relationships** — pairwise awareness so debaters know how to engage each other
+- 🔗 **Character relationships** — pairwise awareness so debaters know how to engage each other
 - 🤖 **Multi-model support via OpenRouter** — characters default to Grok 4.1 Fast, with other supported models still available in the editor
 - 🔁 **Automatic model failover** — recoverable model/provider failures rotate to another supported model and the live queue reflects the replacement
 - 🎛️ **Configurable parameters** — rounds, temperature, max tokens, shared directives
@@ -81,7 +81,7 @@ npm run test:e2e
 Open [http://localhost:3000](http://localhost:3000).
 
 OpenRouter traffic is proxied through internal Next.js API routes under `src/app/api/openrouter`.
-When the shared server key is used, the proxy only accepts browser requests whose `Origin` exactly matches the request URL origin, rate-limits them with best-effort trusted IP detection, clamps completion budgets, strips unsupported OpenRouter options, and only forwards the supported model list exposed in the editor. The hosted payload caps are tuned for debate-sized prompts, so moderator turns can carry persona setup plus rolling transcript context without tripping generic chat limits. Hosted key validation also returns an empty success response instead of relaying server-key metadata from OpenRouter. Arbitrary forwarded host/proto/IP headers are not trusted as proof of origin or client identity.
+When the shared server key is used, the proxy only accepts browser requests whose `Origin` exactly matches the request URL origin, rate-limits them with best-effort trusted IP detection, clamps completion budgets, strips unsupported OpenRouter options, and only forwards the supported model list exposed in the editor. The hosted payload caps are tuned for debate-sized prompts, so moderator turns can carry character setup plus rolling transcript context without tripping generic chat limits. Hosted key validation also returns an empty success response instead of relaying server-key metadata from OpenRouter. Arbitrary forwarded host/proto/IP headers are not trusted as proof of origin or client identity.
 
 If you deploy behind a custom reverse proxy, sanitize and verify any forwarding metadata there instead of expecting the app to trust raw forwarded headers automatically.
 
@@ -100,7 +100,7 @@ Transcript views intentionally render prompt and model output as plain text insi
 | `OPENROUTER_API_KEY` | No | Server-side OpenRouter API key used by the internal proxy when present |
 | `SENTRY_DSN` | No | Server-side Sentry DSN for API route and server runtime error reporting |
 
-If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, the app loads the GA4 tag only after consent and then emits events for page views, starter bundle rerolls, persona additions, debate starts, debate completions, debate cancellations, debate failures, and transcript copies.
+If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, the app loads the GA4 tag only after consent and then emits events for page views, starter bundle rerolls, character additions, debate starts, debate completions, debate cancellations, debate failures, and transcript copies.
 
 ## ☁️ Deploy to Vercel
 
@@ -144,8 +144,8 @@ src/
     ├── openrouter.ts           # OpenRouter proxy client helpers
     ├── openrouter-server.ts    # Server-side OpenRouter proxy helpers
     ├── openrouter-models.ts    # Available model definitions
-    ├── persona-presets.ts      # 16 predefined debate personas
-    ├── persona-profile.ts      # Persona profile types/utilities
+    ├── character-presets.ts      # 16 predefined debate characters
+    ├── character-profile.ts      # Character profile types/utilities
     └── ...
 ```
 

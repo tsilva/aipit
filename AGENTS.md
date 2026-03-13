@@ -24,8 +24,8 @@ Next.js 16 + React 19 + Tailwind CSS 4 single-page application for AI debates ("
 - `src/lib/pit.ts` — Core types and interfaces
 - `src/lib/openrouter.ts` — OpenRouter API client
 - `src/lib/openrouter-models.ts` — Available model definitions
-- `src/lib/persona-presets.ts` — Predefined debate personas
-- `src/lib/persona-profile.ts` — Persona profile types/utilities
+- `src/lib/character-presets.ts` — Predefined debate characters
+- `src/lib/character-profile.ts` — Character profile types/utilities
 - `src/app/page.tsx` — Next.js page (renders pit-studio)
 - `src/app/layout.tsx` — Root layout
 

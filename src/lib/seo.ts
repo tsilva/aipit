@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import { PARTICIPANT_PERSONA_PRESETS } from "@/lib/persona-presets";
+import { PARTICIPANT_CHARACTER_PRESETS } from "@/lib/character-presets";
 import { SITE_URL } from "@/lib/site";
 import type { StarterBundleDefinition } from "@/lib/starter-bundles";
 
 export const SITE_NAME = "The AI Pit";
-export const SITE_TITLE = "The AI Pit | Watch AI Personas Debate Anything";
+export const SITE_TITLE = "The AI Pit | Watch AI Characters Debate Anything";
 export const SITE_DESCRIPTION =
-  "Pit AI personas against each other in live, moderator-led debates. Launch hot-button scenarios, remix the roster, and share the chaos.";
+  "Pit AI characters against each other in live, moderator-led debates. Launch hot-button scenarios, remix the roster, and share the chaos.";
 export const SITE_THEME_COLOR = "#d87a3b";
 export const SITE_BACKGROUND_COLOR = "#0c1118";
 
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
 const DEFAULT_SOCIAL_IMAGE_PATH = "/social-card.png";
-const personaNameById = new Map(PARTICIPANT_PERSONA_PRESETS.map((preset) => [preset.id, preset.name] as const));
+const characterNameById = new Map(PARTICIPANT_CHARACTER_PRESETS.map((preset) => [preset.id, preset.name] as const));
 
 function truncate(value: string, maxLength: number): string {
   if (value.length <= maxLength) {
@@ -44,7 +44,7 @@ function joinNames(names: string[]): string {
 
 function getBundleParticipantNames(bundle: StarterBundleDefinition): string[] {
   return bundle.memberPresetIds
-    .map((presetId) => personaNameById.get(presetId))
+    .map((presetId) => characterNameById.get(presetId))
     .filter((name): name is string => Boolean(name));
 }
 
@@ -63,7 +63,7 @@ export function getBundleUrl(bundleId: string): string {
 
 export function buildBundleDescription(bundle: StarterBundleDefinition): string {
   const names = getBundleParticipantNames(bundle);
-  const cast = names.length > 0 ? joinNames(names) : "three AI personas";
+  const cast = names.length > 0 ? joinNames(names) : "three AI characters";
   const suffix = ` Debate it with ${cast} in The AI Pit.`;
   const promptMaxLength = Math.max(48, 160 - suffix.length);
   const prompt = truncate(bundle.prompt, promptMaxLength);
@@ -95,9 +95,9 @@ export function buildDefaultMetadata(): Metadata {
     manifest: "/manifest.webmanifest",
     keywords: [
       "AI debate simulator",
-      "AI personas",
+      "AI characters",
       "AI debate",
-      "persona debate",
+      "character debate",
       "LLM debate",
       "OpenRouter",
       "AI roleplay",
