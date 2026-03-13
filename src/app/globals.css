@@ -3103,6 +3103,32 @@ select.field {
 }
 
 @media (max-width: 640px) {
+  .studio-form-simulation {
+    gap: 0;
+    padding: 0;
+  }
+
+  .studio-form-simulation .chamber-shell {
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    padding: 0;
+  }
+
+  .studio-form-simulation .chamber-header {
+    padding: 0.8rem 0.75rem 0;
+    margin-bottom: 0.75rem;
+  }
+
+  .studio-form-simulation .stage-frame {
+    flex: 1 1 auto;
+    min-height: 0;
+    border-radius: 0;
+  }
+
   .transcript-sheet-inline {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
@@ -3317,7 +3343,7 @@ select.field {
 
   .timeline-shell {
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 0.7rem 0.75rem;
     padding-left: 0.75rem;
@@ -3382,6 +3408,12 @@ select.field {
   .speaker-focus-content {
     gap: 0.85rem;
     width: 100%;
+  }
+
+  .speaker-focus-bubble,
+  .speaker-focus-bubble-card {
+    width: 100%;
+    max-width: none;
   }
 
   .speaker-focus-shell-transcript {
@@ -3458,6 +3490,7 @@ select.field {
     grid-column: 1 / -1;
     order: 3;
     width: 100%;
+    justify-self: stretch;
   }
 
   .timeline-button-group {
