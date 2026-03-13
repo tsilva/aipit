@@ -3182,20 +3182,22 @@ select.field {
   }
 
   .speaker-focus-bubble::before {
-    left: 0.54rem;
+    left: 50%;
     top: -0.7rem;
     width: 1.14rem;
     height: 0.84rem;
     background: var(--focus-bubble-tail-border);
     clip-path: polygon(50% 0, 0 100%, 100% 100%);
+    transform: translateX(-50%);
   }
 
   .speaker-focus-bubble::after {
-    left: 0.63rem;
+    left: 50%;
     top: -0.57rem;
     width: 0.96rem;
     height: 0.72rem;
     clip-path: polygon(50% 0, 0 100%, 100% 100%);
+    transform: translateX(-50%);
   }
 
   .studio-form-simulation {
@@ -3402,7 +3404,7 @@ select.field {
   }
 
   .speaker-focus-figure {
-    transform: none;
+    transform: translateY(-0.5rem);
   }
 
   .speaker-focus-content {
