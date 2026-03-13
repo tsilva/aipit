@@ -17,6 +17,7 @@
 - 🏟️ **Structured debate flow** — opening → rounds → interventions → consensus
 - 🔗 **Persona relationships** — pairwise awareness so debaters know how to engage each other
 - 🤖 **Multi-model support via OpenRouter** — characters default to Grok 4.1 Fast, with other supported models still available in the editor
+- 🔁 **Automatic model failover** — recoverable model/provider failures rotate to another supported model and the live queue reflects the replacement
 - 🎛️ **Configurable parameters** — rounds, temperature, max tokens, shared directives
 - 💬 **Bubble-based playback** — conversation and transcript views
 - 📊 **Token and cost tracking** — per-debate usage summary

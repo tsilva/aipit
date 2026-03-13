@@ -18,6 +18,7 @@ import {
   postOpenRouterProxyRequest,
   resolveOpenRouterModel,
 } from "@/lib/openrouter";
+import { buildOpenRouterModelFallbackOrder } from "@/lib/openrouter-models";
 import {
   buildCompactPersonaPrompt,
   buildPersonaLanguageDirective,
@@ -47,6 +48,8 @@ export type RunProgressEvent =
   | { type: "intervention"; turn: PitTurn; usage: UsageSummary }
   | { type: "synthesis"; turn: PitTurn; usage: UsageSummary }
   | { type: "consensus"; turn: PitTurn; usage: UsageSummary };
+
+type ThinkingProgressEvent = Extract<RunProgressEvent, { type: "thinking" }>;
 
 type ChatMessage = {
   role: "system" | "user" | "assistant";
@@ -371,18 +374,34 @@ function shouldRetryOpenRouterRequest(status: number, message: string): boolean 
   );
 }
 
+function shouldFallbackToAnotherModel(status: number, message: string): boolean {
+  if (shouldRetryOpenRouterRequest(status, message)) {
+    return true;
+  }
+
+  const normalized = message.trim().toLowerCase();
+
+  return (
+    normalized.includes("no endpoints found") ||
+    normalized.includes("provider routing") ||
+    normalized.includes("model is not available") ||
+    normalized.includes("model unavailable") ||
+    normalized.includes("no provider")
+  );
+}
+
 async function callOpenRouter(
   input: RunInput,
   participant: ParticipantConfig,
   role: "coordinator" | "member",
   frame: PromptFrame,
+  thinkingEvent: ThinkingProgressEvent,
   sessionId: string,
   execution: RunExecutionOptions,
   warnings: string[],
   messages: ChatMessage[],
 ): Promise<{ content: string; usage: UsageSummary; resolvedModel: string; rawPrompt: string }> {
   const apiKey = execution.apiKey?.trim();
-  const resolvedModel = resolveOpenRouterModel(participant.model, apiKey);
   const siteUrl = execution.siteUrl || resolveSiteUrl();
   const requestMessages: ChatMessage[] = [
     {
@@ -391,125 +410,167 @@ async function callOpenRouter(
     },
     ...messages,
   ];
-  let maxCompletionTokens = input.maxCompletionTokens;
-  let lastEmptyContentMessage = `OpenRouter returned no visible text for ${participant.name}.`;
+  const requestedModels = buildOpenRouterModelFallbackOrder(participant.model);
+  let lastFailureMessage = `OpenRouter returned no visible text for ${participant.name}.`;
   const turnAbort = createTurnAbortController(execution.signal);
 
   try {
-    for (let attempt = 1; attempt <= OPENROUTER_MAX_RETRIES; attempt += 1) {
-      throwIfAborted(turnAbort.signal);
+    for (let modelIndex = 0; modelIndex < requestedModels.length; modelIndex += 1) {
+      const requestedModel = requestedModels[modelIndex]!;
+      const nextRequestedModel = requestedModels[modelIndex + 1];
+      const resolvedModel = resolveOpenRouterModel(requestedModel, apiKey);
+      let maxCompletionTokens = input.maxCompletionTokens;
+      let modelFailureReason: string | null = null;
 
-      const response = await postOpenRouterProxyRequest({
-        path: OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH,
-        apiKey,
-        siteUrl,
-        signal: turnAbort.signal,
-        body: {
-          model: resolvedModel,
-          messages: requestMessages,
-          temperature: input.temperature,
-          max_completion_tokens: maxCompletionTokens,
-          session_id: sessionId,
-        },
-      });
+      for (let attempt = 1; attempt <= OPENROUTER_MAX_RETRIES; attempt += 1) {
+        throwIfAborted(turnAbort.signal);
 
-      if (!response.ok) {
-        const text = await response.text();
-        const detail = extractOpenRouterErrorMessage(text);
-        const canRetry = attempt < OPENROUTER_MAX_RETRIES && shouldRetryOpenRouterRequest(response.status, detail);
+        try {
+          const response = await postOpenRouterProxyRequest({
+            path: OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH,
+            apiKey,
+            siteUrl,
+            signal: turnAbort.signal,
+            body: {
+              model: resolvedModel,
+              messages: requestMessages,
+              temperature: input.temperature,
+              max_completion_tokens: maxCompletionTokens,
+              session_id: sessionId,
+            },
+          });
 
-        if (canRetry) {
-          emitWarning(
-            execution,
-            warnings,
-            `${participant.name} hit an OpenRouter provider error (${detail}). Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
-          );
-          await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, turnAbort.signal);
-          continue;
+          if (!response.ok) {
+            const text = await response.text();
+            const detail = extractOpenRouterErrorMessage(text);
+            const canRetry = attempt < OPENROUTER_MAX_RETRIES && shouldRetryOpenRouterRequest(response.status, detail);
+
+            if (canRetry) {
+              emitWarning(
+                execution,
+                warnings,
+                `${participant.name} hit an OpenRouter provider error on ${requestedModel} (${detail}). Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
+              );
+              await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, turnAbort.signal);
+              continue;
+            }
+
+            if (nextRequestedModel && shouldFallbackToAnotherModel(response.status, detail)) {
+              modelFailureReason = `provider error: ${detail}`;
+              lastFailureMessage = `OpenRouter error for ${participant.name} on ${requestedModel}: ${detail}`;
+              break;
+            }
+
+            throw new Error(`OpenRouter error for ${participant.name} on ${requestedModel}: ${detail}`);
+          }
+
+          const payload = (await response.json()) as OpenRouterResponse;
+          const firstChoice = payload.choices?.[0];
+          const content =
+            extractContent(firstChoice?.message?.content) ||
+            extractContent(firstChoice?.text) ||
+            extractContent(firstChoice?.message?.refusal);
+
+          if (content) {
+            participant.model = requestedModel;
+
+            return {
+              content,
+              rawPrompt: formatRawPrompt(requestMessages),
+              resolvedModel: payload.model || resolvedModel,
+              usage: {
+                promptTokens: payload.usage?.prompt_tokens ?? 0,
+                completionTokens: payload.usage?.completion_tokens ?? 0,
+                totalTokens: payload.usage?.total_tokens ?? 0,
+                cost: payload.usage?.cost ?? 0,
+              },
+            };
+          }
+
+          const finishReason = firstChoice?.finish_reason ?? undefined;
+          const hasToolCalls = Boolean(firstChoice?.message?.tool_calls && firstChoice.message.tool_calls.length > 0);
+          const finishReasonText = finishReason ? ` Finish reason: ${finishReason}.` : "";
+          const toolCallNote = hasToolCalls ? " The model returned tool calls, which this app does not support yet." : "";
+
+          lastFailureMessage = `OpenRouter returned no visible text for ${participant.name} on ${requestedModel}.${finishReasonText}${toolCallNote}`;
+
+          if (hasToolCalls) {
+            modelFailureReason = "it returned unsupported tool calls";
+            break;
+          }
+
+          const canRetry = attempt < OPENROUTER_MAX_RETRIES;
+
+          if (finishReason === "length" && canRetry && maxCompletionTokens < OPENROUTER_MAX_COMPLETION_TOKENS) {
+            const nextTokens = nextMaxCompletionTokens(maxCompletionTokens);
+            emitWarning(
+              execution,
+              warnings,
+              `${participant.name} returned no visible text on ${requestedModel} after hitting the token limit. Retrying with a larger completion budget (${maxCompletionTokens} -> ${nextTokens}).`,
+            );
+            maxCompletionTokens = nextTokens;
+            await delayWithSignal(OPENROUTER_RETRY_DELAY_MS, turnAbort.signal);
+            continue;
+          }
+
+          if (canRetry) {
+            emitWarning(
+              execution,
+              warnings,
+              `${participant.name} returned no visible text on ${requestedModel}${finishReason ? ` (finish reason: ${finishReason})` : ""}. Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
+            );
+            await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, turnAbort.signal);
+            continue;
+          }
+
+          modelFailureReason = finishReason
+            ? `it returned no visible text (finish reason: ${finishReason})`
+            : "it returned no visible text";
+          break;
+        } catch (error) {
+          if (isAbortError(error) && turnAbort.didTimeout() && !turnAbort.didParentAbort()) {
+            if (nextRequestedModel) {
+              modelFailureReason = "it timed out";
+              lastFailureMessage = `${participant.name} timed out on ${requestedModel}.`;
+              break;
+            }
+
+            emitWarning(
+              execution,
+              warnings,
+              `${participant.name} took too long to respond. Using fallback text instead.`,
+            );
+            return {
+              content: PARTICIPANT_RESPONSE_TIMEOUT_FALLBACK,
+              rawPrompt: formatRawPrompt(requestMessages),
+              resolvedModel,
+              usage: emptyUsage(),
+            };
+          }
+
+          throw error;
         }
-
-        throw new Error(`OpenRouter error for ${participant.name}: ${detail}`);
       }
 
-      const payload = (await response.json()) as OpenRouterResponse;
-      const firstChoice = payload.choices?.[0];
-      const content =
-        extractContent(firstChoice?.message?.content) ||
-        extractContent(firstChoice?.text) ||
-        extractContent(firstChoice?.message?.refusal);
-
-      if (content) {
-        return {
-          content,
-          rawPrompt: formatRawPrompt(requestMessages),
-          resolvedModel: payload.model || resolvedModel,
-          usage: {
-            promptTokens: payload.usage?.prompt_tokens ?? 0,
-            completionTokens: payload.usage?.completion_tokens ?? 0,
-            totalTokens: payload.usage?.total_tokens ?? 0,
-            cost: payload.usage?.cost ?? 0,
-          },
-        };
-      }
-
-      const finishReason = firstChoice?.finish_reason ?? undefined;
-      const hasToolCalls = Boolean(firstChoice?.message?.tool_calls && firstChoice.message.tool_calls.length > 0);
-      const finishReasonText = finishReason ? ` Finish reason: ${finishReason}.` : "";
-      const toolCallNote = hasToolCalls ? " The model returned tool calls, which this app does not support yet." : "";
-
-      lastEmptyContentMessage = `OpenRouter returned no visible text for ${participant.name}.${finishReasonText}${toolCallNote}`;
-
-      if (hasToolCalls) {
-        break;
-      }
-
-      const canRetry = attempt < OPENROUTER_MAX_RETRIES;
-
-      if (finishReason === "length" && canRetry && maxCompletionTokens < OPENROUTER_MAX_COMPLETION_TOKENS) {
-        const nextTokens = nextMaxCompletionTokens(maxCompletionTokens);
+      if (modelFailureReason && nextRequestedModel) {
+        participant.model = nextRequestedModel;
         emitWarning(
           execution,
           warnings,
-          `${participant.name} returned no visible text after hitting the token limit. Retrying with a larger completion budget (${maxCompletionTokens} -> ${nextTokens}).`,
+          `${participant.name} could not use ${requestedModel} because ${modelFailureReason}. Falling back to ${nextRequestedModel}.`,
         );
-        maxCompletionTokens = nextTokens;
-        await delayWithSignal(OPENROUTER_RETRY_DELAY_MS, turnAbort.signal);
+        execution.onProgress?.({
+          ...thinkingEvent,
+          model: nextRequestedModel,
+        });
         continue;
       }
-
-      if (canRetry) {
-        emitWarning(
-          execution,
-          warnings,
-          `${participant.name} returned no visible text${finishReason ? ` (finish reason: ${finishReason})` : ""}. Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
-        );
-        await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, turnAbort.signal);
-        continue;
-      }
-
-      break;
     }
-  } catch (error) {
-    if (isAbortError(error) && turnAbort.didTimeout() && !turnAbort.didParentAbort()) {
-      emitWarning(
-        execution,
-        warnings,
-        `${participant.name} took too long to respond. Using fallback text instead.`,
-      );
-      return {
-        content: PARTICIPANT_RESPONSE_TIMEOUT_FALLBACK,
-        rawPrompt: formatRawPrompt(requestMessages),
-        resolvedModel,
-        usage: emptyUsage(),
-      };
-    }
-
-    throw error;
   } finally {
     turnAbort.cleanup();
   }
 
-  throw new Error(lastEmptyContentMessage);
+  throw new Error(lastFailureMessage);
 }
 
 async function runDebate(input: RunInput, execution: RunExecutionOptions): Promise<RunResult> {
@@ -523,13 +584,14 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     message: `Moderator ${input.coordinator.name} is opening the debate.`,
   });
   throwIfAborted(execution.signal);
-  execution.onProgress?.({
+  const openingThinkingEvent: ThinkingProgressEvent = {
     type: "thinking",
     speakerId: input.coordinator.id,
     speakerName: input.coordinator.name,
     model: input.coordinator.model,
     kind: "opening",
-  });
+  };
+  execution.onProgress?.(openingThinkingEvent);
 
   const openingResult = await callOpenRouter(
     input,
@@ -541,6 +603,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
       transcript: [],
       speakingOrder,
     },
+    openingThinkingEvent,
     sessionId,
     execution,
     warnings,
@@ -580,14 +643,15 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         type: "status",
         message: `${member.name} is responding in round ${round}.`,
       });
-      execution.onProgress?.({
+      const memberThinkingEvent: ThinkingProgressEvent = {
         type: "thinking",
         speakerId: member.id,
         speakerName: member.name,
         model: member.model,
         kind: "member_turn",
         round,
-      });
+      };
+      execution.onProgress?.(memberThinkingEvent);
       const memberResult = await callOpenRouter(
         input,
         member,
@@ -597,6 +661,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
             `Speak in round ${round} of ${input.rounds}. Use the transcript as the source of truth, address specific arguments already made, and keep the turn compact but substantive.`,
           transcript: [...transcript],
         },
+        memberThinkingEvent,
         sessionId,
         execution,
         warnings,
@@ -632,14 +697,15 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         type: "status",
         message: `Moderator ${input.coordinator.name} is intervening before round ${round + 1}.`,
       });
-      execution.onProgress?.({
+      const interventionThinkingEvent: ThinkingProgressEvent = {
         type: "thinking",
         speakerId: input.coordinator.id,
         speakerName: input.coordinator.name,
         model: input.coordinator.model,
         kind: "intervention",
         round,
-      });
+      };
+      execution.onProgress?.(interventionThinkingEvent);
 
       const interventionResult = await callOpenRouter(
         input,
@@ -650,6 +716,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
             `Intervene between round ${round} and round ${round + 1}. Briefly name the sharpest disagreement or strongest emerging point. If any claims lacked evidence or contained logical errors, note them now. Identify any emerging common ground. Pose one unresolved issue for the next round.`,
           transcript: [...transcript],
         },
+        interventionThinkingEvent,
         sessionId,
         execution,
         warnings,
@@ -685,13 +752,14 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     message: `Moderator ${input.coordinator.name} is closing the debate with a consensus.`,
   });
   throwIfAborted(execution.signal);
-  execution.onProgress?.({
+  const consensusThinkingEvent: ThinkingProgressEvent = {
     type: "thinking",
     speakerId: input.coordinator.id,
     speakerName: input.coordinator.name,
     model: input.coordinator.model,
     kind: "consensus",
-  });
+  };
+  execution.onProgress?.(consensusThinkingEvent);
   const consensusResult = await callOpenRouter(
     input,
     input.coordinator,
@@ -701,6 +769,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         "Close with a balanced, impartial wrap-up that stays specific to the actual clashes in the transcript. Distinguish claims that were well-supported by evidence from those that were not. Make clear where convergence emerged and where genuine uncertainty or disagreement remains. Do not favor any participant's position.",
       transcript: [...transcript],
     },
+    consensusThinkingEvent,
     sessionId,
     execution,
     warnings,
@@ -740,5 +809,14 @@ export async function runPitWorkflow(
   execution: RunExecutionOptions,
 ): Promise<RunResult> {
   const input = rawInput ? (rawInput as RunInput) : createDefaultInput();
-  return runDebate(input, execution);
+  const [coordinator, ...members] = createRosterSnapshot(input);
+
+  return runDebate(
+    {
+      ...input,
+      coordinator,
+      members,
+    },
+    execution,
+  );
 }

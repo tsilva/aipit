@@ -444,7 +444,7 @@ function buildQueueEntries({
       id: actualFrame?.turnId ?? plannedTurn.id,
       kind: actualFrame?.kind ?? plannedTurn.kind,
       speakerName: actualFrame?.speakerName ?? plannedTurn.speakerName,
-      model: actualFrame?.model ?? plannedTurn.model,
+      model: isPendingTurn ? pendingTurn.model : actualFrame?.model ?? plannedTurn.model,
       chapterLabel: actualFrame?.chapterLabel ?? plannedTurn.chapterLabel,
       participant: participantById.get(speakerId) ?? null,
       state,
@@ -2038,7 +2038,7 @@ function ChamberStage({
                             />
                             <span className="speaker-queue-copy">
                               <span className="speaker-queue-name">{speakerName}</span>
-                              <span className="speaker-queue-model mono">{participant?.model ?? model}</span>
+                              <span className="speaker-queue-model mono">{model}</span>
                             </span>
                             <span className={`speaker-queue-state speaker-queue-state-${state}`}>
                               {queueStateLabel(state)}
@@ -2711,6 +2711,16 @@ export function PitStudio({
     if (event.type === "thinking") {
       setIsAwaitingTurnResponse(true);
       setPendingTurn(event);
+      setResult((current) =>
+        current
+          ? {
+              ...current,
+              roster: current.roster.map((participant) =>
+                participant.id === event.speakerId ? { ...participant, model: event.model } : participant,
+              ),
+            }
+          : current,
+      );
       return;
     }
 

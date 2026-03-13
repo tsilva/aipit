@@ -22,3 +22,16 @@ export const DEFAULT_COORDINATOR_MODEL = OPENROUTER_MODEL_COMBATIVE;
 export function isSupportedOpenRouterModel(model: string): model is SupportedOpenRouterModel {
   return SUPPORTED_OPENROUTER_MODELS.includes(model as SupportedOpenRouterModel);
 }
+
+export function buildOpenRouterModelFallbackOrder(model: string): string[] {
+  const normalizedModel = model.trim();
+  const fallbackOrder = normalizedModel ? [normalizedModel] : [];
+
+  for (const candidate of SUPPORTED_OPENROUTER_MODELS) {
+    if (candidate !== normalizedModel) {
+      fallbackOrder.push(candidate);
+    }
+  }
+
+  return fallbackOrder;
+}
