@@ -1,0 +1,114 @@
+{
+  "project_name": "aipit",
+  "project_type": "nodejs",
+  "bundle": "core-brand",
+  "sources": [
+    "bundled_defaults",
+    "/Users/tsilva/.repologogen/config.yaml"
+  ],
+  "metadata": {
+    "title": "aipit | Structured AI Persona Debate Engine",
+    "short_description": "A Next.js application for moderator-led debates between AI personas. Features multi-model failover via OpenRouter, rich character profiles, and automated orchestration.",
+    "social_title": "aipit - Where AI Personas Clash in Structured Debates",
+    "social_description": "Orchestrate complex debates between AI characters with automated moderating, 16+ built-in presets, and real-time token tracking using OpenRouter.",
+    "keywords": [
+      "nextjs",
+      "openrouter",
+      "ai-debates",
+      "llm-orchestration",
+      "ai-personas",
+      "typescript",
+      "multi-agent-systems",
+      "ai-agents",
+      "tailwind-css"
+    ]
+  },
+  "assets": [
+    {
+      "key": "logo",
+      "kind": "logo",
+      "path": "logo/logo-1024.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "key": "icon",
+      "kind": "icon",
+      "path": "icon/icon-512.png",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "key": "app-icons-apple-touch",
+      "kind": "app-icon",
+      "path": "app-icons/apple-touch-icon.png",
+      "size": [
+        180,
+        180
+      ]
+    },
+    {
+      "key": "app-icons-android-192",
+      "kind": "app-icon",
+      "path": "app-icons/android-chrome-192.png",
+      "size": [
+        192,
+        192
+      ]
+    },
+    {
+      "key": "app-icons-android-512",
+      "kind": "app-icon",
+      "path": "app-icons/android-chrome-512.png",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "key": "favicon-16",
+      "kind": "favicon",
+      "path": "favicon/favicon-16.png",
+      "size": [
+        16,
+        16
+      ]
+    },
+    {
+      "key": "favicon-32",
+      "kind": "favicon",
+      "path": "favicon/favicon-32.png",
+      "size": [
+        32,
+        32
+      ]
+    },
+    {
+      "key": "favicon-48",
+      "kind": "favicon",
+      "path": "favicon/favicon-48.png",
+      "size": [
+        48,
+        48
+      ]
+    },
+    {
+      "key": "favicon-ico",
+      "kind": "favicon",
+      "path": "favicon/favicon.ico"
+    },
+    {
+      "key": "social-card",
+      "kind": "social-card",
+      "path": "social/social-card-1200x630.png",
+      "size": [
+        1200,
+        630
+      ]
+    }
+  ]
+}

@@ -26,6 +26,7 @@
 - 🔐 **Server-side OpenRouter proxy** — requests flow through Next.js route handlers, with optional Vercel-hosted API key
 - 🛡️ **Hosted-key abuse guardrails** — same-origin enforcement, per-IP rate limits, model allowlisting, payload caps, and no server-key metadata exposure
 - 📣 **Topic-aware SEO previews** — the homepage and each starter-bundle deep link publish tuned titles, descriptions, canonicals, and generated OG images for richer search and social sharing
+- 🧭 **Installable web metadata** — ships a web manifest, platform icon set, and branded social card so browsers, crawlers, and share targets all get the right assets
 
 ## 🏗️ How It Works
 
@@ -133,6 +134,7 @@ src/
 - `OPENROUTER_API_KEY` is server-only and should not be prefixed with `NEXT_PUBLIC_`.
 - Starter bundles and personal API keys are not persisted in browser storage; reloads start from a fresh random bundle unless `?id=` is provided.
 - `public/sitemap.xml` is generated from the starter bundle list and includes each deep-linkable `/?id=<bundle-id>` route.
+- The app also publishes a web manifest at `/manifest.webmanifest` and exposes branded favicon, Apple touch, Android Chrome, and social-card assets for richer browser and sharing metadata.
 - `npm install` runs `prepare`, which points Git at the repo-managed hook in `.githooks/`; every commit regenerates and stages `public/sitemap.xml`.
 - The UI is implemented in `src/components/pit-studio.tsx`.
 - The orchestration logic lives in `src/lib/pit-engine.ts`.

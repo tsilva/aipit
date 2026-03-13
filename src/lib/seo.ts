@@ -7,9 +7,12 @@ export const SITE_NAME = "The AI Pit";
 export const SITE_TITLE = "The AI Pit | Watch AI Personas Debate Anything";
 export const SITE_DESCRIPTION =
   "Pit AI personas against each other in live, moderator-led debates. Launch hot-button scenarios, remix the roster, and share the chaos.";
+export const SITE_THEME_COLOR = "#d87a3b";
+export const SITE_BACKGROUND_COLOR = "#0c1118";
 
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
+const DEFAULT_SOCIAL_IMAGE_PATH = "/social-card.png";
 const personaNameById = new Map(PARTICIPANT_PERSONA_PRESETS.map((preset) => [preset.id, preset.name] as const));
 
 function truncate(value: string, maxLength: number): string {
@@ -78,16 +81,18 @@ function createImageDescriptor(title: string, subtitle: string, alt: string) {
 }
 
 export function buildDefaultMetadata(): Metadata {
-  const image = createImageDescriptor(
-    "AI Personas Debate Anything",
-    "Launch hot-button scenarios, remix the roster, and share the chaos.",
-    "The AI Pit share preview",
-  );
+  const image = {
+    url: `${SITE_URL}${DEFAULT_SOCIAL_IMAGE_PATH}`,
+    width: OG_IMAGE_WIDTH,
+    height: OG_IMAGE_HEIGHT,
+    alt: "The AI Pit share preview",
+  };
 
   return {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     applicationName: SITE_NAME,
+    manifest: "/manifest.webmanifest",
     keywords: [
       "AI debate simulator",
       "AI personas",
@@ -104,7 +109,20 @@ export function buildDefaultMetadata(): Metadata {
     ],
     authors: [{ name: "Tiago Silva" }],
     creator: "Tiago Silva",
+    publisher: "Tiago Silva",
+    category: "technology",
     metadataBase: new URL(SITE_URL),
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "any" },
+        { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+        { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+        { url: "/favicon-48x48.png", type: "image/png", sizes: "48x48" },
+        { url: "/icon.svg", type: "image/svg+xml" },
+      ],
+      apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
+      shortcut: ["/favicon.ico"],
+    },
     alternates: {
       canonical: "/",
     },
