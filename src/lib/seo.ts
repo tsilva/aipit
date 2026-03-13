@@ -85,7 +85,7 @@ export function buildDefaultMetadata(): Metadata {
     url: `${SITE_URL}${DEFAULT_SOCIAL_IMAGE_PATH}`,
     width: OG_IMAGE_WIDTH,
     height: OG_IMAGE_HEIGHT,
-    alt: "The AI Pit share preview",
+    alt: "Two AI debaters facing off in The AI Pit arena",
   };
 
   return {
@@ -118,7 +118,6 @@ export function buildDefaultMetadata(): Metadata {
         { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
         { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
         { url: "/favicon-48x48.png", type: "image/png", sizes: "48x48" },
-        { url: "/icon.svg", type: "image/svg+xml" },
       ],
       apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
       shortcut: ["/favicon.ico"],

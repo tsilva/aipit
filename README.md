@@ -26,7 +26,7 @@
 - 🔐 **Server-side OpenRouter proxy** — requests flow through Next.js route handlers, with optional Vercel-hosted API key
 - 🛡️ **Hosted-key abuse guardrails** — same-origin enforcement, per-IP rate limits, model allowlisting, payload caps, and no server-key metadata exposure
 - 📣 **Topic-aware SEO previews** — the homepage and each starter-bundle deep link publish tuned titles, descriptions, canonicals, and generated OG images for richer search and social sharing
-- 🧭 **Installable web metadata** — ships a web manifest, platform icon set, and branded social card so browsers, crawlers, and share targets all get the right assets
+- 🧭 **Installable web metadata** — ships a web manifest, Gemini-generated platform icon set, and branded social card so browsers, crawlers, and share targets all get the right assets
 - 📈 **Consent-gated analytics + observability** — GA loads only after consent, runtime failures can be reported to Sentry, and proxy responses carry request IDs for debugging
 - ✅ **CI-backed release gate** — lint, typecheck, unit tests, build, and Playwright smoke coverage run in GitHub Actions
 
@@ -157,7 +157,7 @@ src/
 - Starter bundles and personal API keys are not persisted in browser storage; reloads start from a fresh random bundle unless `?id=` is provided.
 - Analytics is opt-in per browser session; declining consent keeps the app fully usable and prevents GA from loading.
 - `public/sitemap.xml` is generated from the starter bundle list and includes each deep-linkable `/?id=<bundle-id>` route.
-- The app also publishes a web manifest at `/manifest.webmanifest` and exposes branded favicon, Apple touch, Android Chrome, and social-card assets for richer browser and sharing metadata.
+- The app also publishes a web manifest at `/manifest.webmanifest` and exposes Gemini-generated favicon, Apple touch, Android Chrome, and social-card assets for richer browser and sharing metadata.
 - `npm install` runs `prepare`, which points Git at the repo-managed hook in `.githooks/`; every commit regenerates and stages `public/sitemap.xml`.
 - The UI is implemented in `src/components/pit-studio.tsx`.
 - The orchestration logic lives in `src/lib/pit-engine.ts`.
