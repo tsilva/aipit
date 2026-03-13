@@ -25,6 +25,18 @@ describe("resolveAppEnv", () => {
         NODE_ENV: "production",
         VERCEL_ENV: "production",
       }),
-    ).toThrow("NEXT_PUBLIC_SITE_URL is required when VERCEL_ENV=production.");
+    ).toThrow(
+      "NEXT_PUBLIC_SITE_URL is required when VERCEL_ENV=production and no Vercel canonical URL env is available.",
+    );
+  });
+
+  it("accepts Vercel production when a platform canonical URL is available", () => {
+    const resolved = resolveAppEnv({
+      NODE_ENV: "production",
+      VERCEL_ENV: "production",
+      VERCEL_PROJECT_PRODUCTION_URL: "aipit.vercel.app",
+    });
+
+    expect(resolved.siteUrl).toBe("https://aipit.vercel.app");
   });
 });

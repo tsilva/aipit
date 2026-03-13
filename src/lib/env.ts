@@ -24,8 +24,10 @@ export function resolveAppEnv(source: Record<string, string | undefined> = proce
   const productionUrl = normalizeOptional(source.VERCEL_PROJECT_PRODUCTION_URL);
   const fallbackSiteUrl = previewUrl ? toHttps(previewUrl) : productionUrl ? toHttps(productionUrl) : "http://localhost:3000";
 
-  if (!explicitSiteUrl && vercelEnv === "production") {
-    throw new Error("NEXT_PUBLIC_SITE_URL is required when VERCEL_ENV=production.");
+  if (!explicitSiteUrl && vercelEnv === "production" && !productionUrl && !previewUrl) {
+    throw new Error(
+      "NEXT_PUBLIC_SITE_URL is required when VERCEL_ENV=production and no Vercel canonical URL env is available.",
+    );
   }
 
   return {
