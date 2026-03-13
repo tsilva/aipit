@@ -47,6 +47,31 @@ describe("/api/openrouter/chat/completions", () => {
     });
   });
 
+  it("ignores spoofed forwarded host headers on hosted requests", async () => {
+    const response = await POST(
+      new Request("https://aipit.example/api/openrouter/chat/completions", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://evil.example",
+          "x-forwarded-host": "evil.example",
+          "x-forwarded-proto": "https",
+        },
+        body: JSON.stringify({
+          body: {
+            model: SUPPORTED_OPENROUTER_MODELS[0],
+            messages: [{ role: "user", content: "Test" }],
+          },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: { message: "Cross-origin hosted OpenRouter requests are blocked." },
+    });
+  });
+
   it("passes through upstream failures and preserves a request ID header", async () => {
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ error: { message: "Provider unavailable" } }), {

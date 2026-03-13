@@ -81,9 +81,13 @@ npm run test:e2e
 Open [http://localhost:3000](http://localhost:3000).
 
 OpenRouter traffic is proxied through internal Next.js API routes under `src/app/api/openrouter`.
-When the shared server key is used, the proxy only accepts same-origin browser requests, rate-limits them per IP, clamps completion budgets, strips unsupported OpenRouter options, and only forwards the supported model list exposed in the editor. The hosted payload caps are tuned for debate-sized prompts, so moderator turns can carry persona setup plus rolling transcript context without tripping generic chat limits. Hosted key validation also returns an empty success response instead of relaying server-key metadata from OpenRouter.
+When the shared server key is used, the proxy only accepts browser requests whose `Origin` exactly matches the request URL origin, rate-limits them with best-effort trusted IP detection, clamps completion budgets, strips unsupported OpenRouter options, and only forwards the supported model list exposed in the editor. The hosted payload caps are tuned for debate-sized prompts, so moderator turns can carry persona setup plus rolling transcript context without tripping generic chat limits. Hosted key validation also returns an empty success response instead of relaying server-key metadata from OpenRouter. Arbitrary forwarded host/proto/IP headers are not trusted as proof of origin or client identity.
+
+If you deploy behind a custom reverse proxy, sanitize and verify any forwarding metadata there instead of expecting the app to trust raw forwarded headers automatically.
 
 If `OPENROUTER_API_KEY` is configured on the server, the proxy uses that key whenever the browser does not send a user-provided key. Users can still paste their own key, and that key takes precedence for validation and debate runs. Personal keys are kept in memory for the current page session only and are cleared on reload.
+
+Transcript views intentionally render prompt and model output as plain text inside the markdown shell so generated links, images, and other markdown syntax do not become active content.
 
 ## ⚙️ Environment Variables
 

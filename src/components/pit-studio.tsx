@@ -55,6 +55,7 @@ import {
 import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
 import { buildPersonaProfilePreview } from "@/lib/persona-profile";
 import type { ParticipantPersonaPreset } from "@/lib/persona-presets";
+import { buildTranscriptMarkdown } from "@/lib/transcript-markdown";
 import { trackEvent } from "@/lib/google-analytics";
 
 export type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
@@ -1585,11 +1586,6 @@ function ParticipantSettingsSheet({
   );
 }
 
-function transcriptTurnBody(turn: PitTurn): string {
-  const segments = turn.bubbles.length > 0 ? turn.bubbles.map((bubble) => bubble.content.trim()).filter(Boolean) : [turn.content];
-  return segments.join("\n\n");
-}
-
 function formatTokenCount(value: number): string {
   if (!Number.isFinite(value) || value <= 0) {
     return "0";
@@ -1612,41 +1608,6 @@ function formatUsageCost(value: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(normalizedValue);
-}
-
-function buildTranscriptMarkdown({
-  prompt,
-  turns,
-  isRunning,
-}: {
-  prompt: string;
-  turns: PitTurn[];
-  isRunning: boolean;
-}): string {
-  const lines = [
-    "## Prompt",
-    "",
-    prompt.trim() || "_No prompt set yet._",
-  ];
-
-  if (turns.length === 0) {
-    return lines.join("\n");
-  }
-
-  for (const turn of turns) {
-    lines.push(
-      "",
-      `## ${chapterLabelForTurn(turn)} · ${turn.speakerName} · \`${turn.model}\``,
-      "",
-      transcriptTurnBody(turn),
-    );
-  }
-
-  if (isRunning) {
-    lines.push("", "_Transcript updates live as each turn completes._");
-  }
-
-  return lines.join("\n");
 }
 
 async function copyTextToClipboard(text: string): Promise<void> {
@@ -1779,6 +1740,7 @@ function TranscriptPanel({
         className="transcript-sheet-body transcript-sheet-body-with-top-actions"
         onScroll={updateTranscriptScrollLock}
       >
+        <div aria-hidden="true" className="transcript-sheet-copy-clearance" />
         <TranscriptMarkdownContent markdown={markdown} />
 
         <div className="transcript-sheet-footer">
@@ -2275,6 +2237,7 @@ export function PitStudio({
       prompt: transcriptPrompt,
       turns: transcriptTurns,
       isRunning,
+      chapterLabelForTurn,
     }),
   );
   const timeline = buildPlaybackTimeline(result);

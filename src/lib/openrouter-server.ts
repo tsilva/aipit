@@ -68,14 +68,8 @@ function isJsonObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+// Access control follows the actual request URL and ignores forwarded origin headers.
 function resolveRequestOrigin(request: Request): string {
-  const forwardedHost = request.headers.get("x-forwarded-host")?.trim();
-  const forwardedProto = request.headers.get("x-forwarded-proto")?.trim();
-
-  if (forwardedHost) {
-    return `${forwardedProto || "https"}://${forwardedHost}`;
-  }
-
   return new URL(request.url).origin;
 }
 
@@ -102,12 +96,11 @@ export function assertHostedKeyOrigin(request: Request): string {
   return normalizedOrigin;
 }
 
-function resolveClientIdentifier(request: Request): string {
-  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const realIp = request.headers.get("x-real-ip")?.trim();
+// Rate limiting is best-effort and only uses direct platform IP headers when available.
+export function resolveClientIdentifier(request: Request): string {
   const connectingIp = request.headers.get("cf-connecting-ip")?.trim();
 
-  return forwardedFor || realIp || connectingIp || "unknown";
+  return connectingIp || "unknown";
 }
 
 function enforceHostedKeyRateLimit(request: Request, routeName: string): void {

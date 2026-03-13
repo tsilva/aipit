@@ -2628,6 +2628,9 @@ select.field {
 }
 
 .transcript-sheet-inline {
+  --transcript-copy-button-size: 2.65rem;
+  --transcript-copy-button-top: 1rem;
+  --transcript-copy-button-right: 1.85rem;
   position: relative;
   z-index: 4;
   flex: 1 1 auto;
@@ -2646,15 +2649,15 @@ select.field {
 
 .transcript-sheet-actions.transcript-sheet-actions-top {
   position: absolute;
-  top: 1rem;
-  right: 1.85rem;
+  top: var(--transcript-copy-button-top);
+  right: var(--transcript-copy-button-right);
   z-index: 2;
   width: auto;
 }
 
 .transcript-copy-button {
-  width: 2.65rem;
-  height: 2.65rem;
+  width: var(--transcript-copy-button-size);
+  height: var(--transcript-copy-button-size);
   padding: 0;
 }
 
@@ -2737,10 +2740,20 @@ select.field {
 
 .transcript-sheet-body-with-top-actions {
   padding-top: 1.3rem;
-  padding-right: 5rem;
+  padding-right: 1.5rem;
+}
+
+.transcript-sheet-copy-clearance {
+  float: right;
+  width: calc(var(--transcript-copy-button-size) + 0.7rem);
+  height: calc(var(--transcript-copy-button-size) + 0.35rem);
+  margin-left: 0.7rem;
+  margin-bottom: 0.35rem;
+  pointer-events: none;
 }
 
 .transcript-sheet-footer {
+  clear: both;
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid rgba(255, 231, 198, 0.12);
@@ -3145,7 +3158,7 @@ select.field {
   }
 
   .studio-form-simulation .transcript-sheet-body-with-top-actions {
-    padding-right: 4rem;
+    padding-right: 0.8rem;
   }
 
   .cinema-stage {
@@ -3265,20 +3278,15 @@ select.field {
     border-radius: 0;
   }
 
-  .transcript-sheet-inline {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-  }
-
   .transcript-sheet-actions.transcript-sheet-actions-top {
-    position: static;
-    width: 100%;
-    padding: 0.85rem 1rem 0;
+    width: auto;
+    top: 0.85rem;
+    right: 1rem;
     justify-content: flex-end;
   }
 
   .transcript-sheet-body-with-top-actions {
-    padding-top: 0.9rem;
+    padding-top: 0.85rem;
     padding-right: 1rem;
   }
 
@@ -3464,14 +3472,14 @@ select.field {
 
   .transcript-sheet-actions.transcript-sheet-actions-top {
     top: 0.75rem;
-    right: 1.35rem;
+    right: 1rem;
     width: auto;
     justify-content: flex-end;
   }
 
   .transcript-sheet-body-with-top-actions {
     padding-top: 1.3rem;
-    padding-right: 4.5rem;
+    padding-right: 1rem;
   }
 
   .transcript-sheet-actions {
