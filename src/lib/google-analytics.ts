@@ -1,5 +1,7 @@
 "use client";
 
+import { readAnalyticsConsent } from "@/lib/analytics-consent";
+
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? "";
 
 type AnalyticsValue = string | number;
@@ -13,7 +15,12 @@ declare global {
 }
 
 function analyticsEnabled(): boolean {
-  return typeof window !== "undefined" && GA_MEASUREMENT_ID.length > 0 && typeof window.gtag === "function";
+  return (
+    typeof window !== "undefined" &&
+    GA_MEASUREMENT_ID.length > 0 &&
+    readAnalyticsConsent() === "granted" &&
+    typeof window.gtag === "function"
+  );
 }
 
 function normalizeParams(params: AnalyticsParams): Record<string, AnalyticsValue> {

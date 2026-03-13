@@ -1,10 +1,18 @@
 "use client";
 
 import Script from "next/script";
+import { useSyncExternalStore } from "react";
+import { readAnalyticsConsent, subscribeToAnalyticsConsent } from "@/lib/analytics-consent";
 import { GA_MEASUREMENT_ID } from "@/lib/google-analytics";
 
 export function GoogleAnalytics() {
-  if (!GA_MEASUREMENT_ID) {
+  const consent = useSyncExternalStore(
+    subscribeToAnalyticsConsent,
+    readAnalyticsConsent,
+    () => "unset",
+  );
+
+  if (!GA_MEASUREMENT_ID || consent !== "granted") {
     return null;
   }
 
@@ -20,7 +28,7 @@ export function GoogleAnalytics() {
           function gtag(){dataLayer.push(arguments);}
           window.gtag = gtag;
           gtag('js', new Date());
-          gtag('config', '${GA_MEASUREMENT_ID}');
+          gtag('config', '${GA_MEASUREMENT_ID}', { anonymize_ip: true });
         `}
       </Script>
     </>

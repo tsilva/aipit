@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import Link from "next/link";
 import {
   useCallback,
   useDeferredValue,
@@ -1044,6 +1045,11 @@ function StudioHero({
         </span>
         {isRunning ? "STARTING..." : "START"}
       </button>
+
+      <div className="hero-meta-links">
+        <Link href="/privacy">Privacy</Link>
+        <Link href="/terms">Terms</Link>
+      </div>
     </section>
   );
 }

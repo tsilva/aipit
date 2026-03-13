@@ -1,67 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://aipit.tsilva.eu/</loc>
+    <loc>http://localhost:3000/</loc>
     <lastmod>2026-03-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://aipit.tsilva.eu/?id=portugal-housing-war</loc>
+    <loc>http://localhost:3000/?id=portugal-housing-war</loc>
     <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aipit.tsilva.eu/?id=property-war-portugal</loc>
+    <loc>http://localhost:3000/?id=property-war-portugal</loc>
     <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aipit.tsilva.eu/?id=security-state-pressure</loc>
+    <loc>http://localhost:3000/?id=security-state-pressure</loc>
     <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aipit.tsilva.eu/?id=gender-identity-flashpoint</loc>
+    <loc>http://localhost:3000/?id=gender-identity-flashpoint</loc>
     <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aipit.tsilva.eu/?id=podcaster-free-speech-war</loc>
+    <loc>http://localhost:3000/?id=podcaster-free-speech-war</loc>
     <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aipit.tsilva.eu/?id=ai-liability-meltdown</loc>
+    <loc>http://localhost:3000/?id=ai-liability-meltdown</loc>
     <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aipit.tsilva.eu/?id=border-prime-time</loc>
+    <loc>http://localhost:3000/?id=border-prime-time</loc>
     <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aipit.tsilva.eu/?id=absurdity-welfare-panel</loc>
+    <loc>http://localhost:3000/?id=absurdity-welfare-panel</loc>
     <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aipit.tsilva.eu/?id=toilet-paper-emergency</loc>
+    <loc>http://localhost:3000/?id=toilet-paper-emergency</loc>
     <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aipit.tsilva.eu/?id=ocean-democracy-meltdown</loc>
+    <loc>http://localhost:3000/?id=ocean-democracy-meltdown</loc>
     <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

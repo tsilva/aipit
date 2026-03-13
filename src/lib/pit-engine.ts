@@ -163,7 +163,7 @@ function buildRelationshipHints(participant: ParticipantConfig, input: RunInput)
   return hints.join("\n");
 }
 
-function buildSystemPrompt(
+export function buildSystemPrompt(
   input: RunInput,
   participant: ParticipantConfig,
   role: "coordinator" | "member",
@@ -221,13 +221,13 @@ function buildSystemPrompt(
   return sections.filter(Boolean).join("\n\n");
 }
 
-function resolveSiteUrl(): string | undefined {
+export function resolveSiteUrl(): string | undefined {
   if (typeof window !== "undefined" && window.location?.origin) {
     return window.location.origin;
   }
 
-  if (process.env.OPENROUTER_SITE_URL) {
-    return process.env.OPENROUTER_SITE_URL;
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
   }
 
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
@@ -356,7 +356,7 @@ function nextMaxCompletionTokens(current: number): number {
   return Math.min(OPENROUTER_MAX_COMPLETION_TOKENS, Math.max(current + 400, Math.ceil(current * 1.75)));
 }
 
-function shouldRetryOpenRouterRequest(status: number, message: string): boolean {
+export function shouldRetryOpenRouterRequest(status: number, message: string): boolean {
   if (status === 408 || status === 409 || status === 429 || status >= 500) {
     return true;
   }
@@ -374,7 +374,7 @@ function shouldRetryOpenRouterRequest(status: number, message: string): boolean 
   );
 }
 
-function shouldFallbackToAnotherModel(status: number, message: string): boolean {
+export function shouldFallbackToAnotherModel(status: number, message: string): boolean {
   if (shouldRetryOpenRouterRequest(status, message)) {
     return true;
   }

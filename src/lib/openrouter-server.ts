@@ -1,5 +1,7 @@
+import * as Sentry from "@sentry/nextjs";
 import { MODEL_SUGGESTIONS } from "@/lib/openrouter-models";
 import { buildOpenRouterHeaders } from "@/lib/openrouter";
+import { buildResponseHeaders, resolveRequestId } from "@/lib/request-id";
 
 const HOSTED_KEY_RATE_LIMIT_WINDOW_MS = 60_000;
 const HOSTED_KEY_ROUTE_LIMIT = 10;
@@ -77,7 +79,7 @@ function resolveRequestOrigin(request: Request): string {
   return new URL(request.url).origin;
 }
 
-function assertHostedKeyOrigin(request: Request): string {
+export function assertHostedKeyOrigin(request: Request): string {
   const requestOrigin = resolveRequestOrigin(request);
   const originHeader = request.headers.get("origin")?.trim();
 
@@ -150,7 +152,7 @@ function normalizeHostedChatMessage(value: unknown): HostedChatMessage {
   return { role, content };
 }
 
-function normalizeHostedChatBody(body: unknown): HostedChatBody {
+export function normalizeHostedChatBody(body: unknown): HostedChatBody {
   if (!isJsonObject(body)) {
     throw new OpenRouterProxyError("Missing chat completion payload.", 400);
   }
@@ -212,6 +214,7 @@ export async function proxyOpenRouterRequest({
   siteUrl,
   body,
   signal,
+  requestId,
 }: {
   request: Request;
   routeName: string;
@@ -221,8 +224,10 @@ export async function proxyOpenRouterRequest({
   siteUrl?: string;
   body?: unknown;
   signal?: AbortSignal;
+  requestId?: string;
 }): Promise<Response> {
   const startedAt = Date.now();
+  const resolvedRequestId = requestId ?? resolveRequestId(request);
   const usingServerKey = isServerOpenRouterKeyRequest(apiKey);
   const resolvedApiKey = resolveOpenRouterProxyApiKey(apiKey);
   const resolvedSiteUrl = usingServerKey ? assertHostedKeyOrigin(request) : siteUrl?.trim() || undefined;
@@ -246,9 +251,21 @@ export async function proxyOpenRouterRequest({
       signal,
     });
   } catch (error) {
+    Sentry.captureException(error, {
+      extra: {
+        durationMs: Date.now() - startedAt,
+        method,
+        requestId: resolvedRequestId,
+        routeName,
+        siteUrl: resolvedSiteUrl,
+        upstreamUrl,
+        usingServerKey,
+      },
+    });
     console.error("OpenRouter proxy request failed", {
       durationMs: Date.now() - startedAt,
       method,
+      requestId: resolvedRequestId,
       routeName,
       siteUrl: resolvedSiteUrl,
       upstreamUrl,
@@ -261,6 +278,7 @@ export async function proxyOpenRouterRequest({
   const logPayload = {
     durationMs: Date.now() - startedAt,
     method,
+    requestId: resolvedRequestId,
     routeName,
     siteUrl: resolvedSiteUrl,
     status: upstreamResponse.status,
@@ -278,6 +296,9 @@ export async function proxyOpenRouterRequest({
 
   return new Response(upstreamResponse.body, {
     status: upstreamResponse.status,
-    headers: contentType ? { "Cache-Control": "no-store", "Content-Type": contentType } : { "Cache-Control": "no-store" },
+    headers: buildResponseHeaders(
+      resolvedRequestId,
+      contentType ? { "Cache-Control": "no-store", "Content-Type": contentType } : { "Cache-Control": "no-store" },
+    ),
   });
 }

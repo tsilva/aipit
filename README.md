@@ -27,6 +27,8 @@
 - 🛡️ **Hosted-key abuse guardrails** — same-origin enforcement, per-IP rate limits, model allowlisting, payload caps, and no server-key metadata exposure
 - 📣 **Topic-aware SEO previews** — the homepage and each starter-bundle deep link publish tuned titles, descriptions, canonicals, and generated OG images for richer search and social sharing
 - 🧭 **Installable web metadata** — ships a web manifest, platform icon set, and branded social card so browsers, crawlers, and share targets all get the right assets
+- 📈 **Consent-gated analytics + observability** — GA loads only after consent, runtime failures can be reported to Sentry, and proxy responses carry request IDs for debugging
+- ✅ **CI-backed release gate** — lint, typecheck, unit tests, build, and Playwright smoke coverage run in GitHub Actions
 
 ## 🏗️ How It Works
 
@@ -66,6 +68,16 @@ Start the dev server:
 npm run dev
 ```
 
+Run the full verification suite:
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+npm run test:e2e
+```
+
 Open [http://localhost:3000](http://localhost:3000).
 
 OpenRouter traffic is proxied through internal Next.js API routes under `src/app/api/openrouter`.
@@ -77,17 +89,22 @@ If `OPENROUTER_API_KEY` is configured on the server, the proxy uses that key whe
 
 | Variable | Required | Description |
 |----------|----------|-------------|
+| `NEXT_PUBLIC_SITE_URL` | Yes in production | Canonical site URL used for metadata, manifest entries, and OG links |
 | `NEXT_PUBLIC_OPENROUTER_APP_NAME` | No | OpenRouter attribution title for client-side requests |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | Google Analytics 4 measurement ID used to enable pageviews and debate usage events |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | Google Analytics 4 measurement ID; loaded only after explicit user consent |
+| `NEXT_PUBLIC_SENTRY_DSN` | No | Browser-side Sentry DSN for client error reporting |
 | `OPENROUTER_API_KEY` | No | Server-side OpenRouter API key used by the internal proxy when present |
+| `SENTRY_DSN` | No | Server-side Sentry DSN for API route and server runtime error reporting |
 
-If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, the app loads the GA4 tag and emits events for page views, starter bundle rerolls, persona additions, debate starts, debate completions, debate cancellations, debate failures, and transcript copies.
+If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, the app loads the GA4 tag only after consent and then emits events for page views, starter bundle rerolls, persona additions, debate starts, debate completions, debate cancellations, debate failures, and transcript copies.
 
 ## ☁️ Deploy to Vercel
 
 This app is a standard Next.js App Router project, so Vercel can deploy it without extra adapters.
 
 To prepare a shared hosted key on Vercel, add `OPENROUTER_API_KEY` to the project environment variables. The UI now supports both modes: users can bring their own key, or leave the field empty and rely on the hosted server key.
+
+For production deployments, also set `NEXT_PUBLIC_SITE_URL` to the final canonical origin. If you want production error reporting, set `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`.
 
 ```bash
 # Preview deployment
@@ -132,7 +149,9 @@ src/
 
 - OpenRouter requests are sent through internal route handlers in `src/app/api/openrouter`.
 - `OPENROUTER_API_KEY` is server-only and should not be prefixed with `NEXT_PUBLIC_`.
+- `NEXT_PUBLIC_SITE_URL` should be set explicitly in production so metadata, manifest URLs, and OG links use the canonical domain.
 - Starter bundles and personal API keys are not persisted in browser storage; reloads start from a fresh random bundle unless `?id=` is provided.
+- Analytics is opt-in per browser session; declining consent keeps the app fully usable and prevents GA from loading.
 - `public/sitemap.xml` is generated from the starter bundle list and includes each deep-linkable `/?id=<bundle-id>` route.
 - The app also publishes a web manifest at `/manifest.webmanifest` and exposes branded favicon, Apple touch, Android Chrome, and social-card assets for richer browser and sharing metadata.
 - `npm install` runs `prepare`, which points Git at the repo-managed hook in `.githooks/`; every commit regenerates and stages `public/sitemap.xml`.

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import { Suspense } from "react";
+import { AnalyticsConsentBanner } from "@/components/analytics-consent-banner";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { SITE_URL } from "@/lib/site";
 import {
@@ -106,6 +107,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <GoogleAnalytics />
         </Suspense>
+        <AnalyticsConsentBanner />
         {children}
       </body>
     </html>
