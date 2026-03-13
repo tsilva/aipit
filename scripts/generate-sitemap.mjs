@@ -1,7 +1,6 @@
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE_URL } from "../src/lib/site.ts";
 import { STARTER_BUNDLES } from "../src/lib/starter-bundles.ts";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -9,6 +8,35 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
 const sitemapPath = path.join(repoRoot, "public", "sitemap.xml");
 const bundlesPath = path.join(repoRoot, "src", "lib", "starter-bundles.ts");
+
+function normalizeOptional(value) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function toHttps(host) {
+  return host.startsWith("http://") || host.startsWith("https://") ? host : `https://${host}`;
+}
+
+function resolveSiteUrl() {
+  const explicitSiteUrl = normalizeOptional(process.env.NEXT_PUBLIC_SITE_URL);
+  const previewUrl = normalizeOptional(process.env.VERCEL_URL);
+  const productionUrl = normalizeOptional(process.env.VERCEL_PROJECT_PRODUCTION_URL);
+
+  if (explicitSiteUrl) {
+    return toHttps(explicitSiteUrl);
+  }
+
+  if (previewUrl) {
+    return toHttps(previewUrl);
+  }
+
+  if (productionUrl) {
+    return toHttps(productionUrl);
+  }
+
+  return "http://localhost:3000";
+}
 
 function escapeXml(value) {
   return value
@@ -29,15 +57,16 @@ async function resolveLastModifiedDate() {
 }
 
 async function main() {
+  const siteUrl = resolveSiteUrl();
   const lastModified = await resolveLastModifiedDate();
   const urls = [
     {
-      loc: new URL("/", SITE_URL).toString(),
+      loc: new URL("/", siteUrl).toString(),
       changefreq: "monthly",
       priority: "1.0",
     },
     ...STARTER_BUNDLES.map((bundle) => {
-      const url = new URL("/", SITE_URL);
+      const url = new URL("/", siteUrl);
       url.searchParams.set("id", bundle.id);
 
       return {
