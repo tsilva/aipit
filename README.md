@@ -24,6 +24,7 @@
 - ⚡ **Server-rendered setup view** — the initial bundle, roster, and hosted-key availability are rendered on the server to reduce first-load flicker
 - 🔐 **Server-side OpenRouter proxy** — requests flow through Next.js route handlers, with optional Vercel-hosted API key
 - 🛡️ **Hosted-key abuse guardrails** — same-origin enforcement, per-IP rate limits, model allowlisting, payload caps, and no server-key metadata exposure
+- 📣 **Topic-aware SEO previews** — the homepage and each starter-bundle deep link publish tuned titles, descriptions, canonicals, and generated OG images for richer search and social sharing
 
 ## 🏗️ How It Works
 

@@ -3,10 +3,8 @@ import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import { Suspense } from "react";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { SITE_URL } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_NAME, buildDefaultMetadata } from "@/lib/seo";
 import "./globals.css";
-
-const SITE_TITLE = "The AI Pit | AI Persona Debate Simulator";
-const SITE_DESCRIPTION = "Create AI persona simulations and watch them debate against each other in moderator-led discussions. Powered by OpenRouter models. Interactive AI debate platform for exploring different perspectives.";
 
 const displayFont = Space_Grotesk({
   variable: "--font-display",
@@ -19,75 +17,41 @@ const monoFont = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
-export const metadata: Metadata = {
-  title: SITE_TITLE,
-  description: SITE_DESCRIPTION,
-  icons: {
-    icon: [],
-    shortcut: [],
-    apple: [],
-  },
-  keywords: [
-    "AI debate",
-    "persona simulation",
-    "AI personas",
-    "OpenRouter",
-    "AI chat",
-    "language models",
-    "AI discussion",
-    "moderated debate",
-    "AI conversation",
-    "interactive AI",
-    "LLM debate",
-    "AI simulation",
-  ],
-  authors: [{ name: "Tiago Silva" }],
-  creator: "Tiago Silva",
-  metadataBase: new URL(SITE_URL),
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: SITE_TITLE,
-    description: "Watch AI personas debate against each other in moderated discussions. Create custom personas and explore different perspectives with OpenRouter-powered models.",
-    type: "website",
-    url: SITE_URL,
-    siteName: "The AI Pit",
-    locale: "en_US",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: SITE_TITLE,
-    description: "Create AI personas and watch them debate. Interactive simulation powered by OpenRouter models.",
-    creator: "@tiagosilva",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-    },
-  },
-};
+export const metadata: Metadata = buildDefaultMetadata();
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "The AI Pit",
-  url: SITE_URL,
-  description: SITE_DESCRIPTION,
-  author: {
-    "@type": "Person",
-    name: "Tiago Silva",
-    url: "https://www.tsilva.eu",
-  },
-  applicationCategory: "AIApplication",
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "USD",
-  },
+  "@graph": [
+    {
+      "@type": "WebSite",
+      name: SITE_NAME,
+      url: SITE_URL,
+      description: SITE_DESCRIPTION,
+      author: {
+        "@type": "Person",
+        name: "Tiago Silva",
+        url: "https://www.tsilva.eu",
+      },
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: SITE_NAME,
+      url: SITE_URL,
+      description: SITE_DESCRIPTION,
+      applicationCategory: "BrowserApplication",
+      operatingSystem: "Any",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+      author: {
+        "@type": "Person",
+        name: "Tiago Silva",
+        url: "https://www.tsilva.eu",
+      },
+    },
+  ],
 };
 
 export default function RootLayout({

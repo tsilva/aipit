@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { InitialStudioState } from "@/components/pit-studio";
 import { PitStudioEntry } from "@/components/pit-studio-entry";
 import {
@@ -10,6 +11,7 @@ import {
   createRandomStarterInput,
   resolveStarterBundle,
 } from "@/lib/pit";
+import { buildStarterBundleMetadata } from "@/lib/seo";
 
 type HomePageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -17,6 +19,18 @@ type HomePageProps = {
 
 function resolveBundleIdParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+export async function generateMetadata({ searchParams }: HomePageProps): Promise<Metadata> {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const bundleId = resolveBundleIdParam(resolvedSearchParams?.id);
+  const bundle = bundleId ? resolveStarterBundle(bundleId) : undefined;
+
+  if (!bundle) {
+    return {};
+  }
+
+  return buildStarterBundleMetadata(bundle);
 }
 
 function buildInitialStudioState(bundleId: string | undefined): InitialStudioState {
