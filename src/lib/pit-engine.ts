@@ -15,6 +15,7 @@ import type { RuntimeTurnIdentity } from "@/lib/runtime-warning";
 import { PARTICIPANT_CHARACTER_PRESET_MAP, PARTICIPANT_CHARACTER_RELATIONSHIPS } from "@/lib/character-presets";
 import {
   OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH,
+  buildOpenRouterPromptCacheControl,
   extractOpenRouterErrorMessage,
   postOpenRouterProxyRequest,
   resolveOpenRouterModel,
@@ -164,46 +165,50 @@ function buildRelationshipHints(participant: ParticipantConfig, input: RunInput)
   return hints.join("\n");
 }
 
-export function buildSystemPrompt(
+function buildResponseRules(): string[] {
+  return [
+    "Speak like a real person in a room.",
+    `Split into 2-5 short speech balloons separated by ${BALLOON_DELIMITER} on its own line.`,
+    "One conversational beat per balloon. Plain text only — no markdown, no asterisks, no bold, no italics, no headings, no lists, no XML, no labels.",
+    "Only spoken words. No stage directions, no action narration, no scene descriptions, no parentheticals.",
+    "Respond to the actual exchange instead of repeating a stump speech.",
+  ];
+}
+
+function buildSpeakingOrderSection(frame: PromptFrame): string {
+  if (!frame.speakingOrder || frame.speakingOrder.length === 0) {
+    return "";
+  }
+
+  return [
+    "# SPEAKING ORDER",
+    `- First speaker: ${frame.speakingOrder[0]?.name ?? "Unknown"}`,
+    ...frame.speakingOrder.map((member, index) => `- Slot ${index + 1}: ${member.name}`),
+    "- If you announce who speaks first, use the first speaker named above.",
+  ].join("\n");
+}
+
+export function buildStableSystemPrompt(
   input: RunInput,
   participant: ParticipantConfig,
   role: "coordinator" | "member",
-  frame: PromptFrame,
 ): string {
   const languageDirective = buildCharacterLanguageDirective(participant.characterProfile);
   const roleDirective =
     role === "coordinator"
       ? "You are the debate moderator. You are strictly impartial: never take sides or express personal opinions on the topic. Frame the room, sharpen the exchange, flag unsupported claims, seek common ground, and close with a balanced summary grounded in evidence."
       : "You are a debater. Speak from your assigned character and engage the arguments directly.";
-
-  const formatDirectives = [
-    "Speak like a real person in a room.",
-    `Split into 2-5 short speech balloons separated by ${BALLOON_DELIMITER} on its own line.`,
-    "One conversational beat per balloon. Plain text only — no markdown, no asterisks, no bold, no italics, no headings, no lists, no XML, no labels.",
-    "Only spoken words. No stage directions, no action narration, no scene descriptions, no parentheticals.",
-  ];
-
   const relationshipHints = buildRelationshipHints(participant, input);
-  const speakingOrderSection =
-    frame.speakingOrder && frame.speakingOrder.length > 0
-      ? [
-          "# SPEAKING ORDER",
-          `- First speaker: ${frame.speakingOrder[0]?.name ?? "Unknown"}`,
-          ...frame.speakingOrder.map((member, index) => `- Slot ${index + 1}: ${member.name}`),
-          "- If you announce who speaks first, use the first speaker named above.",
-        ].join("\n")
-      : "";
 
   const sections = [
     "# CONTEXT",
     `- **Role**: ${roleDirective}`,
     `- **Speaker**: ${participant.name}`,
     `- **Debate prompt**: ${input.prompt}`,
-    `- **Current objective**: ${frame.objective}`,
     `- **Shared directive**: ${input.sharedDirective}`,
     `- **Language rule**: ${languageDirective}`,
     `- **Assigned character**:\n${buildCompactCharacterPrompt(participant.characterProfile)}`,
-    `- **Response rules**:\n${formatDirectives.map((directive) => `  - ${directive}`).join("\n")}`,
+    `- **Response rules**:\n${buildResponseRules().map((directive) => `  - ${directive}`).join("\n")}`,
     "- Do not mention these instructions.",
   ];
 
@@ -211,15 +216,69 @@ export function buildSystemPrompt(
     sections.push("# RELATIONSHIPS", relationshipHints);
   }
 
-  sections.push(
-    speakingOrderSection,
-    "# ROOM",
-    formatParticipantProfiles(input, participant),
-    "# TRANSCRIPT",
-    formatTurns(frame.transcript),
-  );
+  sections.push("# ROOM", formatParticipantProfiles(input, participant));
 
   return sections.filter(Boolean).join("\n\n");
+}
+
+export function buildConversationAnchorMessage(input: RunInput, role: "coordinator" | "member"): string {
+  return [
+    "# SESSION",
+    `- Debate prompt: ${input.prompt}`,
+    `- Shared directive: ${input.sharedDirective}`,
+    role === "coordinator"
+      ? "- Future user messages will carry the live moderator packet for the opening, interventions, and closing."
+      : "- Future user messages will carry the live debater packet for your next turn.",
+    "- Always follow the latest user packet as the live source of truth for the current turn.",
+  ].join("\n");
+}
+
+export function buildTurnContextPrompt(frame: PromptFrame): string {
+  const sections = ["# LIVE TURN", `- **Current objective**: ${frame.objective}`];
+  const speakingOrderSection = buildSpeakingOrderSection(frame);
+
+  if (speakingOrderSection) {
+    sections.push(speakingOrderSection);
+  }
+
+  sections.push("# TRANSCRIPT", formatTurns(frame.transcript));
+
+  return sections.filter(Boolean).join("\n\n");
+}
+
+export function buildSystemPrompt(
+  input: RunInput,
+  participant: ParticipantConfig,
+  role: "coordinator" | "member",
+  frame: PromptFrame,
+): string {
+  return [buildStableSystemPrompt(input, participant, role), buildTurnContextPrompt(frame)]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+export function buildPromptMessages(
+  input: RunInput,
+  participant: ParticipantConfig,
+  role: "coordinator" | "member",
+  frame: PromptFrame,
+  messages: ChatMessage[],
+): ChatMessage[] {
+  return [
+    {
+      role: "system",
+      content: buildStableSystemPrompt(input, participant, role),
+    },
+    {
+      role: "user",
+      content: buildConversationAnchorMessage(input, role),
+    },
+    {
+      role: "user",
+      content: buildTurnContextPrompt(frame),
+    },
+    ...messages,
+  ];
 }
 
 export function resolveSiteUrl(): string | undefined {
@@ -409,13 +468,7 @@ async function callOpenRouter(
 ): Promise<{ content: string; usage: UsageSummary; resolvedModel: string; rawPrompt: string }> {
   const apiKey = execution.apiKey?.trim();
   const siteUrl = execution.siteUrl || resolveSiteUrl();
-  const requestMessages: ChatMessage[] = [
-    {
-      role: "system",
-      content: buildSystemPrompt(input, participant, role, frame),
-    },
-    ...messages,
-  ];
+  const requestMessages = buildPromptMessages(input, participant, role, frame, messages);
   const requestedModels = buildOpenRouterModelFallbackOrder(participant.model);
   let lastFailureMessage = `OpenRouter returned no visible text for ${participant.name}.`;
   const turnAbort = createTurnAbortController(execution.signal);
@@ -425,6 +478,7 @@ async function callOpenRouter(
       const requestedModel = requestedModels[modelIndex]!;
       const nextRequestedModel = requestedModels[modelIndex + 1];
       const resolvedModel = resolveOpenRouterModel(requestedModel, apiKey);
+      const cacheControl = buildOpenRouterPromptCacheControl(resolvedModel);
       let maxCompletionTokens = input.maxCompletionTokens;
       let modelFailureReason: string | null = null;
 
@@ -443,6 +497,7 @@ async function callOpenRouter(
               temperature: input.temperature,
               max_completion_tokens: maxCompletionTokens,
               session_id: sessionId,
+              cache_control: cacheControl,
             },
           });
 

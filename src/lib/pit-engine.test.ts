@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultInput, createTurn } from "@/lib/pit";
 import {
+  buildPromptMessages,
   buildSystemPrompt,
   shouldFallbackToAnotherModel,
   shouldRetryOpenRouterRequest,
@@ -26,6 +27,36 @@ describe("pit-engine helpers", () => {
     expect(prompt).toContain("<<<BALLOON>>>");
     expect(prompt).toContain("Respond to the strongest objection.");
     expect(prompt).toContain("First point");
+  });
+
+  it("keeps the cached prompt prefix stable across turns", () => {
+    const input = createDefaultInput();
+    const participant = input.members[0]!;
+    const firstFrame = {
+      objective: "Make your first point.",
+      transcript: [],
+    };
+    const secondTurn = createTurn({
+      kind: "opening",
+      participant: input.coordinator,
+      model: input.coordinator.model,
+      content: "Opening frame",
+    });
+    const secondFrame = {
+      objective: "Answer the moderator opening.",
+      transcript: [secondTurn],
+    };
+
+    const firstMessages = buildPromptMessages(input, participant, "member", firstFrame, [
+      { role: "user", content: "Produce your next turn now." },
+    ]);
+    const secondMessages = buildPromptMessages(input, participant, "member", secondFrame, [
+      { role: "user", content: "Produce your next turn now." },
+    ]);
+
+    expect(firstMessages[0]).toEqual(secondMessages[0]);
+    expect(firstMessages[1]).toEqual(secondMessages[1]);
+    expect(firstMessages[2]?.content).not.toEqual(secondMessages[2]?.content);
   });
 
   it("retries transient provider failures and falls back on model availability errors", () => {

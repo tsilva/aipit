@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { MODEL_SUGGESTIONS } from "@/lib/openrouter-models";
-import { buildOpenRouterHeaders } from "@/lib/openrouter";
+import { buildOpenRouterHeaders, type OpenRouterPromptCacheControl } from "@/lib/openrouter";
 import { buildResponseHeaders, resolveRequestId } from "@/lib/request-id";
 
 const HOSTED_KEY_RATE_LIMIT_WINDOW_MS = 60_000;
@@ -28,6 +28,7 @@ type HostedChatBody = {
   temperature?: number;
   max_completion_tokens?: number;
   session_id?: string;
+  cache_control?: OpenRouterPromptCacheControl;
 };
 
 export class OpenRouterProxyError extends Error {
@@ -188,6 +189,14 @@ export function normalizeHostedChatBody(body: unknown): HostedChatBody {
     throw new OpenRouterProxyError("Hosted chat session_id is invalid.", 400);
   }
 
+  const cacheControl = body.cache_control;
+  if (
+    cacheControl !== undefined &&
+    (!isJsonObject(cacheControl) || cacheControl.type !== "ephemeral")
+  ) {
+    throw new OpenRouterProxyError("Hosted chat cache_control is invalid.", 400);
+  }
+
   return {
     model,
     messages,
@@ -195,6 +204,7 @@ export function normalizeHostedChatBody(body: unknown): HostedChatBody {
     max_completion_tokens:
       maxCompletionTokens === undefined ? undefined : Math.min(Math.trunc(maxCompletionTokens), HOSTED_MAX_COMPLETION_TOKENS),
     session_id: sessionId === undefined ? undefined : sessionId,
+    cache_control: cacheControl === undefined ? undefined : { type: "ephemeral" },
   };
 }
 

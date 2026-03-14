@@ -7,6 +7,10 @@ export const OPENROUTER_VALIDATION_MODEL = OPENROUTER_MODEL_LIGHTWEIGHT;
 export const OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH = "/api/openrouter/chat/completions";
 export const OPENROUTER_PROXY_KEY_PATH = "/api/openrouter/key";
 
+export type OpenRouterPromptCacheControl = {
+  type: "ephemeral";
+};
+
 const OPENROUTER_KEY_VALIDATION_RETRIES = 3;
 const OPENROUTER_VALIDATION_RETRY_DELAY_MS = 400;
 
@@ -187,4 +191,14 @@ export async function validateOpenRouterKey(
 
 export function resolveOpenRouterModel(model: string, apiKey?: string): string {
   return apiKey?.trim() ? model : model;
+}
+
+export function buildOpenRouterPromptCacheControl(model: string): OpenRouterPromptCacheControl | undefined {
+  const normalizedModel = model.trim().toLowerCase();
+
+  if (normalizedModel.startsWith("anthropic/")) {
+    return { type: "ephemeral" };
+  }
+
+  return undefined;
 }

@@ -18,6 +18,7 @@
 - 🔗 **Character relationships** — pairwise awareness so debaters know how to engage each other
 - 🤖 **Multi-model support via OpenRouter** — characters default to Grok 4.1 Fast, with other supported models still available in the editor
 - 🔁 **Automatic model failover** — recoverable model/provider failures rotate to another supported model and the live queue reflects the replacement
+- 🧠 **Cache-friendly prompt envelopes** — stable system and session-prefix messages improve OpenRouter prompt-cache reuse and sticky routing during a debate run
 - 🎛️ **Configurable parameters** — rounds, temperature, max tokens, shared directives
 - 💬 **Bubble-based playback** — conversation and transcript views
 - 📊 **Token and cost tracking** — per-debate usage summary
@@ -82,6 +83,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 OpenRouter traffic is proxied through internal Next.js API routes under `src/app/api/openrouter`.
 When the shared server key is used, the proxy only accepts browser requests whose `Origin` exactly matches the request URL origin, rate-limits them with best-effort trusted IP detection, clamps completion budgets, strips unsupported OpenRouter options, and only forwards the supported model list exposed in the editor. The hosted payload caps are tuned for debate-sized prompts, so moderator turns can carry character setup plus rolling transcript context without tripping generic chat limits. Hosted key validation also returns an empty success response instead of relaying server-key metadata from OpenRouter. Arbitrary forwarded host/proto/IP headers are not trusted as proof of origin or client identity.
+
+Every debate request now uses a stable prompt prefix per speaker while still sending the full transcript as the live turn packet. That preserves debate quality and makes OpenRouter prompt caching more likely to pay off on cache-capable providers because more of the repeated prompt prefix stays unchanged from turn to turn.
 
 If you deploy behind a custom reverse proxy, sanitize and verify any forwarding metadata there instead of expecting the app to trust raw forwarded headers automatically.
 

@@ -2547,8 +2547,8 @@ export function PitStudio({
     setActiveRuntimeTurn(null);
     setActiveWarning(null);
     const payload: RunInput = {
-      ...config,
       ...PIT_RUN_DEFAULTS,
+      ...config,
       mode: "debate",
       coordinator: config.coordinator,
       members: shuffleParticipants(config.members),

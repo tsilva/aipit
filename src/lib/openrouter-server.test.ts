@@ -15,10 +15,12 @@ describe("openrouter-server helpers", () => {
       max_completion_tokens: 9000,
       temperature: 0.7,
       session_id: "session-123",
+      cache_control: { type: "ephemeral" },
     });
 
     expect(normalized.max_completion_tokens).toBe(2400);
     expect(normalized.messages).toHaveLength(1);
+    expect(normalized.cache_control).toEqual({ type: "ephemeral" });
   });
 
   it("rejects cross-origin hosted requests", () => {
