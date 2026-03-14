@@ -12,7 +12,7 @@
 ## ✨ Features
 
 - 🎭 **Rich character profiles** — 12-field character sheets (role, personality, perspective, temperament, debate style, speech style, guardrails, language, gender, nationality, birth date, prompt notes)
-- 👥 **16 built-in debater presets** — Portuguese political figures (Montenegro, Mortágua, Ventura, Marques Mendes, Gouveia e Melo, Cotrim de Figueiredo, Seguro) + international media & pop-culture voices (Alex Jones, Lex Fridman, Joe Rogan, Donald Trump, Elon Musk, Homer Simpson, Cornholio, Rick Sanchez, The Knight Who Says "Ni")
+- 👥 **21 built-in debater presets** — Expanded Portuguese political roster (Montenegro, Mortágua, Ventura, Marques Mendes, Gouveia e Melo, Cotrim de Figueiredo, Seguro, Pedro Nuno Santos, António Costa, Catarina Martins, Paulo Raimundo, Inês Sousa Real) + international media & pop-culture voices (Alex Jones, Lex Fridman, Joe Rogan, Donald Trump, Elon Musk, Homer Simpson, Cornholio, Rick Sanchez, The Knight Who Says "Ni")
 - 🎬 **10 curated starter bundles** — cold-start debates seed a moderator, three debaters, and a high-friction topic in one click
 - 🏟️ **Structured debate flow** — opening → rounds → interventions → consensus
 - 🔗 **Character relationships** — pairwise awareness so debaters know how to engage each other
@@ -144,7 +144,7 @@ src/
     ├── openrouter.ts           # OpenRouter proxy client helpers
     ├── openrouter-server.ts    # Server-side OpenRouter proxy helpers
     ├── openrouter-models.ts    # Available model definitions
-    ├── character-presets.ts      # 16 predefined debate characters
+    ├── character-presets.ts      # 21 predefined debate characters
     ├── character-profile.ts      # Character profile types/utilities
     └── ...
 ```

@@ -11,6 +11,7 @@ import {
   type RunResult,
   type UsageSummary,
 } from "@/lib/pit";
+import type { RuntimeTurnIdentity } from "@/lib/runtime-warning";
 import { PARTICIPANT_CHARACTER_PRESET_MAP, PARTICIPANT_CHARACTER_RELATIONSHIPS } from "@/lib/character-presets";
 import {
   OPENROUTER_PROXY_CHAT_COMPLETIONS_PATH,
@@ -34,7 +35,7 @@ export interface RunExecutionOptions {
 
 export type RunProgressEvent =
   | { type: "status"; message: string }
-  | { type: "warning"; warning: string }
+  | ({ type: "warning"; warning: string } & RuntimeTurnIdentity)
   | {
       type: "thinking";
       speakerId: string;
@@ -347,9 +348,14 @@ function createTurnAbortController(signal?: AbortSignal, timeoutMs = PARTICIPANT
   };
 }
 
-function emitWarning(execution: RunExecutionOptions, warnings: string[], warning: string): void {
+function emitWarning(
+  execution: RunExecutionOptions,
+  warnings: string[],
+  warning: string,
+  source: RuntimeTurnIdentity,
+): void {
   warnings.push(warning);
-  execution.onProgress?.({ type: "warning", warning });
+  execution.onProgress?.({ type: "warning", warning, ...source });
 }
 
 function nextMaxCompletionTokens(current: number): number {
@@ -450,6 +456,7 @@ async function callOpenRouter(
                 execution,
                 warnings,
                 `${participant.name} hit an OpenRouter provider error on ${requestedModel} (${detail}). Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
+                thinkingEvent,
               );
               await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, turnAbort.signal);
               continue;
@@ -507,6 +514,7 @@ async function callOpenRouter(
               execution,
               warnings,
               `${participant.name} returned no visible text on ${requestedModel} after hitting the token limit. Retrying with a larger completion budget (${maxCompletionTokens} -> ${nextTokens}).`,
+              thinkingEvent,
             );
             maxCompletionTokens = nextTokens;
             await delayWithSignal(OPENROUTER_RETRY_DELAY_MS, turnAbort.signal);
@@ -518,6 +526,7 @@ async function callOpenRouter(
               execution,
               warnings,
               `${participant.name} returned no visible text on ${requestedModel}${finishReason ? ` (finish reason: ${finishReason})` : ""}. Retrying (${attempt + 1}/${OPENROUTER_MAX_RETRIES}).`,
+              thinkingEvent,
             );
             await delayWithSignal(OPENROUTER_RETRY_DELAY_MS * attempt, turnAbort.signal);
             continue;
@@ -539,6 +548,7 @@ async function callOpenRouter(
               execution,
               warnings,
               `${participant.name} took too long to respond. Using fallback text instead.`,
+              thinkingEvent,
             );
             return {
               content: PARTICIPANT_RESPONSE_TIMEOUT_FALLBACK,
@@ -558,6 +568,7 @@ async function callOpenRouter(
           execution,
           warnings,
           `${participant.name} could not use ${requestedModel} because ${modelFailureReason}. Falling back to ${nextRequestedModel}.`,
+          thinkingEvent,
         );
         execution.onProgress?.({
           ...thinkingEvent,

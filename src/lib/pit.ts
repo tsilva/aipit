@@ -127,7 +127,7 @@ const MODERATOR_CHARACTER_PRESETS: ModeratorCharacterPreset[] = [
   {
     id: DEFAULT_COORDINATOR_PRESET_ID,
     name: "José Rodrigues dos Santos",
-    avatarUrl: "/avatars/presets/jose-rodrigues-dos-santos.jpg",
+    avatarUrl: "/avatars/presets/jose-rodrigues-dos-santos.webp",
     characterProfile: createCharacterProfile({
       role: "Veteran Portuguese television journalist serving as impartial moderator and truth arbiter of the debate",
       personality: "Composed, authoritative, synthesis-driven, rigorously impartial, and impatient with vague or unsupported answers",
@@ -149,7 +149,7 @@ const MODERATOR_CHARACTER_PRESETS: ModeratorCharacterPreset[] = [
   {
     id: US_COORDINATOR_PRESET_ID,
     name: "Anderson Cooper",
-    avatarUrl: "/avatars/presets/anderson-cooper.jpg",
+    avatarUrl: "/avatars/presets/anderson-cooper.webp",
     characterProfile: createCharacterProfile({
       role: "American television journalist serving as an impartial live-debate moderator and fact-focused anchor",
       personality: "Measured, incisive, calm under pressure, rigorously neutral, and fluent at keeping heated guests legible",

@@ -56,6 +56,11 @@ import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
 import { buildCharacterProfilePreview } from "@/lib/character-profile";
 import type { ParticipantCharacterPreset } from "@/lib/character-presets";
 import { buildTranscriptMarkdown } from "@/lib/transcript-markdown";
+import {
+  shouldDisplayRuntimeWarning,
+  type RuntimeTurnIdentity,
+  type RuntimeWarningNotice,
+} from "@/lib/runtime-warning";
 import { trackEvent } from "@/lib/google-analytics";
 
 export type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
@@ -1832,7 +1837,7 @@ function ChamberStage({
   isRunning,
   isBubbleStreaming,
   error,
-  warnings,
+  warning,
   prompt,
   hasSessionStarted,
   panelMode,
@@ -1862,7 +1867,7 @@ function ChamberStage({
   isRunning: boolean;
   isBubbleStreaming: boolean;
   error: string | null;
-  warnings: string[];
+  warning: string | null;
   prompt: string;
   hasSessionStarted: boolean;
   panelMode: StagePanelMode;
@@ -2183,7 +2188,7 @@ function ChamberStage({
         ) : null}
 
         {error ? <div className="notice-row notice-row-error">{error}</div> : null}
-        {warnings.length ? <div className="notice-row notice-row-warning">{warnings[warnings.length - 1]}</div> : null}
+        {warning ? <div className="notice-row notice-row-warning">{warning}</div> : null}
       </section>
 
       {debugFrame ? <RawPromptModal frame={debugFrame} onClose={() => setDebugFrame(null)} /> : null}
@@ -2220,6 +2225,8 @@ export function PitStudio({
   const [frameCompletedAt, setFrameCompletedAt] = useState<number | null>(null);
   const [isAwaitingTurnResponse, setIsAwaitingTurnResponse] = useState(false);
   const [pendingTurn, setPendingTurn] = useState<PendingTurnPreview | null>(null);
+  const [activeRuntimeTurn, setActiveRuntimeTurn] = useState<RuntimeTurnIdentity | null>(null);
+  const [activeWarning, setActiveWarning] = useState<RuntimeWarningNotice | null>(null);
   const keyValidationRequestIdRef = useRef(0);
   const runAbortControllerRef = useRef<AbortController | null>(null);
   const activeRunIdRef = useRef(0);
@@ -2259,6 +2266,8 @@ export function PitStudio({
   const displayedBubbleContent = currentFrame
     ? currentFrame.bubbleContent.slice(0, Math.min(revealedBubbleChars, currentFrame.bubbleContent.length))
     : "";
+  const visibleWarning =
+    activeWarning && shouldDisplayRuntimeWarning(activeWarning, activeRuntimeTurn) ? activeWarning.message : null;
 
   useEffect(() => {
     const currentRoster = [config.coordinator, ...config.members];
@@ -2499,6 +2508,8 @@ export function PitStudio({
     setFrameCompletedAt(null);
     setIsAwaitingTurnResponse(false);
     setPendingTurn(null);
+    setActiveRuntimeTurn(null);
+    setActiveWarning(null);
   }, []);
 
   const exitSimulation = useCallback(() => {
@@ -2547,6 +2558,8 @@ export function PitStudio({
     setFrameCompletedAt(null);
     setIsAwaitingTurnResponse(true);
     setPendingTurn(null);
+    setActiveRuntimeTurn(null);
+    setActiveWarning(null);
     const payload: RunInput = {
       ...config,
       ...PIT_RUN_DEFAULTS,
@@ -2610,6 +2623,7 @@ export function PitStudio({
         setIsRunning(false);
         setIsAwaitingTurnResponse(false);
         setPendingTurn(null);
+        setActiveRuntimeTurn(null);
       }
     }
   }
@@ -2680,6 +2694,11 @@ export function PitStudio({
     if (event.type === "thinking") {
       setIsAwaitingTurnResponse(true);
       setPendingTurn(event);
+      setActiveRuntimeTurn({
+        speakerId: event.speakerId,
+        kind: event.kind,
+        round: event.round,
+      });
       setResult((current) =>
         current
           ? {
@@ -2698,6 +2717,12 @@ export function PitStudio({
     }
 
     if (event.type === "warning") {
+      setActiveWarning({
+        message: event.warning,
+        speakerId: event.speakerId,
+        kind: event.kind,
+        round: event.round,
+      });
       setResult((current) =>
         current
           ? {
@@ -2711,6 +2736,7 @@ export function PitStudio({
 
     setIsAwaitingTurnResponse(false);
     setPendingTurn(null);
+    setActiveRuntimeTurn(null);
 
     setResult((current) => {
       if (!current) {
@@ -2805,7 +2831,7 @@ export function PitStudio({
             isRunning={isRunning}
             isBubbleStreaming={isBubbleStreaming}
             error={error}
-            warnings={result?.warnings ?? []}
+            warning={visibleWarning}
             prompt={config.prompt}
             hasSessionStarted={studioView === "simulation"}
             panelMode={panelMode}

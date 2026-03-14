@@ -3,7 +3,8 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy | The AI Pit",
-  description: "Privacy details for The AI Pit, including OpenRouter proxying and optional analytics consent.",
+  description:
+    "Privacy details for The AI Pit, including hosted OpenRouter processing, optional analytics consent, and service providers.",
 };
 
 export default function PrivacyPage() {
@@ -14,17 +15,42 @@ export default function PrivacyPage() {
         <h1 className="legal-title">Privacy policy</h1>
         <div className="legal-copy">
           <p>
-            The AI Pit proxies debate requests to OpenRouter through internal Next.js API routes. Debate content is
-            processed only to complete the current request and is not stored as an account-backed transcript history.
+            The AI Pit is operated by Tiago Silva. Questions about this policy can be directed through{" "}
+            <a href="https://www.tsilva.eu" target="_blank" rel="noreferrer">
+              tsilva.eu
+            </a>
+            .
           </p>
           <p>
-            If analytics is enabled for the deployment, Google Analytics is loaded only after explicit consent.
-            Declining analytics keeps the app functional and prevents analytics scripts from loading.
+            The AI Pit supports two OpenRouter usage modes. If you provide your own OpenRouter API key, requests are
+            proxied through the app only to complete the request you initiated. If you do not provide your own key and
+            the app offers a hosted key, your prompts, character settings, and model outputs are processed through The
+            AI Pit&apos;s server-side proxy and then through The AI Pit&apos;s OpenRouter account.
           </p>
           <p>
-            Server logs may include request metadata such as request ID, route, upstream status, and latency for
-            debugging and incident response. Personal OpenRouter API keys remain transient and are not persisted across
-            reloads.
+            Debate content is processed to generate the requested debate session. The AI Pit does not provide
+            account-backed transcript storage, and personal OpenRouter API keys are not intentionally persisted across
+            reloads. Do not submit secrets, credentials, payment data, health data, or other sensitive personal data
+            through the hosted-key path.
+          </p>
+          <p>
+            Server logs and abuse-prevention systems may temporarily process operational metadata such as request ID,
+            route name, response status, timing, and IP-derived rate-limit or security signals. These records are used
+            for debugging, abuse prevention, reliability, and incident response.
+          </p>
+          <p>
+            If analytics is configured for the deployment, Google Analytics is loaded only after explicit consent.
+            Declining analytics keeps the app functional and prevents analytics scripts from loading. If Sentry is
+            configured, runtime errors may also be sent to Sentry for debugging.
+          </p>
+          <p>
+            Service providers may include OpenRouter for model access, Vercel or another hosting provider for serving
+            the application and route handlers, Google Analytics if you consent to analytics, and Sentry if error
+            reporting is enabled for the deployment.
+          </p>
+          <p>
+            This app is intended for interactive experimentation, not regulated or high-sensitivity processing. If you
+            need stronger confidentiality guarantees, use your own API key or do not submit the content.
           </p>
         </div>
         <div className="legal-actions">
