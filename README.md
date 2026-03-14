@@ -13,7 +13,7 @@
 
 - 🎭 **Rich character profiles** — 12-field character sheets (role, personality, perspective, temperament, debate style, speech style, guardrails, language, gender, nationality, birth date, prompt notes)
 - 👥 **28 built-in debater presets** — Expanded Portuguese political roster (Montenegro, Mortágua, Ventura, Marques Mendes, Gouveia e Melo, Cotrim de Figueiredo, Seguro, Pedro Nuno Santos, António Costa, Catarina Martins, Paulo Raimundo, Inês Sousa Real) + international media & pop-culture voices (Alex Jones, Lex Fridman, Joe Rogan, Donald Trump, Gordon Ramsay, Eric Cartman, Saul Goodman, Dwight Schrute, Borat, Dr. Phil, T-800, Elon Musk, Homer Simpson, Cornholio, Rick Sanchez, The Knight Who Says "Ni")
-- 🎬 **10 curated starter bundles** — cold-start debates seed a moderator, three debaters, and a high-friction topic in one click
+- 🎬 **20 curated starter bundles** — cold-start debates seed a moderator, three debaters, and a high-friction topic in one click
 - 🏟️ **Structured debate flow** — opening → rounds → interventions → consensus
 - 🔗 **Character relationships** — pairwise awareness so debaters know how to engage each other
 - 🤖 **Multi-model support via OpenRouter** — characters default to Grok 4.1 Fast, with other supported models still available in the editor
