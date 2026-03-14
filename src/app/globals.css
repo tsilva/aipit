@@ -638,53 +638,6 @@ select.field {
 .hero-copy-panel {
   display: grid;
   gap: 1rem;
-  padding-right: 5rem;
-}
-
-.hero-copy-actions {
-  position: absolute;
-  top: 1.35rem;
-  right: 1.35rem;
-  z-index: 1;
-}
-
-.hero-github-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.9rem;
-  height: 2.9rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 231, 198, 0.16);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 248, 237, 0.04)),
-    rgba(255, 248, 237, 0.04);
-  color: var(--foreground);
-  box-shadow: 0 0.9rem 1.7rem rgba(2, 5, 8, 0.14);
-  transition:
-    transform 180ms ease,
-    border-color 180ms ease,
-    background-color 180ms ease,
-    box-shadow 180ms ease;
-}
-
-.hero-github-link:hover {
-  transform: translateY(-1px);
-  border-color: rgba(240, 171, 105, 0.4);
-  background:
-    linear-gradient(180deg, rgba(240, 171, 105, 0.2), rgba(255, 248, 237, 0.06)),
-    rgba(255, 248, 237, 0.06);
-  box-shadow: 0 1rem 1.9rem rgba(216, 122, 59, 0.18);
-}
-
-.hero-github-link:focus-visible {
-  outline: 2px solid rgba(240, 171, 105, 0.55);
-  outline-offset: 3px;
-}
-
-.hero-github-link svg {
-  width: 1.3rem;
-  height: 1.3rem;
 }
 
 .hero-kicker {
@@ -3368,15 +3321,6 @@ select.field {
   .hero-prompt-shell,
   .hero-roster-shell {
     padding: 1rem;
-  }
-
-  .hero-copy-panel {
-    padding-right: 4.6rem;
-  }
-
-  .hero-copy-actions {
-    top: 1rem;
-    right: 1rem;
   }
 
   .hero-prompt-wand-button {

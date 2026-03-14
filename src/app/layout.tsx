@@ -39,9 +39,8 @@ const jsonLd = {
       url: SITE_URL,
       description: SITE_DESCRIPTION,
       author: {
-        "@type": "Person",
-        name: "Tiago Silva",
-        url: "https://www.tsilva.eu",
+        "@type": "Organization",
+        name: SITE_NAME,
       },
     },
     {
@@ -60,9 +59,8 @@ const jsonLd = {
       browserRequirements: "Requires JavaScript. Requires a modern browser.",
       image: `${SITE_URL}/social-card.png`,
       author: {
-        "@type": "Person",
-        name: "Tiago Silva",
-        url: "https://www.tsilva.eu",
+        "@type": "Organization",
+        name: SITE_NAME,
       },
     },
     {

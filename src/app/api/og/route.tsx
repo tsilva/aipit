@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { SITE_HOSTNAME } from "@/lib/site";
 
 export const runtime = "edge";
 
@@ -136,9 +137,7 @@ export function GET(request: Request) {
               <span>•</span>
               <span>Shareable scenarios</span>
             </div>
-            <div style={{ display: "flex", color: "#f0ab69", fontWeight: 700 }}>
-              aipit.tsilva.eu
-            </div>
+            <div style={{ display: "flex", color: "#f0ab69", fontWeight: 700 }}>{SITE_HOSTNAME}</div>
           </div>
         </div>
       </div>

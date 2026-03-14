@@ -5,7 +5,6 @@ import {
   CircleCheck as CheckGlyph,
   Copy as CopyGlyph,
   FileText as PromptGlyph,
-  Github as GitHubGlyph,
   Pause as PauseGlyph,
   Pencil as PencilGlyph,
   Play as PlayGlyph,
@@ -886,19 +885,6 @@ function StudioHero({
   return (
     <section className="hero-shell">
       <section className="hero-panel hero-copy-panel">
-        <div className="hero-copy-actions">
-          <a
-            href="https://github.com/tsilva/aipit"
-            target="_blank"
-            rel="noreferrer"
-            className="hero-github-link"
-            aria-label="Open aipit on GitHub"
-            title="Open aipit on GitHub"
-          >
-            <GitHubGlyph />
-          </a>
-        </div>
-
         <div className="hero-copy-stack">
           <h1 className="hero-title">The AI Pit</h1>
           <p className="hero-body">Choose a topic, select debaters, hit start, get some popcorn 🍿.</p>

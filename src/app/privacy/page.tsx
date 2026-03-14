@@ -15,11 +15,8 @@ export default function PrivacyPage() {
         <h1 className="legal-title">Privacy policy</h1>
         <div className="legal-copy">
           <p>
-            The AI Pit is operated by Tiago Silva. Questions about this policy can be directed through{" "}
-            <a href="https://www.tsilva.eu" target="_blank" rel="noreferrer">
-              tsilva.eu
-            </a>
-            .
+            The AI Pit is provided by the operator of this deployment. Questions about this policy should be directed
+            to the contact channel made available with the deployment.
           </p>
           <p>
             The AI Pit supports two OpenRouter usage modes. If you provide your own OpenRouter API key, requests are

@@ -107,9 +107,9 @@ export function buildDefaultMetadata(): Metadata {
       "AI discourse",
       "interactive AI",
     ],
-    authors: [{ name: "Tiago Silva" }],
-    creator: "Tiago Silva",
-    publisher: "Tiago Silva",
+    authors: [{ name: SITE_NAME }],
+    creator: SITE_NAME,
+    publisher: SITE_NAME,
     category: "technology",
     metadataBase: new URL(SITE_URL),
     icons: {
@@ -138,7 +138,6 @@ export function buildDefaultMetadata(): Metadata {
       card: "summary_large_image",
       title: SITE_TITLE,
       description: SITE_DESCRIPTION,
-      creator: "@tiagosilva",
       images: [image.url],
     },
     robots: {
@@ -180,7 +179,6 @@ export function buildStarterBundleMetadata(bundle: StarterBundleDefinition): Met
       card: "summary_large_image",
       title,
       description,
-      creator: "@tiagosilva",
       images: [image.url],
     },
   };
