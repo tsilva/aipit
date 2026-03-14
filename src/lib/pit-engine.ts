@@ -137,9 +137,9 @@ function formatTurns(turns: PitTurn[]): string {
   return turns
     .map((turn) => {
       const roundLabel = turn.round ? `R${turn.round}` : "S";
-      return `### ${roundLabel} | ${turn.speakerName}\n${turn.content}`;
+      return `${roundLabel} ${turn.speakerName}: ${turn.content}`;
     })
-    .join("\n\n");
+    .join("\n");
 }
 
 function buildRelationshipHints(participant: ParticipantConfig, input: RunInput): string {
@@ -221,15 +221,14 @@ export function buildStableSystemPrompt(
   return sections.filter(Boolean).join("\n\n");
 }
 
-export function buildConversationAnchorMessage(input: RunInput, role: "coordinator" | "member"): string {
+export function buildConversationAnchorMessage(role: "coordinator" | "member"): string {
   return [
     "# SESSION",
-    `- Debate prompt: ${input.prompt}`,
-    `- Shared directive: ${input.sharedDirective}`,
+    "- Continue the same debate with the same speaker identity and room context already provided above.",
     role === "coordinator"
-      ? "- Future user messages will carry the live moderator packet for the opening, interventions, and closing."
-      : "- Future user messages will carry the live debater packet for your next turn.",
-    "- Always follow the latest user packet as the live source of truth for the current turn.",
+      ? "- The next user message carries the live moderator packet."
+      : "- The next user message carries the live debater packet.",
+    "- Treat the latest user message as the source of truth for the current turn.",
   ].join("\n");
 }
 
@@ -271,7 +270,7 @@ export function buildPromptMessages(
     },
     {
       role: "user",
-      content: buildConversationAnchorMessage(input, role),
+      content: buildConversationAnchorMessage(role),
     },
     {
       role: "user",

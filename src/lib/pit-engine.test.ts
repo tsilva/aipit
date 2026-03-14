@@ -13,6 +13,7 @@ describe("pit-engine helpers", () => {
     const participant = input.members[0]!;
     const transcriptTurn = createTurn({
       kind: "member_turn",
+      round: 1,
       participant,
       model: participant.model,
       content: "First point",
@@ -26,7 +27,9 @@ describe("pit-engine helpers", () => {
 
     expect(prompt).toContain("<<<BALLOON>>>");
     expect(prompt).toContain("Respond to the strongest objection.");
-    expect(prompt).toContain("First point");
+    expect(prompt).toContain("R1");
+    expect(prompt).toContain(`${participant.name}: First point`);
+    expect(prompt).not.toContain("###");
   });
 
   it("keeps the cached prompt prefix stable across turns", () => {
@@ -57,6 +60,8 @@ describe("pit-engine helpers", () => {
     expect(firstMessages[0]).toEqual(secondMessages[0]);
     expect(firstMessages[1]).toEqual(secondMessages[1]);
     expect(firstMessages[2]?.content).not.toEqual(secondMessages[2]?.content);
+    expect(firstMessages[1]?.content).not.toContain(input.prompt);
+    expect(firstMessages[1]?.content).not.toContain(input.sharedDirective);
   });
 
   it("retries transient provider failures and falls back on model availability errors", () => {
