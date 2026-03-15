@@ -33,6 +33,7 @@ import {
   useSyncExternalStore,
   type ComponentPropsWithoutRef,
 } from "react";
+import { LandingSeoContent } from "@/components/landing-seo-content";
 import {
   getAudienceContextLabel,
   type PresetAudience,
@@ -3073,6 +3074,8 @@ export function PitStudio({
           />
         )}
       </form>
+
+      {studioView === "setup" ? <LandingSeoContent /> : null}
 
       {showCharacterSelectorModal ? (
         <CharacterSelectorModal

@@ -1036,6 +1036,148 @@ select.field {
   color: var(--foreground);
 }
 
+.landing-seo-shell {
+  display: grid;
+  gap: 1.1rem;
+  width: 100%;
+  max-width: 90rem;
+  margin: 0 auto;
+  padding: 0 0.5rem 2.5rem;
+}
+
+.landing-seo-panel {
+  display: grid;
+  gap: 1.2rem;
+  padding: 1.35rem;
+}
+
+.landing-seo-grid {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.landing-seo-column {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.landing-seo-list,
+.landing-seo-steps,
+.landing-seo-faq-list {
+  margin: 0;
+  padding: 0;
+}
+
+.landing-seo-list,
+.landing-seo-steps {
+  display: grid;
+  gap: 0.85rem;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.landing-seo-list {
+  list-style: none;
+}
+
+.landing-seo-list li,
+.landing-seo-steps li {
+  border-radius: 1.2rem;
+  border: 1px solid rgba(255, 231, 198, 0.08);
+  background: rgba(255, 248, 237, 0.04);
+  padding: 1rem 1.05rem;
+}
+
+.landing-seo-steps {
+  padding-left: 1.15rem;
+}
+
+.landing-seo-steps li::marker {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.landing-seo-featured-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.landing-seo-card {
+  display: grid;
+  gap: 0.55rem;
+  border-radius: 1.3rem;
+  border: 1px solid rgba(255, 231, 198, 0.1);
+  background: rgba(255, 248, 237, 0.04);
+  padding: 1.1rem;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.landing-seo-card:hover,
+.landing-seo-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(240, 171, 105, 0.28);
+  background: rgba(255, 248, 237, 0.07);
+}
+
+.landing-seo-card-eyebrow,
+.landing-seo-card-meta,
+.landing-seo-card-cast,
+.landing-seo-card-description,
+.landing-seo-faq-answer {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.landing-seo-card-eyebrow {
+  color: var(--accent-strong);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.landing-seo-card-title,
+.landing-seo-faq-question {
+  margin: 0;
+  color: var(--foreground);
+  line-height: 1.2;
+}
+
+.landing-seo-card-copy {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.landing-seo-card-meta,
+.landing-seo-card-cast,
+.landing-seo-card-description,
+.landing-seo-faq-answer {
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.landing-seo-faq-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.landing-seo-faq-item {
+  display: grid;
+  gap: 0.5rem;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(255, 231, 198, 0.08);
+  background: rgba(255, 248, 237, 0.04);
+  padding: 1rem 1.05rem;
+}
+
 .hero-roster-shell {
   display: grid;
   gap: 1rem;
@@ -2154,6 +2296,11 @@ select.field {
 }
 
 @media (min-width: 901px) {
+  .landing-seo-grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.85fr);
+    align-items: start;
+  }
+
   .cinema-stage-conversation .speaker-focus-shell {
     justify-items: start;
   }
@@ -3156,6 +3303,14 @@ select.field {
   .consent-banner {
     left: 1rem;
     width: auto;
+  }
+
+  .landing-seo-shell {
+    padding-bottom: 2rem;
+  }
+
+  .landing-seo-panel {
+    padding: 1rem;
   }
 
   .hero-title {

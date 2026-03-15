@@ -5,11 +5,15 @@ import { AnalyticsConsentBanner } from "@/components/analytics-consent-banner";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { SITE_URL } from "@/lib/site";
 import {
+  LANDING_FAQ_ITEMS,
   SITE_BACKGROUND_COLOR,
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_THEME_COLOR,
   buildDefaultMetadata,
+  buildBundleDescription,
+  getBundleUrl,
+  getFeaturedStarterBundles,
 } from "@/lib/seo";
 import "./globals.css";
 
@@ -30,6 +34,8 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
+const featuredBundles = getFeaturedStarterBundles();
+
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
@@ -38,6 +44,7 @@ const jsonLd = {
       name: SITE_NAME,
       url: SITE_URL,
       description: SITE_DESCRIPTION,
+      inLanguage: "en-US",
       author: {
         "@type": "Organization",
         name: SITE_NAME,
@@ -55,9 +62,16 @@ const jsonLd = {
         price: "0",
         priceCurrency: "USD",
       },
+      isAccessibleForFree: true,
       applicationSubCategory: "AI Debate Simulator",
       browserRequirements: "Requires JavaScript. Requires a modern browser.",
       image: `${SITE_URL}/social-card.png`,
+      featureList: [
+        "Moderator-led AI debates",
+        "Character presets and custom rosters",
+        "OpenRouter model support",
+        "Transcript playback and export",
+      ],
       author: {
         "@type": "Organization",
         name: SITE_NAME,
@@ -79,6 +93,30 @@ const jsonLd = {
         name: SITE_NAME,
         url: SITE_URL,
       },
+    },
+    {
+      "@type": "FAQPage",
+      name: `${SITE_NAME} FAQ`,
+      url: `${SITE_URL}/#faq`,
+      mainEntity: LANDING_FAQ_ITEMS.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: item.answer,
+        },
+      })),
+    },
+    {
+      "@type": "ItemList",
+      name: "Featured AI debate prompts",
+      itemListElement: featuredBundles.map((bundle, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: bundle.name,
+        url: getBundleUrl(bundle.id),
+        description: buildBundleDescription(bundle),
+      })),
     },
   ],
 };
