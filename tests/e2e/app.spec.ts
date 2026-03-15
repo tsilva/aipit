@@ -64,28 +64,18 @@ test.describe("audience-aware setup", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Decline" }).click();
 
-    await expect(page.getByRole("button", { name: "Global" })).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByText("Global media & pop culture")).toBeVisible();
     await expect(page.getByRole("button", { name: /Debater .* Global media & pop culture/i }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Global" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Portugal" })).toHaveCount(0);
   });
 
-  test("switching audience updates the starter debate and preset picker", async ({ page }) => {
+  test("reroll keeps non-Portuguese visitors out of Portugal starters", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Decline" }).click();
 
-    await page.getByRole("button", { name: "Portugal" }).click();
-
-    await expect(page.getByRole("button", { name: "Portugal" })).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByText("Portugal politics")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Debater .* Portugal politics/i }).first()).toBeVisible();
-
-    await page.getByRole("button", { name: "Add debater" }).click();
-    await expect(page.getByText("Luís Montenegro")).toBeVisible();
-    await expect(page.getByText("Joe Rogan")).toHaveCount(0);
-    await page.getByRole("button", { name: "Close character selector" }).last().click();
-
     await page.getByRole("button", { name: "Load another starter debate" }).click();
-    await expect(page.getByRole("button", { name: /Debater .* Portugal politics/i }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /Debater .* Global media & pop culture/i }).first()).toBeVisible();
   });
 });
 
@@ -96,8 +86,15 @@ test.describe("Portuguese locale defaults", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Decline" }).click();
 
-    await expect(page.getByRole("button", { name: "Portugal" })).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByText("Portugal politics")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Debater .* Portugal politics/i }).first()).toBeVisible();
+  });
+
+  test("reroll keeps Portuguese visitors in Portugal starters", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Decline" }).click();
+
+    await page.getByRole("button", { name: "Load another starter debate" }).click();
     await expect(page.getByRole("button", { name: /Debater .* Portugal politics/i }).first()).toBeVisible();
   });
 });

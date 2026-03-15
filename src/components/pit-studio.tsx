@@ -35,7 +35,6 @@ import {
 } from "react";
 import {
   getAudienceContextLabel,
-  getAudienceLabel,
   type PresetAudience,
 } from "@/lib/audience";
 import {
@@ -802,14 +801,12 @@ function StudioHero({
   apiKeyStatus,
   apiKeyStatusMessage,
   draftApiKey,
-  audience,
   canSubmit,
   hasApiKey,
   isRunning,
   onDraftApiKeyChange,
   onSaveApiKey,
   onPromptChange,
-  onAudienceChange,
   onRerollStarterBundle,
   onAddMember,
   onSelectModerator,
@@ -821,14 +818,12 @@ function StudioHero({
   apiKeyStatus: ApiKeyStatus;
   apiKeyStatusMessage: string;
   draftApiKey: string;
-  audience: PresetAudience;
   canSubmit: boolean;
   hasApiKey: boolean;
   isRunning: boolean;
   onDraftApiKeyChange: (value: string) => void;
   onSaveApiKey: () => Promise<boolean>;
   onPromptChange: (value: string) => void;
-  onAudienceChange: (audience: PresetAudience) => void;
   onRerollStarterBundle: () => void;
   onAddMember: () => void;
   onSelectModerator: (id: string) => void;
@@ -919,28 +914,7 @@ function StudioHero({
           <div>
             <p className="hero-kicker">Debate Topic</p>
             <h2 className="hero-panel-title">What is the debate topic about?</h2>
-            <p className="hero-panel-copy">
-              Defaulting to <strong>{getAudienceContextLabel(audience)}</strong> starters so the opening cast fits the
-              audience you want.
-            </p>
-          </div>
-
-          <div className="hero-audience-controls">
-            <p className="hero-audience-label">Starter lane</p>
-            <div className="mode-toggle hero-mode-toggle" aria-label="Starter audience">
-              {(["global", "portugal"] as const).map((nextAudience) => (
-                <button
-                  key={nextAudience}
-                  type="button"
-                  className={`mode-toggle-button ${audience === nextAudience ? "is-selected" : ""}`}
-                  aria-pressed={audience === nextAudience}
-                  onClick={() => onAudienceChange(nextAudience)}
-                >
-                  {getAudienceLabel(nextAudience)}
-                </button>
-              ))}
-            </div>
-            <span className="hero-audience-context-chip">{getAudienceContextLabel(audience)}</span>
+            <p className="hero-panel-copy">The wand rerolls a fresh starter debate that fits the detected audience.</p>
           </div>
         </div>
 
@@ -1082,19 +1056,17 @@ function StudioHero({
 }
 
 function CharacterSelectorModal({
-  audience,
   onClose,
   onSelectPreset,
 }: {
-  audience: PresetAudience;
   onClose: () => void;
   onSelectPreset: (preset: ParticipantCharacterPreset) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [filterPresets, setFilterPresets] = useState<((query: string, audience?: PresetAudience) => ParticipantCharacterPreset[]) | null>(null);
+  const [filterPresets, setFilterPresets] = useState<((query: string) => ParticipantCharacterPreset[]) | null>(null);
   const [didPresetLoadFail, setDidPresetLoadFail] = useState(false);
   const deferredQuery = useDeferredValue(query);
-  const presets = filterPresets ? filterPresets(deferredQuery, audience) : [];
+  const presets = filterPresets ? filterPresets(deferredQuery) : [];
 
   useEffect(() => {
     let isMounted = true;
@@ -1128,10 +1100,7 @@ function CharacterSelectorModal({
         <div className="settings-modal-header">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted)]">Pit Lineup</p>
-            <p className="hero-panel-copy">
-              Choose a preset character from the <strong>{getAudienceContextLabel(audience)}</strong> lane to quickly
-              populate this seat in the debate.
-            </p>
+            <p className="hero-panel-copy">Choose a preset character to quickly populate this seat in the debate.</p>
           </div>
 
           <button
@@ -2231,7 +2200,7 @@ export function PitStudio({
   const initialStudioStateRef = useRef(initialState);
   const initialStudioState = initialStudioStateRef.current;
   const [config, setConfig] = useState<RunInput>(initialStudioState.config);
-  const [audience, setAudience] = useState<PresetAudience>(initialStudioState.audience);
+  const [audience] = useState<PresetAudience>(initialStudioState.audience);
   const [lineupOrder, setLineupOrder] = useState<string[]>(initialStudioState.lineupOrder);
   const [starterBundleId, setStarterBundleId] = useState<string | undefined>(initialStudioState.starterBundleId);
   const [result, setResult] = useState<RunResult | null>(null);
@@ -2439,18 +2408,6 @@ export function PitStudio({
       starter_bundle_id: nextStarter.bundle.id,
       starter_bundle_audience: nextStarter.bundle.audience,
     });
-  }
-
-  function changeAudience(nextAudience: PresetAudience) {
-    if (nextAudience === audience) {
-      return;
-    }
-
-    const nextStarter = createRandomStarterInput(undefined, nextAudience);
-    setAudience(nextAudience);
-    setStarterBundleId(nextStarter.bundle.id);
-    setConfig(nextStarter.input);
-    setError(null);
   }
 
   async function saveApiKey() {
@@ -2847,14 +2804,12 @@ export function PitStudio({
             apiKeyStatus={apiKeyStatus}
             apiKeyStatusMessage={apiKeyStatusMessage}
             draftApiKey={draftApiKey}
-            audience={audience}
             hasApiKey={hasApiKey}
             canSubmit={hasValidatedApiKey && hasPrompt && config.members.length >= 2}
             isRunning={isRunning}
             onDraftApiKeyChange={setDraftApiKey}
             onSaveApiKey={saveApiKey}
             onPromptChange={(prompt) => setConfig((current) => ({ ...current, prompt }))}
-            onAudienceChange={changeAudience}
             onRerollStarterBundle={rerollStarterBundle}
             onAddMember={() => setShowCharacterSelectorModal(true)}
             onSelectModerator={selectModerator}
@@ -2897,7 +2852,6 @@ export function PitStudio({
 
       {showCharacterSelectorModal ? (
         <CharacterSelectorModal
-          audience={audience}
           onClose={() => setShowCharacterSelectorModal(false)}
           onSelectPreset={(preset) => {
             trackEvent("character_added", {
