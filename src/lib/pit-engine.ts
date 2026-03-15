@@ -95,6 +95,11 @@ interface PromptFrame {
   speakingOrder?: ParticipantConfig[];
 }
 
+interface ModeratorInterventionPacket {
+  frame: PromptFrame;
+  userMessage: string;
+}
+
 function buildCompactProfile(participant: ParticipantConfig): string {
   const preset = participant.presetId ? PARTICIPANT_CHARACTER_PRESET_MAP.get(participant.presetId) : undefined;
 
@@ -254,6 +259,33 @@ export function buildSystemPrompt(
   return [buildStableSystemPrompt(input, participant, role), buildTurnContextPrompt(frame)]
     .filter(Boolean)
     .join("\n\n");
+}
+
+export function buildModeratorInterventionPacket({
+  round,
+  totalRounds,
+  transcript,
+  speakingOrder,
+}: {
+  round: number;
+  totalRounds: number;
+  transcript: PitTurn[];
+  speakingOrder: ParticipantConfig[];
+}): ModeratorInterventionPacket {
+  const nextRound = round + 1;
+  const nextSpeaker = speakingOrder[0]?.name ?? "Unknown";
+
+  return {
+    frame: {
+      objective:
+        `Intervene between round ${round} and round ${nextRound}. Briefly name the sharpest disagreement or strongest emerging point. If any claims lacked evidence or contained logical errors, note them now. Identify any emerging common ground. Pose one unresolved issue for the next round. If you announce who speaks first in round ${nextRound}, it must be ${nextSpeaker}.`,
+      transcript,
+      speakingOrder,
+    },
+    userMessage:
+      `Intervention: between round ${round} and round ${nextRound} of ${totalRounds}.\n` +
+      `Next round first speaker: ${nextSpeaker}.\n\nProduce the moderator intervention now.`,
+  };
 }
 
 export function buildPromptMessages(
@@ -772,15 +804,18 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
       };
       execution.onProgress?.(interventionThinkingEvent);
 
+      const interventionPacket = buildModeratorInterventionPacket({
+        round,
+        totalRounds: input.rounds,
+        transcript: [...transcript],
+        speakingOrder,
+      });
+
       const interventionResult = await callOpenRouter(
         input,
         input.coordinator,
         "coordinator",
-        {
-          objective:
-            `Intervene between round ${round} and round ${round + 1}. Briefly name the sharpest disagreement or strongest emerging point. If any claims lacked evidence or contained logical errors, note them now. Identify any emerging common ground. Pose one unresolved issue for the next round.`,
-          transcript: [...transcript],
-        },
+        interventionPacket.frame,
         interventionThinkingEvent,
         sessionId,
         execution,
@@ -788,7 +823,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         [
           {
             role: "user",
-            content: `Intervention: between round ${round} and round ${round + 1}.\n\nProduce the moderator intervention now.`,
+            content: interventionPacket.userMessage,
           },
         ],
       );

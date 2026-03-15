@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultInput, createTurn } from "@/lib/pit";
 import {
+  buildModeratorInterventionPacket,
   buildPromptMessages,
   buildSystemPrompt,
   shouldFallbackToAnotherModel,
@@ -68,5 +69,27 @@ describe("pit-engine helpers", () => {
     expect(shouldRetryOpenRouterRequest(429, "rate limit")).toBe(true);
     expect(shouldFallbackToAnotherModel(503, "provider routing failed")).toBe(true);
     expect(shouldFallbackToAnotherModel(400, "plain validation error")).toBe(false);
+  });
+
+  it("pins the next-round speaking order in moderator interventions", () => {
+    const input = createDefaultInput();
+    const transcriptTurn = createTurn({
+      kind: "member_turn",
+      round: 1,
+      participant: input.members[1]!,
+      model: input.members[1]!.model,
+      content: "I disagree with your efficiency argument.",
+    });
+
+    const packet = buildModeratorInterventionPacket({
+      round: 1,
+      totalRounds: 2,
+      transcript: [transcriptTurn],
+      speakingOrder: input.members,
+    });
+
+    expect(packet.frame.speakingOrder).toEqual(input.members);
+    expect(packet.frame.objective).toContain(`it must be ${input.members[0]!.name}`);
+    expect(packet.userMessage).toContain(`Next round first speaker: ${input.members[0]!.name}.`);
   });
 });
