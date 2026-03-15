@@ -806,6 +806,7 @@ function StudioHero({
   apiKeyStatus,
   apiKeyStatusMessage,
   draftApiKey,
+  hasPendingApiKeyChanges,
   canSubmit,
   hasApiKey,
   isRunning,
@@ -823,6 +824,7 @@ function StudioHero({
   apiKeyStatus: ApiKeyStatus;
   apiKeyStatusMessage: string;
   draftApiKey: string;
+  hasPendingApiKeyChanges: boolean;
   canSubmit: boolean;
   hasApiKey: boolean;
   isRunning: boolean;
@@ -840,8 +842,7 @@ function StudioHero({
   const hasMountedApiKeyEditorRef = useRef(false);
   const isApiKeyEditorVisible = isEditingApiKey;
   const previousApiKeyEditorVisibilityRef = useRef(isApiKeyEditorVisible);
-  const hasPendingApiKeyChanges = draftApiKey.trim() !== apiKey.trim();
-  const canConfirmApiKey = draftApiKey.trim().length > 0;
+  const canConfirmApiKey = draftApiKey.trim().length > 0 || apiKey.trim().length > 0;
   const apiKeyFieldValue = isApiKeyEditorVisible ? draftApiKey : apiKeyLabel;
   const displayedApiKeyStatus = hasPendingApiKeyChanges ? "unresolved" : apiKeyStatus;
   const displayedApiKeyStatusMessage = hasPendingApiKeyChanges ? unresolvedApiKeyStatusMessage() : apiKeyStatusMessage;
@@ -2225,6 +2226,7 @@ export function PitStudio({
   const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>(initialStudioState.apiKeyStatus);
   const [apiKeyStatusMessage, setApiKeyStatusMessage] = useState(initialStudioState.apiKeyStatusMessage);
   const [draftApiKey, setDraftApiKey] = useState(initialStudioState.draftApiKey);
+  const [hasPendingApiKeyChanges, setHasPendingApiKeyChanges] = useState(false);
   const [showCharacterSelectorModal, setShowCharacterSelectorModal] = useState(false);
   const [studioView, setStudioView] = useState<StudioView>("setup");
   const [panelMode, setPanelMode] = useState<StagePanelMode>("conversation");
@@ -2249,7 +2251,6 @@ export function PitStudio({
     roster.flatMap((participant) => (participant.presetId ? [participant.presetId] : [])),
   );
   const hasApiKey = apiKey.trim().length > 0;
-  const hasPendingApiKeyChanges = draftApiKey.trim() !== apiKey.trim();
   const hasValidatedApiKey = apiKeyStatus === "valid" && !hasPendingApiKeyChanges;
   const hasPrompt = config.prompt.trim().length > 0;
   const transcriptTurns = flattenTurns(result);
@@ -2433,6 +2434,7 @@ export function PitStudio({
     if (!trimmed) {
       setApiKey("");
       setDraftApiKey("");
+      setHasPendingApiKeyChanges(false);
       await validateApiKey({
         nextApiKey: "",
         requestIdRef: keyValidationRequestIdRef,
@@ -2446,7 +2448,8 @@ export function PitStudio({
 
     setApiKey(trimmed);
     setDraftApiKey(trimmed);
-    await validateApiKey({
+    setHasPendingApiKeyChanges(false);
+    const isValid = await validateApiKey({
       nextApiKey: trimmed,
       requestIdRef: keyValidationRequestIdRef,
       siteUrl: window.location.origin,
@@ -2454,7 +2457,12 @@ export function PitStudio({
       setApiKeyStatusMessage,
     });
     setError(null);
-    return true;
+    return isValid;
+  }
+
+  function handleDraftApiKeyChange(value: string) {
+    setDraftApiKey(value);
+    setHasPendingApiKeyChanges(value.trim() !== apiKey.trim());
   }
 
   function selectFrame(index: number) {
@@ -2822,10 +2830,11 @@ export function PitStudio({
             apiKeyStatus={apiKeyStatus}
             apiKeyStatusMessage={apiKeyStatusMessage}
             draftApiKey={draftApiKey}
+            hasPendingApiKeyChanges={hasPendingApiKeyChanges}
             hasApiKey={hasApiKey}
             canSubmit={hasValidatedApiKey && hasPrompt && config.members.length >= 2}
             isRunning={isRunning}
-            onDraftApiKeyChange={setDraftApiKey}
+            onDraftApiKeyChange={handleDraftApiKeyChange}
             onSaveApiKey={saveApiKey}
             onPromptChange={(prompt) => setConfig((current) => ({ ...current, prompt }))}
             onRerollStarterBundle={rerollStarterBundle}
