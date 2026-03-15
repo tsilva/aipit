@@ -14,6 +14,10 @@ describe("audience helpers", () => {
     expect(detectAudience({ acceptLanguage: "en-US,en;q=0.9", countryCode: "PT" })).toBe("portugal");
   });
 
+  it("does not switch non-Portuguese country codes into the Portugal audience", () => {
+    expect(detectAudience({ acceptLanguage: "en-US,en;q=0.9", countryCode: "US" })).toBe("global");
+  });
+
   it("defaults non-Portuguese or missing signals to the global audience", () => {
     expect(detectAudience({ acceptLanguage: "en-US,en;q=0.9" })).toBe("global");
     expect(detectAudience({})).toBe("global");

@@ -40,7 +40,7 @@ async function buildInitialStudioState(bundleId: string | undefined): Promise<In
   const requestHeaders = await headers();
   const audience = resolveInitialAudience({
     acceptLanguage: requestHeaders.get("accept-language"),
-    countryCode: requestHeaders.get("x-vercel-ip-country"),
+    countryCode: requestHeaders.get("cf-ipcountry") ?? requestHeaders.get("x-vercel-ip-country"),
     starterBundleAudience: queryStarterBundle?.audience,
   });
   const starter = queryStarterBundle
