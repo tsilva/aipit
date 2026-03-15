@@ -123,6 +123,66 @@ function useBodyScrollLock(isLocked: boolean) {
   }, [isLocked]);
 }
 
+function useModalFocusTrap(containerRef: React.RefObject<HTMLElement | null>, isActive: boolean) {
+  useEffect(() => {
+    if (!isActive || typeof document === "undefined") {
+      return;
+    }
+
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const resolveFocusableElements = () =>
+      Array.from(
+        container.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hidden && element.getAttribute("aria-hidden") !== "true");
+
+    const focusableElements = resolveFocusableElements();
+    (focusableElements[0] ?? container).focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const currentFocusableElements = resolveFocusableElements();
+      if (currentFocusableElements.length === 0) {
+        event.preventDefault();
+        container.focus();
+        return;
+      }
+
+      const firstElement = currentFocusableElements[0];
+      const lastElement = currentFocusableElements[currentFocusableElements.length - 1];
+
+      if (event.shiftKey) {
+        if (document.activeElement === firstElement || !container.contains(document.activeElement)) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+        return;
+      }
+
+      if (document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [containerRef, isActive]);
+}
+
 export type InitialStudioState = {
   config: RunInput;
   audience: PresetAudience;
@@ -344,6 +404,16 @@ function buildPlaybackTimeline(result: RunResult | null): {
     frames,
     totalDurationMs: elapsedMs,
   };
+}
+
+function buildPlaybackTurnIds(frames: PlaybackFrame[]): string[] {
+  return frames.reduce<string[]>((turnIds, frame) => {
+    if (turnIds[turnIds.length - 1] !== frame.turnId) {
+      turnIds.push(frame.turnId);
+    }
+
+    return turnIds;
+  }, []);
 }
 
 function buildPlannedQueueTurns({
@@ -1094,8 +1164,10 @@ function CharacterSelectorModal({
   const [didPresetLoadFail, setDidPresetLoadFail] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const presets = filterPresets ? filterPresets(deferredQuery) : [];
+  const modalRef = useRef<HTMLElement | null>(null);
 
   useBodyScrollLock(true);
+  useModalFocusTrap(modalRef, true);
 
   useEffect(() => {
     let isMounted = true;
@@ -1123,9 +1195,19 @@ function CharacterSelectorModal({
 
   return (
     <div className="settings-modal-backdrop">
-      <button type="button" className="settings-modal-dismiss" aria-label="Close character selector" onClick={onClose} />
+      <button
+        type="button"
+        className="settings-modal-dismiss"
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={onClose}
+      />
 
-      <section className="settings-sheet character-selector-modal-panel w-full max-w-3xl p-6 sm:p-7">
+      <section
+        ref={modalRef}
+        className="settings-sheet character-selector-modal-panel w-full max-w-3xl p-6 sm:p-7"
+        tabIndex={-1}
+      >
         <div className="settings-modal-header">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted)]">Pit Lineup</p>
@@ -1228,8 +1310,10 @@ function ParticipantSettingsSheet({
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const avatarEditorRef = useRef<HTMLDivElement | null>(null);
   const avatarFileInputRef = useRef<HTMLInputElement | null>(null);
+  const modalRef = useRef<HTMLElement | null>(null);
 
   useBodyScrollLock(true);
+  useModalFocusTrap(modalRef, true);
 
   useEffect(() => {
     if (isEditingName) {
@@ -1302,8 +1386,21 @@ function ParticipantSettingsSheet({
 
   return (
     <div className="settings-modal-backdrop participant-modal-backdrop">
-      <button type="button" className="settings-modal-dismiss" aria-label="Close participant settings" onClick={onClose} />
-      <section className="settings-sheet participant-modal-panel" role="dialog" aria-modal="true" aria-label="Participant settings">
+      <button
+        type="button"
+        className="settings-modal-dismiss"
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={onClose}
+      />
+      <section
+        ref={modalRef}
+        className="settings-sheet participant-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Participant settings"
+        tabIndex={-1}
+      >
         <div className="participant-modal-header">
           <div className="participant-sheet-header">
             <div className="participant-avatar-anchor" ref={avatarEditorRef}>
@@ -1816,6 +1913,8 @@ function RawPromptModal({
   onClose: () => void;
 }) {
   useBodyScrollLock(true);
+  const modalRef = useRef<HTMLElement | null>(null);
+  useModalFocusTrap(modalRef, true);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1830,12 +1929,20 @@ function RawPromptModal({
 
   return (
     <div className="settings-modal-backdrop">
-      <button type="button" className="settings-modal-dismiss" aria-label="Close raw prompt" onClick={onClose} />
+      <button
+        type="button"
+        className="settings-modal-dismiss"
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={onClose}
+      />
       <section
+        ref={modalRef}
         className="settings-sheet settings-modal-panel raw-prompt-modal-panel w-full max-w-4xl p-6 sm:p-7"
         role="dialog"
         aria-modal="true"
         aria-label="Raw prompt"
+        tabIndex={-1}
       >
         <div className="settings-modal-header">
           <div className="raw-prompt-modal-copy">
@@ -1961,6 +2068,7 @@ function ChamberStage({
   const [debugFrame, setDebugFrame] = useState<PlaybackFrame | null>(null);
   const showBubbleDebugButton = useSyncExternalStore(subscribeToRuntime, isLocalRuntime, () => false);
   const activeQueueItemRef = useRef<HTMLDivElement | null>(null);
+  const queueListRef = useRef<HTMLDivElement | null>(null);
 
   function openRawPrompt(frame: PlaybackFrame) {
     onPausePlayback();
@@ -1969,6 +2077,11 @@ function ChamberStage({
 
   useEffect(() => {
     if (panelMode !== "conversation" || !queueScrollTargetId) {
+      return;
+    }
+
+    const queueList = queueListRef.current;
+    if (!queueList || queueList.scrollHeight <= queueList.clientHeight + 1) {
       return;
     }
 
@@ -2030,7 +2143,7 @@ function ChamberStage({
                         <span>{formatUsageCost(usage.cost)}</span>
                       </p>
                     </div>
-                    <div className="speaker-queue-list">
+                    <div ref={queueListRef} className="speaker-queue-list">
                       {queueEntries.length > 0 ? (
                         queueEntries.map(({ id, participant, state, speakerName, model }) => (
                           <div
@@ -2269,6 +2382,9 @@ export function PitStudio({
   const keyValidationRequestIdRef = useRef(0);
   const runAbortControllerRef = useRef<AbortController | null>(null);
   const activeRunIdRef = useRef(0);
+  const generatedTurnCountRef = useRef(0);
+  const acknowledgedTurnCountRef = useRef(0);
+  const bufferedTurnWaitersRef = useRef(new Set<() => void>());
 
   const roster = [config.coordinator, ...config.members];
   const orderedRoster = orderParticipants(roster, lineupOrder);
@@ -2290,6 +2406,7 @@ export function PitStudio({
   );
   const timeline = buildPlaybackTimeline(result);
   const frames = timeline.frames;
+  const playbackTurnIds = buildPlaybackTurnIds(frames);
   const chapters = timeline.chapters;
   const totalDurationMs = timeline.totalDurationMs;
   const hasPendingFrame = isAwaitingTurnResponse && pendingTurn !== null;
@@ -2309,6 +2426,22 @@ export function PitStudio({
     : "";
   const visibleWarning =
     activeWarning && shouldDisplayRuntimeWarning(activeWarning, activeRuntimeTurn) ? activeWarning.message : null;
+  const acknowledgedTurnCount =
+    currentFrame
+      ? Math.max(0, playbackTurnIds.findIndex((turnId) => turnId === currentFrame.turnId))
+      : hasPendingFrame
+        ? playbackTurnIds.length
+        : 0;
+
+  const releaseBufferedTurnWaiters = useCallback(() => {
+    if (generatedTurnCountRef.current - acknowledgedTurnCountRef.current >= 2) {
+      return;
+    }
+
+    const waiters = [...bufferedTurnWaitersRef.current];
+    bufferedTurnWaitersRef.current.clear();
+    waiters.forEach((resolve) => resolve());
+  }, []);
 
   useEffect(() => {
     const currentRoster = [config.coordinator, ...config.members];
@@ -2326,6 +2459,11 @@ export function PitStudio({
       setActiveFrameIndex(maxNavigableFrameIndex);
     }
   }, [activeFrameIndex, maxNavigableFrameIndex]);
+
+  useEffect(() => {
+    acknowledgedTurnCountRef.current = acknowledgedTurnCount;
+    releaseBufferedTurnWaiters();
+  }, [acknowledgedTurnCount, releaseBufferedTurnWaiters]);
 
   useEffect(() => {
     if (!currentFrame) {
@@ -2544,6 +2682,9 @@ export function PitStudio({
   }
 
   const resetSimulationState = useCallback(() => {
+    bufferedTurnWaitersRef.current.clear();
+    generatedTurnCountRef.current = 0;
+    acknowledgedTurnCountRef.current = 0;
     setStudioView("setup");
     setPanelMode("conversation");
     setResult(null);
@@ -2596,6 +2737,7 @@ export function PitStudio({
     const runId = activeRunIdRef.current + 1;
     activeRunIdRef.current = runId;
 
+    window.scrollTo({ top: 0, behavior: "auto" });
     setStudioView("simulation");
     setPanelMode("conversation");
     setError(null);
@@ -2609,6 +2751,9 @@ export function PitStudio({
     setPendingTurn(null);
     setActiveRuntimeTurn(null);
     setActiveWarning(null);
+    bufferedTurnWaitersRef.current.clear();
+    generatedTurnCountRef.current = 0;
+    acknowledgedTurnCountRef.current = 0;
     const payload: RunInput = {
       ...PIT_RUN_DEFAULTS,
       ...config,
@@ -2640,6 +2785,31 @@ export function PitStudio({
         apiKey,
         siteUrl: window.location.origin,
         signal: abortController.signal,
+        awaitBufferedTurnSlot: async ({ signal }) => {
+          if (generatedTurnCountRef.current - acknowledgedTurnCountRef.current < 2) {
+            return;
+          }
+
+          await new Promise<void>((resolve, reject) => {
+            function cleanup() {
+              bufferedTurnWaitersRef.current.delete(handleReady);
+              signal?.removeEventListener("abort", handleAbort);
+            }
+
+            function handleReady() {
+              cleanup();
+              resolve();
+            }
+
+            function handleAbort() {
+              cleanup();
+              reject(new DOMException("The operation was aborted.", "AbortError"));
+            }
+
+            bufferedTurnWaitersRef.current.add(handleReady);
+            signal?.addEventListener("abort", handleAbort, { once: true });
+          });
+        },
         onProgress: (progressEvent) => {
           if (activeRunIdRef.current !== runId) {
             return;
@@ -2786,6 +2956,8 @@ export function PitStudio({
     setIsAwaitingTurnResponse(false);
     setPendingTurn(null);
     setActiveRuntimeTurn(null);
+    generatedTurnCountRef.current += 1;
+    releaseBufferedTurnWaiters();
 
     setResult((current) => {
       if (!current) {

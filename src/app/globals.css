@@ -3715,9 +3715,12 @@ select.field {
 
   .participant-sheet-name-row {
     align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.4rem;
   }
 
   .participant-sheet-name {
+    flex: 1 0 100%;
     white-space: normal;
     overflow: visible;
     text-overflow: clip;

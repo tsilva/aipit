@@ -32,6 +32,7 @@ export interface RunExecutionOptions {
   siteUrl?: string;
   onProgress?: (event: RunProgressEvent) => void;
   signal?: AbortSignal;
+  awaitBufferedTurnSlot?: (context: { signal?: AbortSignal }) => Promise<void> | void;
 }
 
 export type RunProgressEvent =
@@ -406,6 +407,12 @@ function throwIfAborted(signal?: AbortSignal): void {
   }
 }
 
+async function awaitBufferedTurnSlot(execution: RunExecutionOptions): Promise<void> {
+  throwIfAborted(execution.signal);
+  await execution.awaitBufferedTurnSlot?.({ signal: execution.signal });
+  throwIfAborted(execution.signal);
+}
+
 function createTurnAbortController(signal?: AbortSignal, timeoutMs = PARTICIPANT_RESPONSE_TIMEOUT_MS) {
   const controller = new AbortController();
   let didTimeout = false;
@@ -735,6 +742,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     });
 
     for (const member of speakingOrder) {
+      await awaitBufferedTurnSlot(execution);
       throwIfAborted(execution.signal);
       execution.onProgress?.({
         type: "status",
@@ -789,6 +797,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     const roundRecord = { round, turns } as { round: number; turns: PitTurn[]; intervention?: PitTurn };
 
     if (round < input.rounds) {
+      await awaitBufferedTurnSlot(execution);
       throwIfAborted(execution.signal);
       execution.onProgress?.({
         type: "status",
@@ -851,6 +860,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     type: "status",
     message: `Moderator ${input.coordinator.name} is closing the debate with a consensus.`,
   });
+  await awaitBufferedTurnSlot(execution);
   throwIfAborted(execution.signal);
   const consensusThinkingEvent: ThinkingProgressEvent = {
     type: "thinking",

@@ -148,6 +148,64 @@ test("uses the participant terminology in the settings sheet actions", async ({ 
   await expect(page.getByRole("button", { name: "Close participant settings" })).toBeVisible();
 });
 
+test("keeps keyboard focus inside the character selector", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await dismissConsentBannerIfVisible(page);
+
+  await page.getByRole("button", { name: "Add debater" }).click();
+  await expect(page.locator(".character-selector-modal-panel")).toBeVisible();
+
+  for (let index = 0; index < 8; index += 1) {
+    await page.keyboard.press("Tab");
+  }
+
+  const focusState = await page.evaluate(() => ({
+    inModal: !!document.activeElement?.closest(".character-selector-modal-panel"),
+  }));
+
+  expect(focusState.inModal).toBe(true);
+});
+
+test("resets the scroll position when entering simulation on short screens", async ({ page }) => {
+  await page.route("**/api/openrouter/key", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: { label: "ok" } }),
+    });
+  });
+  await page.route("**/api/openrouter/chat/completions", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        model: "mock/model",
+        choices: [{ message: { content: "Mock line\n<<<BALLOON>>>\nFollow-up line" } }],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 20,
+          total_tokens: 30,
+          cost: 0.01,
+        },
+      }),
+    });
+  });
+
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/");
+  await dismissConsentBannerIfVisible(page);
+
+  await page.getByLabel("OpenRouter API key").fill("good-key");
+  await page.getByRole("button", { name: "Save API key" }).click();
+  await expect(page.getByText("OpenRouter API key verified. Selected models are enabled.")).toBeVisible();
+
+  await page.getByRole("button", { name: "START", exact: true }).click();
+  await expect(page.locator(".chamber-shell")).toBeVisible();
+
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
 test.describe("audience-aware setup", () => {
   test.use({ locale: "en-US" });
 
