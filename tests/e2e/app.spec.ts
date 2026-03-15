@@ -1,4 +1,14 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import { STARTER_BUNDLES } from "../../src/lib/starter-bundles";
+
+const GLOBAL_STARTER_PROMPTS = STARTER_BUNDLES.filter((bundle) => bundle.audience === "global").map((bundle) => bundle.prompt);
+const PORTUGAL_STARTER_PROMPTS = STARTER_BUNDLES.filter((bundle) => bundle.audience === "portugal").map((bundle) => bundle.prompt);
+
+async function expectStarterPromptFromAudience(page: Page, prompts: string[]) {
+  const prompt = await page.locator("#hero-pit-prompt").inputValue();
+  expect(prompts).toContain(prompt);
+  return prompt;
+}
 
 test("gates analytics by consent and completes a mocked debate", async ({ page }) => {
   let chatCalls = 0;
@@ -64,8 +74,7 @@ test.describe("audience-aware setup", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Decline" }).click();
 
-    await expect(page.getByText("Global media & pop culture")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Debater .* Global media & pop culture/i }).first()).toBeVisible();
+    await expectStarterPromptFromAudience(page, GLOBAL_STARTER_PROMPTS);
     await expect(page.getByRole("button", { name: "Global" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Portugal" })).toHaveCount(0);
   });
@@ -74,8 +83,10 @@ test.describe("audience-aware setup", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Decline" }).click();
 
+    const initialPrompt = await expectStarterPromptFromAudience(page, GLOBAL_STARTER_PROMPTS);
     await page.getByRole("button", { name: "Load another starter debate" }).click();
-    await expect(page.getByRole("button", { name: /Debater .* Global media & pop culture/i }).first()).toBeVisible();
+    await expect.poll(async () => page.locator("#hero-pit-prompt").inputValue()).not.toBe(initialPrompt);
+    await expectStarterPromptFromAudience(page, GLOBAL_STARTER_PROMPTS);
   });
 });
 
@@ -86,15 +97,16 @@ test.describe("Portuguese locale defaults", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Decline" }).click();
 
-    await expect(page.getByText("Portugal politics")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Debater .* Portugal politics/i }).first()).toBeVisible();
+    await expectStarterPromptFromAudience(page, PORTUGAL_STARTER_PROMPTS);
   });
 
   test("reroll keeps Portuguese visitors in Portugal starters", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Decline" }).click();
 
+    const initialPrompt = await expectStarterPromptFromAudience(page, PORTUGAL_STARTER_PROMPTS);
     await page.getByRole("button", { name: "Load another starter debate" }).click();
-    await expect(page.getByRole("button", { name: /Debater .* Portugal politics/i }).first()).toBeVisible();
+    await expect.poll(async () => page.locator("#hero-pit-prompt").inputValue()).not.toBe(initialPrompt);
+    await expectStarterPromptFromAudience(page, PORTUGAL_STARTER_PROMPTS);
   });
 });
