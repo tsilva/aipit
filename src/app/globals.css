@@ -57,6 +57,10 @@ select {
   font: inherit;
 }
 
+button:not(:disabled) {
+  cursor: pointer;
+}
+
 .auto-size-textarea {
   field-sizing: content;
 }
