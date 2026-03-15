@@ -104,6 +104,25 @@ function unresolvedApiKeyStatusMessage(): string {
   return "API key changed. Confirm it to validate before starting.";
 }
 
+function useBodyScrollLock(isLocked: boolean) {
+  useEffect(() => {
+    if (!isLocked || typeof document === "undefined") {
+      return;
+    }
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [isLocked]);
+}
+
 export type InitialStudioState = {
   config: RunInput;
   audience: PresetAudience;
@@ -1076,6 +1095,8 @@ function CharacterSelectorModal({
   const deferredQuery = useDeferredValue(query);
   const presets = filterPresets ? filterPresets(deferredQuery) : [];
 
+  useBodyScrollLock(true);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -1207,6 +1228,8 @@ function ParticipantSettingsSheet({
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const avatarEditorRef = useRef<HTMLDivElement | null>(null);
   const avatarFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useBodyScrollLock(true);
 
   useEffect(() => {
     if (isEditingName) {
@@ -1444,8 +1467,8 @@ function ParticipantSettingsSheet({
               <button
                 type="button"
                 onClick={onRemove}
-                aria-label="Remove member"
-                title="Remove member"
+                aria-label="Remove participant"
+                title="Remove participant"
                 className="icon-circle-button participant-modal-delete"
               >
                 <TrashGlyph />
@@ -1454,7 +1477,7 @@ function ParticipantSettingsSheet({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close member settings"
+              aria-label="Close participant settings"
               className="icon-circle-button participant-modal-close"
             >
               <CloseGlyph />
@@ -1792,6 +1815,8 @@ function RawPromptModal({
   frame: PlaybackFrame;
   onClose: () => void;
 }) {
+  useBodyScrollLock(true);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {

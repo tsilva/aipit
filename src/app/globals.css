@@ -3696,6 +3696,36 @@ select.field {
   }
 }
 
+@media (max-width: 640px) {
+  .participant-modal-header {
+    position: relative;
+    padding: 1rem 4.85rem 0 1rem;
+  }
+
+  .participant-modal-actions {
+    position: absolute;
+    top: 0.95rem;
+    right: 1rem;
+    gap: 0.45rem;
+  }
+
+  .participant-modal-body {
+    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  .participant-sheet-name-row {
+    align-items: flex-start;
+  }
+
+  .participant-sheet-name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: 1.32rem;
+    line-height: 1.12;
+  }
+}
+
 @media (max-width: 380px), (max-height: 640px) {
   .studio-form-simulation {
     gap: 0.25rem;

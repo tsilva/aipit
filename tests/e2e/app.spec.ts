@@ -123,6 +123,31 @@ test("allows clearing a saved personal API key", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Edit API key" })).toBeVisible();
 });
 
+test("locks background scrolling while the character selector is open", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await dismissConsentBannerIfVisible(page);
+
+  await page.evaluate(() => window.scrollTo(0, 500));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(500);
+
+  await page.getByRole("button", { name: "Add debater" }).click();
+  await expect(page.locator(".character-selector-modal-panel")).toBeVisible();
+
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(500);
+});
+
+test("uses the participant terminology in the settings sheet actions", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await dismissConsentBannerIfVisible(page);
+
+  await page.getByRole("button", { name: "Edit Anderson Cooper" }).click();
+
+  await expect(page.getByRole("button", { name: "Close participant settings" })).toBeVisible();
+});
+
 test.describe("audience-aware setup", () => {
   test.use({ locale: "en-US" });
 
