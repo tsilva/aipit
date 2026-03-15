@@ -46,7 +46,6 @@ import {
   createRandomStarterInput,
   createMember,
   emptyUsage,
-  getParticipantCharacterPreset,
   type PitTurn,
   type ParticipantConfig,
   type RunInput,
@@ -747,7 +746,6 @@ function SetupParticipantCard({
 }) {
   const moderatorActionId = useId();
   const characterPreview = buildCharacterProfilePreview(participant.characterProfile).trim().replace(/\s+/g, " ");
-  const presetAudience = participant.presetId ? getParticipantCharacterPreset(participant.presetId)?.audience : undefined;
 
   return (
     <div className={`hero-roster-card ${isModerator ? "hero-roster-card-active" : ""}`}>
@@ -773,7 +771,6 @@ function SetupParticipantCard({
             <span className="hero-roster-role">{roleLabel}</span>
             <span className="hero-roster-name">{participant.name}</span>
             <span className="hero-roster-model mono">{participant.model}</span>
-            {presetAudience ? <span className="hero-roster-chip">{getAudienceContextLabel(presetAudience)}</span> : null}
           </div>
         </div>
 
