@@ -12,8 +12,8 @@
 ## ✨ Features
 
 - 🎭 **Rich character profiles** — 12-field character sheets (role, personality, perspective, temperament, debate style, speech style, guardrails, language, gender, nationality, birth date, prompt notes)
-- 👥 **28 built-in debater presets** — Expanded Portuguese political roster (Montenegro, Mortágua, Ventura, Marques Mendes, Gouveia e Melo, Cotrim de Figueiredo, Seguro, Pedro Nuno Santos, António Costa, Catarina Martins, Paulo Raimundo, Inês Sousa Real) + international media & pop-culture voices (Alex Jones, Lex Fridman, Joe Rogan, Donald Trump, Gordon Ramsay, Eric Cartman, Saul Goodman, Dwight Schrute, Borat, Dr. Phil, T-800, Elon Musk, Homer Simpson, Cornholio, Rick Sanchez, The Knight Who Says "Ni")
-- 🎬 **20 curated starter bundles** — cold-start debates seed a moderator, three debaters, and a high-friction topic in one click
+- 👥 **28 built-in debater presets** — split into a Portugal politics lane and a globally recognizable media/pop-culture lane so the roster matches the audience you want
+- 🎬 **20 curated starter bundles** — cold-start debates seed a moderator, three debaters, and a high-friction topic in one click, with locale-aware audience defaults
 - 🏟️ **Structured debate flow** — opening → rounds → interventions → consensus
 - 🔗 **Character relationships** — pairwise awareness so debaters know how to engage each other
 - 🤖 **Multi-model support via OpenRouter** — characters default to Grok 4.1 Fast, with other supported models still available in the editor
@@ -33,12 +33,12 @@
 
 ## 🏗️ How It Works
 
-1. **Setup** — Start from a curated bundle or customize manually: each starter bundle seeds a moderator, three debaters, and a topic; the wand rerolls the full bundle.
+1. **Setup** — Start from a curated bundle or customize manually: each starter bundle seeds a moderator, three debaters, and a topic; the wand rerolls the full bundle inside the currently selected audience lane.
 2. **Opening** — The moderator (José Rodrigues dos Santos or Anderson Cooper, depending on the starter bundle) frames the prompt and sets the stage.
 3. **Rounds** — Each debater argues in sequence for N rounds. The moderator intervenes between rounds to sharpen the discussion.
 4. **Consensus** — The moderator closes with a balanced wrap-up synthesizing the key arguments.
 
-Each fresh page load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`, for example `http://localhost:3000/?id=ai-liability-meltdown`. That starter bundle is now resolved on the server so the first HTML already contains the real setup UI instead of a client-side loading shell. If you want the dumbest possible cold open, `?id=silliest` resolves to `ocean-democracy-meltdown`.
+Each fresh page load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`, for example `http://localhost:3000/?id=ai-liability-meltdown`. The default starter lane is chosen on the server from the browser locale: Portuguese visitors default to Portugal politics, everyone else defaults to the global roster, and an explicit `?id=` bundle still wins. That starter bundle is resolved on the server so the first HTML already contains the real setup UI instead of a client-side loading shell. If you want the dumbest possible cold open, `?id=silliest` resolves to `ocean-democracy-meltdown`.
 
 The orchestration engine lives in [`pit-engine.ts`](src/lib/pit-engine.ts) and the full UI in [`pit-studio.tsx`](src/components/pit-studio.tsx).
 

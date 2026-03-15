@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import type { InitialStudioState } from "@/components/pit-studio";
 import { PitStudioEntry } from "@/components/pit-studio-entry";
+import { resolveInitialAudience } from "@/lib/audience";
 import {
   missingOpenRouterKeyMessage,
   serverOpenRouterKeyMessage,
@@ -33,20 +35,26 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
   return buildStarterBundleMetadata(bundle);
 }
 
-function buildInitialStudioState(bundleId: string | undefined): InitialStudioState {
+async function buildInitialStudioState(bundleId: string | undefined): Promise<InitialStudioState> {
   const queryStarterBundle = bundleId ? resolveStarterBundle(bundleId) : undefined;
+  const requestHeaders = await headers();
+  const audience = resolveInitialAudience({
+    acceptLanguage: requestHeaders.get("accept-language"),
+    starterBundleAudience: queryStarterBundle?.audience,
+  });
   const starter = queryStarterBundle
     ? {
         bundle: queryStarterBundle,
         input: createInputFromStarterBundle(queryStarterBundle),
       }
-    : createRandomStarterInput();
+    : createRandomStarterInput(undefined, audience);
   const config = starter.input;
   const lineupOrder = [config.coordinator, ...config.members].map((participant) => participant.id);
   const hostedKeyAvailable = hasServerOpenRouterKey();
 
   return {
     config,
+    audience,
     lineupOrder,
     starterBundleId: starter.bundle.id,
     apiKey: "",
@@ -60,7 +68,7 @@ function buildInitialStudioState(bundleId: string | undefined): InitialStudioSta
 
 export default async function Home({ searchParams }: HomePageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const initialState = buildInitialStudioState(resolveBundleIdParam(resolvedSearchParams?.id));
+  const initialState = await buildInitialStudioState(resolveBundleIdParam(resolvedSearchParams?.id));
 
   return <PitStudioEntry initialState={initialState} />;
 }

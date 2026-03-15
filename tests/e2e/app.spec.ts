@@ -56,3 +56,48 @@ test("shows a recoverable upstream failure message", async ({ page }) => {
 
   await expect(page.getByText("Failed to reach OpenRouter.")).toBeVisible({ timeout: 30_000 });
 });
+
+test.describe("audience-aware setup", () => {
+  test.use({ locale: "en-US" });
+
+  test("defaults non-Portuguese visitors to the global lane", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Decline" }).click();
+
+    await expect(page.getByRole("button", { name: "Global" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByText("Global media & pop culture")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Debater .* Global media & pop culture/i }).first()).toBeVisible();
+  });
+
+  test("switching audience updates the starter debate and preset picker", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Decline" }).click();
+
+    await page.getByRole("button", { name: "Portugal" }).click();
+
+    await expect(page.getByRole("button", { name: "Portugal" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByText("Portugal politics")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Debater .* Portugal politics/i }).first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Add debater" }).click();
+    await expect(page.getByText("Luís Montenegro")).toBeVisible();
+    await expect(page.getByText("Joe Rogan")).toHaveCount(0);
+    await page.getByRole("button", { name: "Close character selector" }).last().click();
+
+    await page.getByRole("button", { name: "Load another starter debate" }).click();
+    await expect(page.getByRole("button", { name: /Debater .* Portugal politics/i }).first()).toBeVisible();
+  });
+});
+
+test.describe("Portuguese locale defaults", () => {
+  test.use({ locale: "pt-PT" });
+
+  test("defaults Portuguese visitors to the Portugal lane", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Decline" }).click();
+
+    await expect(page.getByRole("button", { name: "Portugal" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByText("Portugal politics")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Debater .* Portugal politics/i }).first()).toBeVisible();
+  });
+});

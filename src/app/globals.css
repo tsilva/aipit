@@ -309,6 +309,20 @@ select.field {
   gap: 0.5rem;
 }
 
+.character-preset-card-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 231, 198, 0.14);
+  background: rgba(255, 248, 237, 0.06);
+  padding: 0.28rem 0.52rem;
+  color: var(--accent-strong);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .participant-sheet-header {
   display: flex;
   align-items: flex-start;
@@ -904,6 +918,33 @@ select.field {
   width: fit-content;
 }
 
+.hero-audience-controls {
+  display: grid;
+  justify-items: start;
+  gap: 0.45rem;
+}
+
+.hero-audience-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero-audience-context-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 231, 198, 0.14);
+  background: rgba(255, 248, 237, 0.05);
+  padding: 0.38rem 0.68rem;
+  color: var(--ink-soft);
+  font-size: 0.74rem;
+  line-height: 1;
+}
+
 .hero-selector-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1120,6 +1161,22 @@ select.field {
   white-space: nowrap;
   font-size: 0.68rem;
   letter-spacing: 0.06em;
+}
+
+.hero-roster-chip {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  margin-top: 0.38rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 231, 198, 0.14);
+  background: rgba(255, 248, 237, 0.05);
+  padding: 0.28rem 0.52rem;
+  color: var(--accent-strong);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .hero-roster-edit {

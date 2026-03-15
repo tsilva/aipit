@@ -1,3 +1,4 @@
+import type { PresetAudience } from "@/lib/audience";
 import { createCharacterProfile, type ParticipantCharacterProfile } from "@/lib/character-profile";
 import {
   OPENROUTER_MODEL_COMBATIVE,
@@ -8,6 +9,7 @@ export interface ParticipantCharacterPreset {
   name: string;
   title: string;
   summary: string;
+  audience: PresetAudience;
   language: string;
   recommendedModel: string;
   relationships?: Record<string, string>;
@@ -144,15 +146,21 @@ export const PARTICIPANT_CHARACTER_RELATIONSHIPS: Record<string, Record<string, 
 
 function definePreset({
   searchTerms,
+  audience = "global",
   ...preset
-}: Omit<ParticipantCharacterPreset, "searchText"> & { searchTerms: string[] }): ParticipantCharacterPreset {
+}: Omit<ParticipantCharacterPreset, "searchText" | "audience"> & {
+  audience?: PresetAudience;
+  searchTerms: string[];
+}): ParticipantCharacterPreset {
   return {
     ...preset,
+    audience,
     relationships: preset.relationships ?? PARTICIPANT_CHARACTER_RELATIONSHIPS[preset.id] ?? {},
     searchText: normalizeSearchText([
       preset.name,
       preset.title,
       preset.summary,
+      audience,
       preset.language,
       preset.characterProfile.role,
       preset.characterProfile.personality,
@@ -171,14 +179,17 @@ function definePreset({
   };
 }
 
-export function filterParticipantCharacterPresets(query: string): ParticipantCharacterPreset[] {
+export function filterParticipantCharacterPresets(query: string, audience?: PresetAudience): ParticipantCharacterPreset[] {
   const normalizedQuery = normalizeSearchText(query.trim());
+  const filteredPresets = audience
+    ? PARTICIPANT_CHARACTER_PRESETS.filter((preset) => preset.audience === audience)
+    : PARTICIPANT_CHARACTER_PRESETS;
 
   if (!normalizedQuery) {
-    return PARTICIPANT_CHARACTER_PRESETS;
+    return filteredPresets;
   }
 
-  return PARTICIPANT_CHARACTER_PRESETS.filter((preset) => preset.searchText.includes(normalizedQuery));
+  return filteredPresets.filter((preset) => preset.searchText.includes(normalizedQuery));
 }
 
 export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
@@ -187,6 +198,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     name: "Luís Montenegro",
     title: "PSD leader; centre-right institutionalist; prime-ministerial cadence",
     summary: "Moderate reformist, pro-European, fiscally cautious, focused on governability and execution.",
+    audience: "portugal",
     language: "European Portuguese first; competent English when needed",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/luis-montenegro.webp",
@@ -227,6 +239,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     name: "Mariana Mortágua",
     title: "Bloco de Esquerda coordinator; democratic socialist; anti-austerity polemicist",
     summary: "Sharp, data-literate left voice focused on inequality, housing, labour, feminism, and finance.",
+    audience: "portugal",
     language: "European Portuguese first; fluent English for international topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/mariana-mortagua.webp",
@@ -266,6 +279,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     name: "André Ventura",
     title: "Chega leader; nationalist right populist; confrontational anti-establishment voice",
     summary: "Combative, polarising, media-savvy rhetoric centred on security, corruption, identity, and order.",
+    audience: "portugal",
     language: "European Portuguese first; direct English if pressed",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/andre-ventura.webp",
@@ -304,6 +318,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     name: "Luís Marques Mendes",
     title: "Senior PSD figure; commentator; moderate centre-right institutional pragmatist",
     summary: "Measured, insider-savvy, consensus-seeking conservative with television pundit precision.",
+    audience: "portugal",
     language: "European Portuguese",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/luis-marques-mendes.webp",
@@ -342,6 +357,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     name: "Henrique Gouveia e Melo",
     title: "Admiral; public-service disciplinarian; non-partisan authority figure",
     summary: "Austere, duty-driven, competence-first voice focused on order, service, and national cohesion.",
+    audience: "portugal",
     language: "European Portuguese; concise English when operational clarity matters",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/henrique-gouveia-e-melo.webp",
@@ -380,6 +396,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     name: "João Cotrim de Figueiredo",
     title: "Iniciativa Liberal founder; classical liberal reformer; pro-market moderniser",
     summary: "Economically liberal, reformist, managerial voice focused on freedom, competition, and state efficiency.",
+    audience: "portugal",
     language: "European Portuguese first; polished English for business or EU topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/joao-cotrim-de-figueiredo.webp",
@@ -419,6 +436,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     name: "António José Seguro",
     title: "Former PS leader; moderate social democrat; conciliatory institutional centre-left",
     summary: "Serene, consensus-oriented social-democratic voice centred on cohesion, dignity, and democratic trust.",
+    audience: "portugal",
     language: "European Portuguese; formal English when diplomacy requires it",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/antonio-jose-seguro.webp",
@@ -458,6 +476,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     title: "PS secretary-general; insurgent social democrat; housing-and-infrastructure bruiser",
     summary:
       "Assertive, campaign-ready socialist voice focused on wages, the state, housing pressure, and political combat without centrist softness.",
+    audience: "portugal",
     language: "European Portuguese first; forceful English when needed",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/pedro-nuno-santos.webp",
@@ -498,6 +517,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     title: "Former prime minister; tactical socialist operator; institutional dealmaker",
     summary:
       "Calm, tactical centre-left voice built around negotiation, sequencing, and keeping power aligned with workable outcomes.",
+    audience: "portugal",
     language: "European Portuguese first; polished English for diplomatic topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/antonio-costa.webp",
@@ -537,6 +557,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     title: "Former BE coordinator; movement-left rhetorician; feminist anti-austerity campaigner",
     summary:
       "Quick, articulate left-popular voice mixing activist clarity, parliamentary sharpness, and moral pressure on inequality.",
+    audience: "portugal",
     language: "European Portuguese first; fluent English for international left topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/catarina-martins.webp",
@@ -576,6 +597,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     title: "PCP secretary-general; workerist communist organiser; labour-first collectivist",
     summary:
       "Plainspoken, disciplined communist voice centred on workers, salaries, public ownership, and suspicion of elite consensus.",
+    audience: "portugal",
     language: "European Portuguese",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/paulo-raimundo.webp",
@@ -615,6 +637,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     title: "PAN spokesperson; animal-rights progressive; green-liberal parliamentarian",
     summary:
       "Polished progressive voice focused on animal welfare, environmental protection, social rights, and ethical reform.",
+    audience: "portugal",
     language: "European Portuguese first; formal English for legal or international topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/ines-sousa-real.webp",

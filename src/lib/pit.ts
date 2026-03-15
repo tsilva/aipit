@@ -1,5 +1,6 @@
+import type { PresetAudience } from "@/lib/audience";
 import { DEFAULT_COORDINATOR_MODEL, DEFAULT_PRESET_MODEL } from "@/lib/openrouter-models";
-import { PARTICIPANT_CHARACTER_PRESETS } from "@/lib/character-presets";
+import { PARTICIPANT_CHARACTER_PRESETS, type ParticipantCharacterPreset } from "@/lib/character-presets";
 import {
   buildCharacterProfileSummary,
   cloneCharacterProfile,
@@ -175,6 +176,10 @@ const MODERATOR_CHARACTER_PRESET_MAP = new Map(MODERATOR_CHARACTER_PRESETS.map((
 const STARTER_BUNDLE_MAP = new Map(STARTER_BUNDLES.map((bundle) => [bundle.id, bundle] as const));
 const PARTICIPANT_PRESET_MAP = new Map(PARTICIPANT_CHARACTER_PRESETS.map((preset) => [preset.id, preset] as const));
 
+export function getParticipantCharacterPreset(presetId: string): ParticipantCharacterPreset | undefined {
+  return PARTICIPANT_PRESET_MAP.get(presetId);
+}
+
 export function createCoordinatorFromPreset(presetId: string): ParticipantConfig {
   const preset = MODERATOR_CHARACTER_PRESET_MAP.get(presetId) ?? MODERATOR_CHARACTER_PRESET_MAP.get(DEFAULT_COORDINATOR_PRESET_ID)!;
 
@@ -231,11 +236,16 @@ function createMemberFromPresetId(presetId: string, index: number): ParticipantC
   };
 }
 
-export function pickRandomStarterBundle(excludingId?: string): StarterBundle {
+export function listStarterBundles(audience?: PresetAudience): StarterBundle[] {
+  return audience ? STARTER_BUNDLES.filter((bundle) => bundle.audience === audience) : STARTER_BUNDLES;
+}
+
+export function pickRandomStarterBundle(excludingId?: string, audience?: PresetAudience): StarterBundle {
+  const audienceBundles = listStarterBundles(audience);
   const eligibleBundles = excludingId
-    ? STARTER_BUNDLES.filter((bundle) => bundle.id !== excludingId)
-    : STARTER_BUNDLES;
-  const bundlePool = eligibleBundles.length > 0 ? eligibleBundles : STARTER_BUNDLES;
+    ? audienceBundles.filter((bundle) => bundle.id !== excludingId)
+    : audienceBundles;
+  const bundlePool = eligibleBundles.length > 0 ? eligibleBundles : audienceBundles;
 
   return bundlePool[Math.floor(Math.random() * bundlePool.length)];
 }
@@ -261,8 +271,11 @@ export function createInputFromStarterBundle(bundle: StarterBundle): RunInput {
   };
 }
 
-export function createRandomStarterInput(excludingId?: string): { bundle: StarterBundle; input: RunInput } {
-  const bundle = pickRandomStarterBundle(excludingId);
+export function createRandomStarterInput(
+  excludingId?: string,
+  audience?: PresetAudience,
+): { bundle: StarterBundle; input: RunInput } {
+  const bundle = pickRandomStarterBundle(excludingId, audience);
 
   return {
     bundle,
@@ -270,8 +283,8 @@ export function createRandomStarterInput(excludingId?: string): { bundle: Starte
   };
 }
 
-export function createDefaultInput(): RunInput {
-  return createRandomStarterInput().input;
+export function createDefaultInput(audience?: PresetAudience): RunInput {
+  return createRandomStarterInput(undefined, audience).input;
 }
 
 function clamp(value: number, min: number, max: number): number {

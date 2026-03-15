@@ -1,9 +1,12 @@
+import type { PresetAudience } from "@/lib/audience";
+
 export interface StarterBundleDefinition {
   id: string;
   name: string;
   prompt: string;
   moderatorPresetId: string;
   memberPresetIds: readonly [string, string, string];
+  audience: PresetAudience;
 }
 
 export const DEFAULT_COORDINATOR_PRESET_ID = "jose-rodrigues-dos-santos";
@@ -18,6 +21,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should governments criminalize street camping even when housing supply is still broken?",
     moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
     memberPresetIds: ["luis-montenegro", "mariana-mortagua", "andre-ventura"],
+    audience: "portugal",
   },
   {
     id: "property-war-portugal",
@@ -25,6 +29,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should governments impose hard limits on how many homes one person or fund can own?",
     moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
     memberPresetIds: ["mariana-mortagua", "joao-cotrim-de-figueiredo", "henrique-gouveia-e-melo"],
+    audience: "portugal",
   },
   {
     id: "security-state-pressure",
@@ -32,6 +37,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should governments make DNA databases mandatory for all citizens to solve future crimes?",
     moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
     memberPresetIds: ["henrique-gouveia-e-melo", "andre-ventura", "mariana-mortagua"],
+    audience: "portugal",
   },
   {
     id: "gender-identity-flashpoint",
@@ -39,6 +45,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Can men get pregnant?",
     moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
     memberPresetIds: ["mariana-mortagua", "andre-ventura", "luis-montenegro"],
+    audience: "portugal",
   },
   {
     id: "podcaster-free-speech-war",
@@ -46,6 +53,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should online anonymity be abolished for accounts with more than a million followers?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["alex-jones", "lex-fridman", "joe-rogan"],
+    audience: "global",
   },
   {
     id: "ai-liability-meltdown",
@@ -53,6 +61,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should AI companies be held criminally liable when their models enable mass fraud or suicide coaching?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["elon-musk", "lex-fridman", "rick-sanchez"],
+    audience: "global",
   },
   {
     id: "border-prime-time",
@@ -60,6 +69,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should rich democracies deport migrants who enter illegally even if they have built families locally?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["donald-trump", "joe-rogan", "alex-jones"],
+    audience: "global",
   },
   {
     id: "absurdity-welfare-panel",
@@ -67,6 +77,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should universal basic income replace most targeted welfare programs even if some vulnerable groups lose out?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["homer-simpson", "rick-sanchez", "knight-who-says-ni"],
+    audience: "global",
   },
   {
     id: "toilet-paper-emergency",
@@ -75,6 +86,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
       "Should governments maintain strategic toilet paper reserves for national emergencies, or is that proof civilization has already collapsed?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["cornholio", "homer-simpson", "rick-sanchez"],
+    audience: "global",
   },
   {
     id: "ocean-democracy-meltdown",
@@ -82,6 +94,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should dolphins get voting rights in coastal cities if they can consistently recognize corrupt politicians?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["rick-sanchez", "homer-simpson", "knight-who-says-ni"],
+    audience: "global",
   },
   {
     id: "tourism-overdose-portugal",
@@ -89,6 +102,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should Lisbon and Porto cap short-term rentals and tourist beds even if that kills investment and nightlife?",
     moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
     memberPresetIds: ["mariana-mortagua", "luis-montenegro", "joao-cotrim-de-figueiredo"],
+    audience: "portugal",
   },
   {
     id: "national-service-showdown",
@@ -96,6 +110,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should Portugal require one year of mandatory national service for every 18-year-old?",
     moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
     memberPresetIds: ["henrique-gouveia-e-melo", "andre-ventura", "catarina-martins"],
+    audience: "portugal",
   },
   {
     id: "retirement-age-riot",
@@ -103,6 +118,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should Portugal raise the retirement age above 70 to keep the pension system alive?",
     moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
     memberPresetIds: ["luis-marques-mendes", "paulo-raimundo", "antonio-costa"],
+    audience: "portugal",
   },
   {
     id: "rail-vs-roads-portugal",
@@ -110,6 +126,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should Portugal pour billions into free rail and cut airport and highway expansion instead?",
     moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
     memberPresetIds: ["pedro-nuno-santos", "ines-sousa-real", "joao-cotrim-de-figueiredo"],
+    audience: "portugal",
   },
   {
     id: "social-media-age-ban",
@@ -117,6 +134,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should governments ban social media for everyone under 16 even if parents strongly object?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["dr-phil", "joe-rogan", "eric-cartman"],
+    audience: "global",
   },
   {
     id: "office-return-bloodsport",
@@ -124,6 +142,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should companies be allowed to fire employees who refuse to return to the office full time?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["dwight-schrute", "saul-goodman", "homer-simpson"],
+    audience: "global",
   },
   {
     id: "mars-before-earth",
@@ -131,6 +150,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should governments subsidize Mars colonies before they have fixed homelessness, hospitals, and schools on Earth?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["elon-musk", "rick-sanchez", "mariana-mortagua"],
+    audience: "portugal",
   },
   {
     id: "deepfake-defamation-war",
@@ -138,6 +158,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should publishing AI deepfakes of real people carry criminal penalties even when the creator claims it was satire?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["saul-goodman", "elon-musk", "alex-jones"],
+    audience: "global",
   },
   {
     id: "meat-tax-firestorm",
@@ -145,6 +166,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should governments heavily tax meat and dairy to hit climate goals faster?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["ines-sousa-real", "gordon-ramsay", "joe-rogan"],
+    audience: "portugal",
   },
   {
     id: "college-scam-tribunal",
@@ -152,6 +174,7 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Is college now a luxury-status scam that most young people should skip?",
     moderatorPresetId: US_COORDINATOR_PRESET_ID,
     memberPresetIds: ["joe-rogan", "lex-fridman", "saul-goodman"],
+    audience: "global",
   },
 ];
 
