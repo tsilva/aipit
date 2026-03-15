@@ -2,17 +2,32 @@
 
 import Script from "next/script";
 import { useSyncExternalStore } from "react";
-import { readAnalyticsConsent, subscribeToAnalyticsConsent } from "@/lib/analytics-consent";
+import {
+  type AnalyticsConsentState,
+  hasAnalyticsPermission,
+  readAnalyticsConsent,
+  readAnalyticsConsentRequirement,
+  subscribeToAnalyticsConsent,
+} from "@/lib/analytics-consent";
 import { GA_MEASUREMENT_ID } from "@/lib/google-analytics";
 
+function subscribeToHydration() {
+  return () => {};
+}
+
 export function GoogleAnalytics() {
-  const consent = useSyncExternalStore(
+  const hasMounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
+  const consent: AnalyticsConsentState = useSyncExternalStore(
     subscribeToAnalyticsConsent,
     readAnalyticsConsent,
-    () => "unset",
+    (): AnalyticsConsentState => "unset",
   );
 
-  if (!GA_MEASUREMENT_ID || consent !== "granted") {
+  if (
+    !hasMounted ||
+    !GA_MEASUREMENT_ID ||
+    !hasAnalyticsPermission({ consent, requireConsent: readAnalyticsConsentRequirement() })
+  ) {
     return null;
   }
 

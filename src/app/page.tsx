@@ -13,6 +13,7 @@ import {
   createRandomStarterInput,
   resolveStarterBundle,
 } from "@/lib/pit";
+import { readCountryCodeFromHeaders } from "@/lib/region";
 import { buildStarterBundleMetadata } from "@/lib/seo";
 
 type HomePageProps = {
@@ -40,7 +41,7 @@ async function buildInitialStudioState(bundleId: string | undefined): Promise<In
   const requestHeaders = await headers();
   const audience = resolveInitialAudience({
     acceptLanguage: requestHeaders.get("accept-language"),
-    countryCode: requestHeaders.get("cf-ipcountry") ?? requestHeaders.get("x-vercel-ip-country"),
+    countryCode: readCountryCodeFromHeaders(requestHeaders),
     starterBundleAudience: queryStarterBundle?.audience,
   });
   const starter = queryStarterBundle

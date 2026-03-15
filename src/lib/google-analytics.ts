@@ -1,6 +1,6 @@
 "use client";
 
-import { readAnalyticsConsent } from "@/lib/analytics-consent";
+import { hasAnalyticsPermission, readAnalyticsConsent, readAnalyticsConsentRequirement } from "@/lib/analytics-consent";
 
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? "";
 
@@ -18,7 +18,10 @@ function analyticsEnabled(): boolean {
   return (
     typeof window !== "undefined" &&
     GA_MEASUREMENT_ID.length > 0 &&
-    readAnalyticsConsent() === "granted" &&
+    hasAnalyticsPermission({
+      consent: readAnalyticsConsent(),
+      requireConsent: readAnalyticsConsentRequirement(),
+    }) &&
     typeof window.gtag === "function"
   );
 }

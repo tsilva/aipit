@@ -28,7 +28,7 @@
 - 🛡️ **Hosted-key abuse guardrails** — same-origin enforcement, per-IP rate limits, model allowlisting, payload caps, and no server-key metadata exposure
 - 📣 **Topic-aware SEO previews** — the homepage and each starter-bundle deep link publish tuned titles, descriptions, canonicals, and generated OG images for richer search and social sharing
 - 🧭 **Installable web metadata** — ships a web manifest, Gemini-generated platform icon set, and branded social card so browsers, crawlers, and share targets all get the right assets
-- 📈 **Consent-gated analytics + observability** — GA loads only after consent, runtime failures can be reported to Sentry, and proxy responses carry request IDs for debugging
+- 📈 **Region-aware analytics + observability** — EU visitors must opt in before GA loads, non-EU visitors are tracked by default unless they decline, runtime failures can be reported to Sentry, and proxy responses carry request IDs for debugging
 - ✅ **CI-backed release gate** — lint, typecheck, unit tests, build, and Playwright smoke coverage run in GitHub Actions
 
 ## 🏗️ How It Works
@@ -98,12 +98,12 @@ Transcript views intentionally render prompt and model output as plain text insi
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SITE_URL` | Yes in production | Canonical site URL used for metadata, manifest entries, and OG links |
 | `NEXT_PUBLIC_OPENROUTER_APP_NAME` | No | OpenRouter attribution title for client-side requests |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | Google Analytics 4 measurement ID; loaded only after explicit user consent |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | Google Analytics 4 measurement ID; EU visitors must opt in before it loads, non-EU visitors can decline per browser |
 | `NEXT_PUBLIC_SENTRY_DSN` | No | Browser-side Sentry DSN for client error reporting |
 | `OPENROUTER_API_KEY` | No | Server-side OpenRouter API key used by the internal proxy when present |
 | `SENTRY_DSN` | No | Server-side Sentry DSN for API route and server runtime error reporting |
 
-If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, the app loads the GA4 tag only after consent and then emits events for page views, starter bundle rerolls, character additions, debate starts, debate completions, debate cancellations, debate failures, and transcript copies.
+If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, the app uses Cloudflare or Vercel geolocation headers to decide whether consent is required. EU visitors are prompted before the GA4 tag loads; outside the EU the tag loads by default unless analytics was previously declined in that browser. The app then emits events for page views, starter bundle rerolls, character additions, debate starts, debate completions, debate cancellations, debate failures, and transcript copies.
 
 ## ☁️ Deploy to Vercel
 
@@ -158,7 +158,7 @@ src/
 - `OPENROUTER_API_KEY` is server-only and should not be prefixed with `NEXT_PUBLIC_`.
 - `NEXT_PUBLIC_SITE_URL` should be set explicitly in production so metadata, manifest URLs, and OG links use the canonical domain.
 - Starter bundles and personal API keys are not persisted in browser storage; reloads start from a fresh random bundle unless `?id=` is provided.
-- Analytics is opt-in per browser session; declining consent keeps the app fully usable and prevents GA from loading.
+- EU visitors must opt in before analytics loads. Outside the EU, declining analytics in the current browser keeps the app fully usable and prevents GA from loading.
 - `public/sitemap.xml` is generated from the starter bundle list and includes each deep-linkable `/?id=<bundle-id>` route.
 - The app also publishes a web manifest at `/manifest.webmanifest` and exposes Gemini-generated favicon, Apple touch, Android Chrome, and social-card assets for richer browser and sharing metadata.
 - `npm install` runs `prepare`, which points Git at the repo-managed hook in `.githooks/`; every commit regenerates and stages `public/sitemap.xml`.

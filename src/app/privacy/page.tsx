@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy | The AI Pit",
   description:
-    "Privacy details for The AI Pit, including hosted OpenRouter processing, optional analytics consent, and service providers.",
+    "Privacy details for The AI Pit, including hosted OpenRouter processing, region-aware analytics consent, and service providers.",
 };
 
 export default function PrivacyPage() {
@@ -36,14 +36,16 @@ export default function PrivacyPage() {
             for debugging, abuse prevention, reliability, and incident response.
           </p>
           <p>
-            If analytics is configured for the deployment, Google Analytics is loaded only after explicit consent.
-            Declining analytics keeps the app functional and prevents analytics scripts from loading. If Sentry is
-            configured, runtime errors may also be sent to Sentry for debugging.
+            If analytics is configured for the deployment, visitors in European Union countries are asked for explicit
+            consent before Google Analytics loads. Outside the European Union, analytics may load by default unless
+            you have already declined analytics in this browser. Declining analytics keeps the app functional and
+            prevents analytics scripts from loading. If Sentry is configured, runtime errors may also be sent to
+            Sentry for debugging.
           </p>
           <p>
             Service providers may include OpenRouter for model access, Vercel or another hosting provider for serving
-            the application and route handlers, Google Analytics if you consent to analytics, and Sentry if error
-            reporting is enabled for the deployment.
+            the application and route handlers, Google Analytics when analytics is enabled for your browser under the
+            rules above, and Sentry if error reporting is enabled for the deployment.
           </p>
           <p>
             This app is intended for interactive experimentation, not regulated or high-sensitivity processing. If you

@@ -3,17 +3,34 @@
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import {
+  type AnalyticsConsentState,
+  hasAnalyticsPermission,
+  readAnalyticsConsentRequirement,
   readAnalyticsConsent,
   subscribeToAnalyticsConsent,
   writeAnalyticsConsent,
 } from "@/lib/analytics-consent";
+import { GA_MEASUREMENT_ID } from "@/lib/google-analytics";
+
+function subscribeToHydration() {
+  return () => {};
+}
 
 export function AnalyticsConsentBanner() {
-  const consent = useSyncExternalStore(
+  const hasMounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
+  const consent: AnalyticsConsentState = useSyncExternalStore(
     subscribeToAnalyticsConsent,
     readAnalyticsConsent,
-    () => "unset",
+    (): AnalyticsConsentState => "unset",
   );
+
+  if (!hasMounted || !GA_MEASUREMENT_ID) {
+    return null;
+  }
+
+  if (hasAnalyticsPermission({ consent, requireConsent: readAnalyticsConsentRequirement() })) {
+    return null;
+  }
 
   if (consent !== "unset") {
     return null;
