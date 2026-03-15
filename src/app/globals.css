@@ -254,6 +254,25 @@ select.field {
   transform: translateY(0);
 }
 
+.character-preset-card:disabled {
+  transform: none;
+  cursor: default;
+  opacity: 0.78;
+  box-shadow: none;
+}
+
+.character-preset-card:disabled:hover,
+.character-preset-card:disabled:focus-visible,
+.character-preset-card.is-applied:hover,
+.character-preset-card.is-applied:focus-visible {
+  transform: none;
+  border-color: rgba(240, 171, 105, 0.42);
+  background:
+    linear-gradient(180deg, rgba(216, 122, 59, 0.16), rgba(255, 248, 237, 0.04)),
+    rgba(255, 248, 237, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(240, 171, 105, 0.16);
+}
+
 .character-preset-card-top {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

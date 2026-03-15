@@ -694,6 +694,14 @@ function promoteParticipantToModerator(input: RunInput, participantId: string): 
 }
 
 function addParticipantToLineup(input: RunInput, preset: ParticipantCharacterPreset): RunInput {
+  const isPresetAlreadyInLineup = [input.coordinator, ...input.members].some(
+    (participant) => participant.presetId === preset.id,
+  );
+
+  if (isPresetAlreadyInLineup) {
+    return input;
+  }
+
   const incomingParticipant = buildPresetParticipant(preset, input.members.length + 1);
 
   if (input.members.length === 0) {
@@ -1055,9 +1063,11 @@ function StudioHero({
 function CharacterSelectorModal({
   onClose,
   onSelectPreset,
+  activePresetIds,
 }: {
   onClose: () => void;
   onSelectPreset: (preset: ParticipantCharacterPreset) => void;
+  activePresetIds: ReadonlySet<string>;
 }) {
   const [query, setQuery] = useState("");
   const [filterPresets, setFilterPresets] = useState<((query: string) => ParticipantCharacterPreset[]) | null>(null);
@@ -1128,33 +1138,41 @@ function CharacterSelectorModal({
                 Character presets failed to load. Close and reopen the picker to try again.
               </div>
             ) : presets.length > 0 ? (
-              presets.map((preset) => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  className="character-preset-card"
-                  onClick={() => onSelectPreset(preset)}
-                >
-                  <span className="character-preset-card-top">
-                    <ParticipantAvatar
-                      name={preset.name}
-                      avatarUrl={preset.avatarUrl}
-                      className="character-preset-avatar"
-                      fallbackClassName="character-preset-avatar-fallback"
-                      imageClassName="avatar-image"
-                      sizes="48px"
-                    />
-                    <span className="character-preset-card-copy">
-                      <span className="character-preset-card-header">
-                        <span className="character-preset-card-name">{preset.name}</span>
-                        <span className="character-preset-card-chip">{getAudienceContextLabel(preset.audience)}</span>
+              presets.map((preset) => {
+                const isApplied = activePresetIds.has(preset.id);
+
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={`character-preset-card${isApplied ? " is-applied" : ""}`}
+                    disabled={isApplied}
+                    aria-disabled={isApplied}
+                    onClick={() => onSelectPreset(preset)}
+                  >
+                    <span className="character-preset-card-top">
+                      <ParticipantAvatar
+                        name={preset.name}
+                        avatarUrl={preset.avatarUrl}
+                        className="character-preset-avatar"
+                        fallbackClassName="character-preset-avatar-fallback"
+                        imageClassName="avatar-image"
+                        sizes="48px"
+                      />
+                      <span className="character-preset-card-copy">
+                        <span className="character-preset-card-header">
+                          <span className="character-preset-card-name">{preset.name}</span>
+                          <span className="character-preset-card-chip">
+                            {isApplied ? "Already added" : getAudienceContextLabel(preset.audience)}
+                          </span>
+                        </span>
+                        <span className="character-preset-card-title">{preset.title}</span>
+                        <span className="character-preset-card-summary">{preset.summary}</span>
                       </span>
-                      <span className="character-preset-card-title">{preset.title}</span>
-                      <span className="character-preset-card-summary">{preset.summary}</span>
                     </span>
-                  </span>
-                </button>
-              ))
+                  </button>
+                );
+              })
             ) : (
               <div className="character-preset-empty">
                 No presets match that search yet. Try a name, party, or ideology keyword.
@@ -2227,6 +2245,9 @@ export function PitStudio({
 
   const roster = [config.coordinator, ...config.members];
   const orderedRoster = orderParticipants(roster, lineupOrder);
+  const activePresetIds = new Set(
+    roster.flatMap((participant) => (participant.presetId ? [participant.presetId] : [])),
+  );
   const hasApiKey = apiKey.trim().length > 0;
   const hasPendingApiKeyChanges = draftApiKey.trim() !== apiKey.trim();
   const hasValidatedApiKey = apiKeyStatus === "valid" && !hasPendingApiKeyChanges;
@@ -2849,8 +2870,13 @@ export function PitStudio({
 
       {showCharacterSelectorModal ? (
         <CharacterSelectorModal
+          activePresetIds={activePresetIds}
           onClose={() => setShowCharacterSelectorModal(false)}
           onSelectPreset={(preset) => {
+            if (activePresetIds.has(preset.id)) {
+              return;
+            }
+
             trackEvent("character_added", {
               preset_id: preset.id,
               debater_count: roster.length,
