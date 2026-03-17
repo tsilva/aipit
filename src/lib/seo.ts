@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import createGeneratedMetadata from "../../repologogen-next/web-seo-metadata";
 import { PARTICIPANT_CHARACTER_PRESETS } from "@/lib/character-presets";
-import { SITE_URL } from "@/lib/site";
+import { SITE_TWITTER_HANDLE, SITE_URL } from "@/lib/site";
 import type { StarterBundleDefinition } from "@/lib/starter-bundles";
 
 export const SITE_NAME = "The AI Pit";
@@ -179,6 +179,8 @@ export function buildDefaultMetadata(): Metadata {
     },
     twitter: {
       card: "summary_large_image",
+      site: SITE_TWITTER_HANDLE,
+      creator: SITE_TWITTER_HANDLE,
       title: SITE_TITLE,
       description: SITE_DESCRIPTION,
       images: [image.url],
@@ -220,6 +222,8 @@ export function buildStarterBundleMetadata(bundle: StarterBundleDefinition): Met
     },
     twitter: {
       card: "summary_large_image",
+      site: SITE_TWITTER_HANDLE,
+      creator: SITE_TWITTER_HANDLE,
       title,
       description,
       images: [image.url],
