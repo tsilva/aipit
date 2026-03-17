@@ -27,7 +27,7 @@ import {
   buildCharacterProfileSummary,
 } from "@/lib/character-profile";
 
-export interface RunExecutionOptions {
+interface RunExecutionOptions {
   apiKey?: string;
   siteUrl?: string;
   onProgress?: (event: RunProgressEvent) => void;
@@ -194,7 +194,7 @@ function buildSpeakingOrderSection(frame: PromptFrame): string {
   ].join("\n");
 }
 
-export function buildStableSystemPrompt(
+function buildStableSystemPrompt(
   input: RunInput,
   participant: ParticipantConfig,
   role: "coordinator" | "member",
@@ -227,7 +227,7 @@ export function buildStableSystemPrompt(
   return sections.filter(Boolean).join("\n\n");
 }
 
-export function buildConversationAnchorMessage(role: "coordinator" | "member"): string {
+function buildConversationAnchorMessage(role: "coordinator" | "member"): string {
   return [
     "# SESSION",
     "- Continue the same debate with the same speaker identity and room context already provided above.",
@@ -238,7 +238,7 @@ export function buildConversationAnchorMessage(role: "coordinator" | "member"): 
   ].join("\n");
 }
 
-export function buildTurnContextPrompt(frame: PromptFrame): string {
+function buildTurnContextPrompt(frame: PromptFrame): string {
   const sections = ["# LIVE TURN", `- **Current objective**: ${frame.objective}`];
   const speakingOrderSection = buildSpeakingOrderSection(frame);
 
@@ -313,7 +313,7 @@ export function buildPromptMessages(
   ];
 }
 
-export function resolveSiteUrl(): string | undefined {
+function resolveSiteUrl(): string | undefined {
   if (typeof window !== "undefined" && window.location?.origin) {
     return window.location.origin;
   }

@@ -48,7 +48,7 @@ function getBundleParticipantNames(bundle: StarterBundleDefinition): string[] {
     .filter((name): name is string => Boolean(name));
 }
 
-export function buildOgImageUrl(title: string, subtitle: string): string {
+function buildOgImageUrl(title: string, subtitle: string): string {
   const params = new URLSearchParams({
     title: truncate(title, 90),
     subtitle: truncate(subtitle, 140),
@@ -57,11 +57,11 @@ export function buildOgImageUrl(title: string, subtitle: string): string {
   return `${SITE_URL}/api/og?${params.toString()}`;
 }
 
-export function getBundleUrl(bundleId: string): string {
+function getBundleUrl(bundleId: string): string {
   return `${SITE_URL}/?id=${encodeURIComponent(bundleId)}`;
 }
 
-export function buildBundleDescription(bundle: StarterBundleDefinition): string {
+function buildBundleDescription(bundle: StarterBundleDefinition): string {
   const names = getBundleParticipantNames(bundle);
   const cast = names.length > 0 ? joinNames(names) : "three AI characters";
   const suffix = ` Debate it with ${cast} in The AI Pit.`;

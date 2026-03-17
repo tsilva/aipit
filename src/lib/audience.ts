@@ -1,6 +1,6 @@
 export type PresetAudience = "global" | "portugal";
 
-export const DEFAULT_PRESET_AUDIENCE: PresetAudience = "global";
+const DEFAULT_PRESET_AUDIENCE: PresetAudience = "global";
 
 const AUDIENCE_CONTEXT_LABELS: Record<PresetAudience, string> = {
   global: "Global media & pop culture",

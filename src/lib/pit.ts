@@ -1,12 +1,10 @@
 import type { PresetAudience } from "@/lib/audience";
-import { DEFAULT_COORDINATOR_MODEL, DEFAULT_PRESET_MODEL } from "@/lib/openrouter-models";
-import { PARTICIPANT_CHARACTER_PRESETS, type ParticipantCharacterPreset } from "@/lib/character-presets";
+import { OPENROUTER_MODEL_COMBATIVE } from "@/lib/openrouter-models";
+import { PARTICIPANT_CHARACTER_PRESETS } from "@/lib/character-presets";
 import {
   buildCharacterProfileSummary,
   cloneCharacterProfile,
   createCharacterProfile,
-  hasCharacterProfileContent,
-  normalizeCharacterProfile,
   type ParticipantCharacterProfile,
 } from "@/lib/character-profile";
 import {
@@ -16,16 +14,8 @@ import {
   US_COORDINATOR_PRESET_ID,
   type StarterBundleDefinition,
 } from "@/lib/starter-bundles";
-export {
-  COORDINATOR_PRESET_ID,
-  DEFAULT_COORDINATOR_PRESET_ID,
-  SILLIEST_STARTER_BUNDLE_ID,
-  STARTER_BUNDLES,
-  US_COORDINATOR_PRESET_ID,
-} from "@/lib/starter-bundles";
 
 export type PitMode = "debate";
-export { DEFAULT_PRESET_MODEL, MODEL_SUGGESTIONS } from "@/lib/openrouter-models";
 
 export type TurnKind =
   | "opening"
@@ -97,18 +87,18 @@ export interface RunResult {
   warnings: string[];
 }
 
-export interface ModeratorCharacterPreset {
+interface ModeratorCharacterPreset {
   id: string;
   name: string;
   avatarUrl?: string;
   characterProfile: ParticipantCharacterProfile;
 }
 
-export type StarterBundle = StarterBundleDefinition;
+type StarterBundle = StarterBundleDefinition;
 
 export const BALLOON_DELIMITER = "<<<BALLOON>>>";
 
-export const DEFAULT_SHARED_DIRECTIVE = `Character-vs-character debate. Defend your character's instincts, style, and worldview with full conviction — let the character's natural temperament drive tone and intensity. Engage the strongest opposing points; respond to what was actually said, never repeat a stump speech. Hold your position but acknowledge stronger objections when they matter. Stay concrete, argumentative, conversational — not essayistic.`;
+const DEFAULT_SHARED_DIRECTIVE = `Character-vs-character debate. Defend your character's instincts, style, and worldview with full conviction — let the character's natural temperament drive tone and intensity. Engage the strongest opposing points; respond to what was actually said, never repeat a stump speech. Hold your position but acknowledge stronger objections when they matter. Stay concrete, argumentative, conversational — not essayistic.`;
 export const PIT_RUN_DEFAULTS = {
   sharedDirective: DEFAULT_SHARED_DIRECTIVE,
   rounds: 2,
@@ -176,32 +166,24 @@ const MODERATOR_CHARACTER_PRESET_MAP = new Map(MODERATOR_CHARACTER_PRESETS.map((
 const STARTER_BUNDLE_MAP = new Map(STARTER_BUNDLES.map((bundle) => [bundle.id, bundle] as const));
 const PARTICIPANT_PRESET_MAP = new Map(PARTICIPANT_CHARACTER_PRESETS.map((preset) => [preset.id, preset] as const));
 
-export function getParticipantCharacterPreset(presetId: string): ParticipantCharacterPreset | undefined {
-  return PARTICIPANT_PRESET_MAP.get(presetId);
-}
-
-export function createCoordinatorFromPreset(presetId: string): ParticipantConfig {
+function createCoordinatorFromPreset(presetId: string): ParticipantConfig {
   const preset = MODERATOR_CHARACTER_PRESET_MAP.get(presetId) ?? MODERATOR_CHARACTER_PRESET_MAP.get(DEFAULT_COORDINATOR_PRESET_ID)!;
 
   return {
     id: makeId("coordinator"),
     name: preset.name,
-    model: DEFAULT_COORDINATOR_MODEL,
+    model: OPENROUTER_MODEL_COMBATIVE,
     presetId: preset.id,
     characterProfile: cloneCharacterProfile(preset.characterProfile),
     avatarUrl: preset.avatarUrl,
   };
 }
 
-export function createCoordinator(): ParticipantConfig {
-  return createCoordinatorFromPreset(DEFAULT_COORDINATOR_PRESET_ID);
-}
-
 export function createMember(index: number): ParticipantConfig {
   return {
     id: makeId(`member-${index}`),
     name: `Debater ${index}`,
-    model: DEFAULT_PRESET_MODEL,
+    model: OPENROUTER_MODEL_COMBATIVE,
     characterProfile:
       index % 2 === 0
         ? createCharacterProfile({
@@ -240,7 +222,7 @@ export function listStarterBundles(audience?: PresetAudience): StarterBundle[] {
   return audience ? STARTER_BUNDLES.filter((bundle) => bundle.audience === audience) : STARTER_BUNDLES;
 }
 
-export function pickRandomStarterBundle(excludingId?: string, audience?: PresetAudience): StarterBundle {
+function pickRandomStarterBundle(excludingId?: string, audience?: PresetAudience): StarterBundle {
   const audienceBundles = listStarterBundles(audience);
   const eligibleBundles = excludingId
     ? audienceBundles.filter((bundle) => bundle.id !== excludingId)
@@ -250,7 +232,7 @@ export function pickRandomStarterBundle(excludingId?: string, audience?: PresetA
   return bundlePool[Math.floor(Math.random() * bundlePool.length)];
 }
 
-export function getStarterBundle(bundleId: string): StarterBundle | undefined {
+function getStarterBundle(bundleId: string): StarterBundle | undefined {
   return STARTER_BUNDLE_MAP.get(bundleId);
 }
 
@@ -287,78 +269,6 @@ export function createDefaultInput(audience?: PresetAudience): RunInput {
   return createRandomStarterInput(undefined, audience).input;
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function normalizeText(value: unknown, fallback = ""): string {
-  return typeof value === "string" ? value.trim() : fallback;
-}
-
-function normalizeOptionalText(value: unknown): string | undefined {
-  const normalized = normalizeText(value);
-  return normalized || undefined;
-}
-
-function normalizeParticipant(value: unknown, fallbackName: string): ParticipantConfig {
-  const raw = (value ?? {}) as Record<string, unknown>;
-
-  return {
-    id: normalizeText(raw.id, makeId(fallbackName.toLowerCase().replace(/\s+/g, "-"))),
-    name: normalizeText(raw.name, fallbackName),
-    model: normalizeText(raw.model),
-    presetId: normalizeOptionalText(raw.presetId),
-    characterProfile: normalizeCharacterProfile(raw.characterProfile, normalizeText(raw.character)),
-    avatarUrl: normalizeOptionalText(raw.avatarUrl),
-  };
-}
-
-export function normalizeRunInput(value: unknown): RunInput {
-  const raw = (value ?? {}) as Record<string, unknown>;
-  const members = Array.isArray(raw.members)
-    ? raw.members.map((member, index) => normalizeParticipant(member, `Debater ${index + 1}`))
-    : [];
-
-  const input: RunInput = {
-    mode: "debate",
-    prompt: normalizeText(raw.prompt),
-    sharedDirective: normalizeText(raw.sharedDirective, PIT_RUN_DEFAULTS.sharedDirective),
-    rounds: clamp(Number(raw.rounds) || PIT_RUN_DEFAULTS.rounds, 1, 6),
-    temperature: clamp(Number(raw.temperature) || PIT_RUN_DEFAULTS.temperature, 0, 2),
-    maxCompletionTokens: clamp(Number(raw.maxCompletionTokens) || PIT_RUN_DEFAULTS.maxCompletionTokens, 200, 4000),
-    coordinator: normalizeParticipant(raw.coordinator, "Moderator"),
-    members,
-  };
-
-  if (!input.prompt) {
-    throw new Error("Main prompt is required.");
-  }
-
-  if (!input.coordinator.model) {
-    throw new Error("Moderator model is required.");
-  }
-
-  if (!hasCharacterProfileContent(input.coordinator.characterProfile)) {
-    throw new Error("Moderator character details are required.");
-  }
-
-  if (input.members.length < 2) {
-    throw new Error("At least two debaters are required to start the debate.");
-  }
-
-  for (const member of input.members) {
-    if (!member.model) {
-      throw new Error(`Model is required for ${member.name || "a debater"}.`);
-    }
-
-    if (!hasCharacterProfileContent(member.characterProfile)) {
-      throw new Error(`Character details are required for ${member.name || "a debater"}.`);
-    }
-  }
-
-  return input;
-}
-
 export function emptyUsage(): UsageSummary {
   return {
     promptTokens: 0,
@@ -388,7 +298,7 @@ export function createRosterSnapshot(input: RunInput): ParticipantConfig[] {
   }));
 }
 
-export function parseTurnBubbles(content: string): TurnBubble[] {
+function parseTurnBubbles(content: string): TurnBubble[] {
   const normalized = content.trim();
 
   if (!normalized) {

@@ -2,7 +2,7 @@ import type { PitTurn } from "@/lib/pit";
 
 const MARKDOWN_SPECIAL_CHARACTERS = /[\\`*_{}\[\]()#+\-!>|]/g;
 
-export function escapeMarkdownText(text: string): string {
+function escapeMarkdownText(text: string): string {
   return text.replace(MARKDOWN_SPECIAL_CHARACTERS, "\\$&");
 }
 

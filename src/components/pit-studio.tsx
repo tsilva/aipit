@@ -38,7 +38,6 @@ import {
   type PresetAudience,
 } from "@/lib/audience";
 import {
-  MODEL_SUGGESTIONS,
   PIT_RUN_DEFAULTS,
   addUsage,
   createRosterSnapshot,
@@ -51,6 +50,7 @@ import {
   type RunInput,
   type RunResult,
 } from "@/lib/pit";
+import { SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
 import {
   invalidOpenRouterKeyMessage,
   validateOpenRouterKey,
@@ -1593,7 +1593,7 @@ function ParticipantSettingsSheet({
               value={participant.model}
               onChange={(event) => onChange({ model: event.target.value })}
             >
-              {MODEL_SUGGESTIONS.map((model) => (
+              {SUPPORTED_OPENROUTER_MODELS.map((model) => (
                 <option key={model} value={model}>
                   {model}
                 </option>

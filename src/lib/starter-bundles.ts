@@ -10,9 +10,8 @@ export interface StarterBundleDefinition {
 }
 
 export const DEFAULT_COORDINATOR_PRESET_ID = "jose-rodrigues-dos-santos";
-export const COORDINATOR_PRESET_ID = DEFAULT_COORDINATOR_PRESET_ID;
 export const US_COORDINATOR_PRESET_ID = "anderson-cooper";
-export const SILLIEST_STARTER_BUNDLE_ID = "ocean-democracy-meltdown";
+const SILLIEST_STARTER_BUNDLE_ID = "ocean-democracy-meltdown";
 
 export const STARTER_BUNDLES: StarterBundleDefinition[] = [
   {

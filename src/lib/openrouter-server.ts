@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { MODEL_SUGGESTIONS } from "@/lib/openrouter-models";
+import { SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
 import { buildOpenRouterHeaders, type OpenRouterPromptCacheControl } from "@/lib/openrouter";
 import { buildResponseHeaders, resolveRequestId } from "@/lib/request-id";
 
@@ -14,7 +14,7 @@ const HOSTED_MAX_TOTAL_MESSAGE_CHARS = 180_000;
 const HOSTED_MAX_COMPLETION_TOKENS = 2_400;
 const HOSTED_MAX_SESSION_ID_LENGTH = 128;
 
-const HOSTED_ALLOWED_MODELS = new Set<string>(MODEL_SUGGESTIONS);
+const HOSTED_ALLOWED_MODELS = new Set<string>(SUPPORTED_OPENROUTER_MODELS);
 const hostedRequestCounts = new Map<string, { count: number; resetAt: number }>();
 
 type HostedChatMessage = {
@@ -55,7 +55,7 @@ export function isServerOpenRouterKeyRequest(apiKey?: string): boolean {
   return !apiKey?.trim();
 }
 
-export function resolveOpenRouterProxyApiKey(apiKey?: string): string {
+function resolveOpenRouterProxyApiKey(apiKey?: string): string {
   const resolvedApiKey = apiKey?.trim() || resolveServerApiKey();
 
   if (!resolvedApiKey) {
