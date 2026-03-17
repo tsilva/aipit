@@ -1,7 +1,7 @@
 {
-  "name": "aipit | AI-Powered Structured Debate Orchestrator",
-  "short_name": "aipit | AI-Powered Structured Debate Orchestrator",
-  "description": "A Next.js platform for orchestrating moderator-led debates between richly profiled AI characters using OpenRouter. Features multi-model support, immutable replays, and cost-tracking.",
+  "name": "AIPIT | AI Character Debate Studio",
+  "short_name": "AIPIT | AI Character Debate Studio",
+  "description": "A Next.js platform for orchestrating structured, moderator-led debates between AI characters. Features multi-model failover, real-time backpressure, and shareable immutable replays.",
   "icons": [
     {
       "src": "android-chrome-192.png",

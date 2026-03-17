@@ -6,25 +6,24 @@
     "web-seo"
   ],
   "sources": [
-    "bundled_defaults",
-    "/Users/tsilva/.repologogen/config.yaml"
+    "bundled_defaults"
   ],
   "metadata": {
-    "title": "aipit | AI-Powered Structured Debate Orchestrator",
-    "short_description": "A Next.js platform for orchestrating moderator-led debates between richly profiled AI characters using OpenRouter. Features multi-model support, immutable replays, and cost-tracking.",
-    "social_title": "aipit - Where AI Characters Clash in Structured Debates",
-    "social_description": "Throw AI characters into moderator-led simulations. Features 28+ presets, structured debate flows, and shareable immutable replays. Built with Next.js and OpenRouter.",
+    "title": "aipit | AI Character Debate & Orchestration Platform",
+    "short_description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, immutable replay snapshots, and advanced token management.",
+    "social_title": "aipit: Where AI Characters Clash in Structured Debates",
+    "social_description": "Watch richly-profiled AI personalities debate on a Next.js platform featuring automated orchestration, character presets, and shareable replay snapshots via Cloudflare R2.",
     "keywords": [
-      "ai debates",
+      "nextjs",
       "openrouter",
-      "next.js",
-      "llm orchestration",
-      "ai simulation",
-      "structured prompts",
-      "ai roleplay",
-      "multi-model ai",
+      "ai-debates",
+      "llm-orchestration",
       "prompt-caching",
-      "ai moderator"
+      "ai-characters",
+      "structured-conferencing",
+      "cloudflare-r2",
+      "typescript",
+      "multi-model-ai"
     ]
   },
   "assets": [
@@ -140,6 +139,20 @@
       "target": "web-seo",
       "strategy": "written_metadata",
       "path": "web-seo/site.webmanifest"
+    },
+    {
+      "key": "web-seo-nextjs-metadata-json",
+      "kind": "metadata",
+      "target": "web-seo",
+      "strategy": "written_metadata",
+      "path": "repologogen-next/web-seo-metadata.json"
+    },
+    {
+      "key": "web-seo-nextjs-metadata-ts",
+      "kind": "metadata",
+      "target": "web-seo",
+      "strategy": "written_metadata",
+      "path": "repologogen-next/web-seo-metadata.ts"
     }
   ]
 }

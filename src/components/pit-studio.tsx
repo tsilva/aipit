@@ -1996,6 +1996,7 @@ function ChamberStage({
   isPlaybackPlaying,
   isAwaitingTurnResponse,
   pendingTurn,
+  shareUrl,
   shareError,
   shareActionLabel,
   shareActionCopied,
@@ -2032,6 +2033,7 @@ function ChamberStage({
   isPlaybackPlaying: boolean;
   isAwaitingTurnResponse: boolean;
   pendingTurn: PendingTurnPreview | null;
+  shareUrl: string | null;
   shareError: string | null;
   shareActionLabel?: string;
   shareActionCopied: boolean;
@@ -2078,6 +2080,8 @@ function ChamberStage({
     queuedFocusEntry?.participant ??
     null;
   const visibleQueuedEntry = isShowingPendingTurn ? (thinkingEntry ?? queuedFocusEntry) : queuedFocusEntry;
+  const isViewingFinalFrame =
+    Boolean(currentFrame) && !isShowingPendingTurn && frames.length > 0 && activeFrameIndex === frames.length - 1;
 
   const canConfigureActiveSpeaker = false;
   const canGoPrevious = activeFrameIndex > 0;
@@ -2125,19 +2129,6 @@ function ChamberStage({
             </button>
             {hasPlaybackStarted ? (
               <div className="chamber-panel-tools">
-                {onShareAction && shareActionLabel ? (
-                  <button
-                    type="button"
-                    onClick={onShareAction}
-                    disabled={shareActionDisabled}
-                    className={`action-button action-button-compact ${shareActionCopied ? "action-button-primary" : ""}`.trim()}
-                  >
-                    <span className="action-button-icon">
-                      {shareActionCopied ? <CheckGlyph /> : <CopyGlyph />}
-                    </span>
-                    {shareActionLabel}
-                  </button>
-                ) : null}
                 <div className="mode-toggle mode-toggle-compact stage-panel-toggle" aria-label="Stage panel mode">
                   {(["conversation", "transcript"] as const).map((nextPanelMode) => (
                     <button
@@ -2280,6 +2271,29 @@ function ChamberStage({
                             <p className={`stage-bubble-copy ${isBubbleStreaming ? "is-streaming" : ""}`}>
                               {displayedBubbleContent || "\u00a0"}
                             </p>
+                            {isViewingFinalFrame && onShareAction && shareActionLabel ? (
+                              <div className="speaker-focus-share-cta">
+                                <div className="speaker-focus-share-copy">
+                                  <p className="speaker-focus-share-kicker">Finished?</p>
+                                  <p className="speaker-focus-share-body">
+                                    {shareUrl
+                                      ? "This debate has a replay link. Copy it and send it around."
+                                      : "Turn this finished debate into a replay link you can send around."}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={onShareAction}
+                                  disabled={shareActionDisabled}
+                                  className={`action-button speaker-focus-share-button ${shareActionCopied ? "action-button-primary" : ""}`.trim()}
+                                >
+                                  <span className="action-button-icon">
+                                    {shareActionCopied ? <CheckGlyph /> : <CopyGlyph />}
+                                  </span>
+                                  {shareActionLabel}
+                                </button>
+                              </div>
+                            ) : null}
                           </article>
                         ) : visibleQueuedEntry ? (
                           <article className="speaker-focus-bubble-card speaker-focus-bubble-card-muted">
@@ -3206,6 +3220,7 @@ export function PitStudio({
             isPlaybackPlaying={isPlaybackPlaying}
             isAwaitingTurnResponse={isAwaitingTurnResponse}
             pendingTurn={pendingTurn}
+            shareUrl={shareUrl}
             shareError={shareError}
             shareActionLabel={showShareAction ? shareActionLabel : undefined}
             shareActionCopied={shareState === "copied"}

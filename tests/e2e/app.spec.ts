@@ -24,6 +24,27 @@ async function dismissConsentBannerIfVisible(page: Page) {
   await expect(banner).toBeHidden();
 }
 
+async function advanceToLastBubble(page: Page) {
+  const nextButton = page.getByRole("button", { name: "Next speech bubble" });
+
+  for (let step = 0; step < 48; step += 1) {
+    if (await page.getByRole("button", { name: "Share" }).isVisible().catch(() => false)) {
+      return;
+    }
+
+    if (!(await nextButton.isVisible().catch(() => false))) {
+      break;
+    }
+
+    if (!(await nextButton.isEnabled().catch(() => false))) {
+      await page.waitForTimeout(250);
+      continue;
+    }
+
+    await nextButton.click();
+  }
+}
+
 test("gates analytics by consent and completes a mocked debate", async ({ page }) => {
   let chatCalls = 0;
 
@@ -128,6 +149,7 @@ test("creates a share link after a mocked debate finishes", async ({ page }) => 
 
   await page.getByRole("button", { name: "START", exact: true }).click();
   await expect.poll(() => chatCalls, { timeout: 45_000 }).toBeGreaterThanOrEqual(minimumExpectedChatCalls);
+  await advanceToLastBubble(page);
   await expect(page.getByRole("button", { name: "Share" })).toBeVisible({ timeout: 45_000 });
 
   await page.getByRole("button", { name: "Share" }).click();

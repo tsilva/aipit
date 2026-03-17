@@ -2348,6 +2348,41 @@ select.field {
   animation: bubble-caret 850ms steps(1) infinite;
 }
 
+.speaker-focus-share-cta {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.95rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(95, 75, 61, 0.12);
+}
+
+.speaker-focus-share-copy {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.speaker-focus-share-kicker {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7b4d2f;
+}
+
+.speaker-focus-share-body {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: rgba(36, 31, 27, 0.82);
+}
+
+.speaker-focus-share-button {
+  width: 100%;
+  justify-content: center;
+  padding-block: 0.72rem;
+}
+
 .subtitle-ribbon {
   border-top: 1px solid rgba(255, 235, 210, 0.08);
   border-bottom: 1px solid rgba(255, 235, 210, 0.08);
