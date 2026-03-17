@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import createGeneratedMetadata from "../../repologogen-next/web-seo-metadata";
 import { PARTICIPANT_CHARACTER_PRESETS } from "@/lib/character-presets";
 import { SITE_URL } from "@/lib/site";
 import type { StarterBundleDefinition } from "@/lib/starter-bundles";
@@ -12,8 +13,55 @@ export const SITE_BACKGROUND_COLOR = "#0c1118";
 
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
-const DEFAULT_SOCIAL_IMAGE_PATH = "/social-card.png";
 const characterNameById = new Map(PARTICIPANT_CHARACTER_PRESETS.map((preset) => [preset.id, preset.name] as const));
+const generatedMetadata = createGeneratedMetadata(new URL(SITE_URL));
+
+function normalizeMetadataUrl(value: string | URL): string {
+  return value instanceof URL ? value.toString() : value;
+}
+
+function getDefaultSocialImage() {
+  const images = generatedMetadata.openGraph?.images;
+  const firstImage = Array.isArray(images) ? images[0] : images;
+
+  if (!firstImage) {
+    return {
+      url: "/brand/web-seo/og-image-1200x630.png",
+      width: OG_IMAGE_WIDTH,
+      height: OG_IMAGE_HEIGHT,
+      alt: "The AI Pit brand card",
+    };
+  }
+
+  if (typeof firstImage === "string" || firstImage instanceof URL) {
+    return {
+      url: normalizeMetadataUrl(firstImage),
+      width: OG_IMAGE_WIDTH,
+      height: OG_IMAGE_HEIGHT,
+      alt: "The AI Pit brand card",
+    };
+  }
+
+  return {
+    url: normalizeMetadataUrl(firstImage.url),
+    width: firstImage.width ?? OG_IMAGE_WIDTH,
+    height: firstImage.height ?? OG_IMAGE_HEIGHT,
+    alt: firstImage.alt ?? "The AI Pit brand card",
+  };
+}
+
+const DEFAULT_SOCIAL_IMAGE = getDefaultSocialImage();
+const DEFAULT_MANIFEST_PATH =
+  typeof generatedMetadata.manifest === "string"
+    ? generatedMetadata.manifest
+    : generatedMetadata.manifest instanceof URL
+      ? generatedMetadata.manifest.toString()
+      : "/brand/web-seo/site.webmanifest";
+const DEFAULT_ICONS = generatedMetadata.icons;
+
+export const DEFAULT_SOCIAL_IMAGE_URL = DEFAULT_SOCIAL_IMAGE.url.startsWith("http")
+  ? DEFAULT_SOCIAL_IMAGE.url
+  : `${SITE_URL}${DEFAULT_SOCIAL_IMAGE.url}`;
 
 function truncate(value: string, maxLength: number): string {
   if (value.length <= maxLength) {
@@ -82,17 +130,17 @@ function createImageDescriptor(title: string, subtitle: string, alt: string) {
 
 export function buildDefaultMetadata(): Metadata {
   const image = {
-    url: `${SITE_URL}${DEFAULT_SOCIAL_IMAGE_PATH}`,
-    width: OG_IMAGE_WIDTH,
-    height: OG_IMAGE_HEIGHT,
-    alt: "Two AI debaters facing off in The AI Pit arena",
+    url: DEFAULT_SOCIAL_IMAGE_URL,
+    width: DEFAULT_SOCIAL_IMAGE.width,
+    height: DEFAULT_SOCIAL_IMAGE.height,
+    alt: DEFAULT_SOCIAL_IMAGE.alt,
   };
 
   return {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     applicationName: SITE_NAME,
-    manifest: "/manifest.webmanifest",
+    manifest: DEFAULT_MANIFEST_PATH,
     keywords: [
       "AI debate simulator",
       "AI debate app",
@@ -116,16 +164,7 @@ export function buildDefaultMetadata(): Metadata {
     publisher: SITE_NAME,
     category: "technology",
     metadataBase: new URL(SITE_URL),
-    icons: {
-      icon: [
-        { url: "/favicon.ico", sizes: "any" },
-        { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
-        { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
-        { url: "/favicon-48x48.png", type: "image/png", sizes: "48x48" },
-      ],
-      apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
-      shortcut: ["/favicon.ico"],
-    },
+    icons: DEFAULT_ICONS,
     alternates: {
       canonical: "/",
     },

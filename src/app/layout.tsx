@@ -5,6 +5,7 @@ import { AnalyticsConsentBanner } from "@/components/analytics-consent-banner";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { SITE_URL } from "@/lib/site";
 import {
+  DEFAULT_SOCIAL_IMAGE_URL,
   SITE_BACKGROUND_COLOR,
   SITE_DESCRIPTION,
   SITE_NAME,
@@ -59,7 +60,7 @@ const jsonLd = {
       isAccessibleForFree: true,
       applicationSubCategory: "AI Debate Simulator",
       browserRequirements: "Requires JavaScript. Requires a modern browser.",
-      image: `${SITE_URL}/social-card.png`,
+      image: DEFAULT_SOCIAL_IMAGE_URL,
       featureList: [
         "Moderator-led AI debates",
         "Character presets and custom rosters",
@@ -78,7 +79,7 @@ const jsonLd = {
       description: SITE_DESCRIPTION,
       primaryImageOfPage: {
         "@type": "ImageObject",
-        url: `${SITE_URL}/social-card.png`,
+        url: DEFAULT_SOCIAL_IMAGE_URL,
         width: 1200,
         height: 630,
       },

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-const payload = {
+const payload: Omit<Metadata, "metadataBase"> = {
   "title": "aipit | Orchestrated AI Character Debates",
   "description": "A Next.js platform that runs moderator-led debates between AI characters. Built with OpenRouter, it features automated failover, cost tracking, and shareable replay snapshots.",
   "keywords": [
@@ -58,7 +58,7 @@ const payload = {
     ]
   },
   "manifest": "/brand/web-seo/site.webmanifest"
-} as const;
+};
 
 export function createMetadata(metadataBase: URL): Metadata {
   return {
