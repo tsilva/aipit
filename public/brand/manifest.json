@@ -1,0 +1,157 @@
+{
+  "project_name": "aipit",
+  "project_type": "nodejs",
+  "bundle": "core-brand",
+  "targets": [
+    "web-seo"
+  ],
+  "sources": [
+    "bundled_defaults"
+  ],
+  "metadata": {
+    "title": "aipit | AI Character Debate Orchestrator",
+    "short_description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, character profiles, streaming responses, and shareable snapshots.",
+    "social_title": "aipit - Structured AI Character Debates",
+    "social_description": "Watch richly-profiled AI characters clash in moderator-led discussions. Powered by Next.js and OpenRouter with multi-model support and live streaming.",
+    "keywords": [
+      "nextjs",
+      "openrouter",
+      "ai-debates",
+      "llm-orchestration",
+      "ai-characters",
+      "streaming-llm",
+      "structured-debate",
+      "react-server-components",
+      "ai-simulation"
+    ]
+  },
+  "assets": [
+    {
+      "key": "logo",
+      "kind": "logo",
+      "target": "shared",
+      "strategy": "generated",
+      "path": "logo/logo-1024.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "key": "icon",
+      "kind": "icon",
+      "target": "shared",
+      "strategy": "generated_from_logo_reference",
+      "path": "icon/icon-1024.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "key": "web-seo-favicon-16",
+      "kind": "favicon",
+      "target": "web-seo",
+      "strategy": "resized_from_icon",
+      "path": "web-seo/favicon/favicon-16.png",
+      "size": [
+        16,
+        16
+      ]
+    },
+    {
+      "key": "web-seo-favicon-32",
+      "kind": "favicon",
+      "target": "web-seo",
+      "strategy": "resized_from_icon",
+      "path": "web-seo/favicon/favicon-32.png",
+      "size": [
+        32,
+        32
+      ]
+    },
+    {
+      "key": "web-seo-favicon-48",
+      "kind": "favicon",
+      "target": "web-seo",
+      "strategy": "resized_from_icon",
+      "path": "web-seo/favicon/favicon-48.png",
+      "size": [
+        48,
+        48
+      ]
+    },
+    {
+      "key": "web-seo-favicon-ico",
+      "kind": "favicon",
+      "target": "web-seo",
+      "strategy": "resized_from_icon",
+      "path": "web-seo/favicon/favicon.ico"
+    },
+    {
+      "key": "web-seo-apple-touch-icon",
+      "kind": "app-icon",
+      "target": "web-seo",
+      "strategy": "resized_from_icon",
+      "path": "web-seo/apple-touch-icon.png",
+      "size": [
+        180,
+        180
+      ]
+    },
+    {
+      "key": "web-seo-android-chrome-192",
+      "kind": "app-icon",
+      "target": "web-seo",
+      "strategy": "resized_from_icon",
+      "path": "web-seo/android-chrome-192.png",
+      "size": [
+        192,
+        192
+      ]
+    },
+    {
+      "key": "web-seo-android-chrome-512",
+      "kind": "app-icon",
+      "target": "web-seo",
+      "strategy": "resized_from_icon",
+      "path": "web-seo/android-chrome-512.png",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "key": "web-seo-og-image",
+      "kind": "social-card",
+      "target": "web-seo",
+      "strategy": "generated_from_logo_reference",
+      "path": "web-seo/og-image-1200x630.png",
+      "size": [
+        1200,
+        630
+      ]
+    },
+    {
+      "key": "web-seo-site-webmanifest",
+      "kind": "metadata",
+      "target": "web-seo",
+      "strategy": "written_metadata",
+      "path": "web-seo/site.webmanifest"
+    },
+    {
+      "key": "web-seo-nextjs-metadata-json",
+      "kind": "metadata",
+      "target": "web-seo",
+      "strategy": "written_metadata",
+      "path": "web-seo-metadata.json"
+    },
+    {
+      "key": "web-seo-nextjs-metadata-ts",
+      "kind": "metadata",
+      "target": "web-seo",
+      "strategy": "written_metadata",
+      "path": "web-seo-metadata.ts"
+    }
+  ]
+}

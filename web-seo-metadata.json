@@ -1,19 +1,20 @@
 {
-  "title": "aipit | Orchestrated AI Character Debates",
-  "description": "A Next.js platform that runs moderator-led debates between AI characters. Built with OpenRouter, it features automated failover, cost tracking, and shareable replay snapshots.",
+  "title": "aipit | AI Character Debate Orchestrator",
+  "description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, character profiles, streaming responses, and shareable snapshots.",
   "keywords": [
     "nextjs",
     "openrouter",
     "ai-debates",
     "llm-orchestration",
-    "prompt-engineering",
     "ai-characters",
-    "automated-moderation",
-    "typescript"
+    "streaming-llm",
+    "structured-debate",
+    "react-server-components",
+    "ai-simulation"
   ],
   "openGraph": {
-    "title": "aipit | Orchestrated AI Character Debates",
-    "description": "A Next.js platform that runs moderator-led debates between AI characters. Built with OpenRouter, it features automated failover, cost tracking, and shareable replay snapshots.",
+    "title": "aipit | AI Character Debate Orchestrator",
+    "description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, character profiles, streaming responses, and shareable snapshots.",
     "images": [
       {
         "url": "/brand/web-seo/og-image-1200x630.png",
@@ -25,8 +26,8 @@
   },
   "twitter": {
     "card": "summary_large_image",
-    "title": "aipit | Orchestrated AI Character Debates",
-    "description": "A Next.js platform that runs moderator-led debates between AI characters. Built with OpenRouter, it features automated failover, cost tracking, and shareable replay snapshots.",
+    "title": "aipit | AI Character Debate Orchestrator",
+    "description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, character profiles, streaming responses, and shareable snapshots.",
     "images": [
       "/brand/web-seo/og-image-1200x630.png"
     ]
