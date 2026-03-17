@@ -2333,11 +2333,11 @@ function ChamberStage({
                             {isViewingFinalFrame && onShareAction && shareActionLabel ? (
                               <div className="speaker-focus-share-cta">
                                 <div className="speaker-focus-share-copy">
-                                  <p className="speaker-focus-share-kicker">Finished?</p>
+                                  <p className="speaker-focus-share-kicker">Liked the debate?</p>
                                   <p className="speaker-focus-share-body">
                                     {shareUrl
-                                      ? "This debate has a replay link. Copy it and send it around."
-                                      : "Turn this finished debate into a replay link you can send around."}
+                                      ? "Share it with others."
+                                      : "Create a replay link to share it with others."}
                                   </p>
                                 </div>
                                 <button
