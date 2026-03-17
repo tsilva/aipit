@@ -361,6 +361,65 @@ function flattenTurns(result: RunResult | null): PitTurn[] {
   ];
 }
 
+function upsertRoundTurn(turns: PitTurn[], turn: PitTurn): PitTurn[] {
+  const existingIndex = turns.findIndex((existingTurn) => existingTurn.id === turn.id);
+
+  if (existingIndex === -1) {
+    return [...turns, turn];
+  }
+
+  return turns.map((existingTurn, index) => (index === existingIndex ? turn : existingTurn));
+}
+
+function upsertTurnIntoResult(result: RunResult, turn: PitTurn): RunResult {
+  switch (turn.kind) {
+    case "opening":
+      return { ...result, opening: turn };
+    case "member_turn": {
+      const existingRounds = result.rounds ?? [];
+      const roundNumber = turn.round ?? 1;
+      const roundIndex = existingRounds.findIndex((round) => round.round === roundNumber);
+
+      if (roundIndex >= 0) {
+        return {
+          ...result,
+          rounds: existingRounds.map((round, index) =>
+            index === roundIndex ? { ...round, turns: upsertRoundTurn(round.turns, turn) } : round,
+          ),
+        };
+      }
+
+      return {
+        ...result,
+        rounds: [...existingRounds, { round: roundNumber, turns: [turn] }],
+      };
+    }
+    case "intervention": {
+      const existingRounds = result.rounds ?? [];
+      const roundNumber = turn.round ?? 1;
+      const roundIndex = existingRounds.findIndex((round) => round.round === roundNumber);
+
+      if (roundIndex >= 0) {
+        return {
+          ...result,
+          rounds: existingRounds.map((round, index) =>
+            index === roundIndex ? { ...round, intervention: turn } : round,
+          ),
+        };
+      }
+
+      return {
+        ...result,
+        rounds: [...existingRounds, { round: roundNumber, turns: [], intervention: turn }],
+      };
+    }
+    case "synthesis":
+      return { ...result, synthesis: turn };
+    case "consensus":
+      return { ...result, consensus: turn };
+  }
+}
+
 function buildPlaybackTimeline(result: RunResult | null): {
   chapters: TimelineChapter[];
   frames: PlaybackFrame[];
@@ -3088,6 +3147,23 @@ export function PitStudio({
       return;
     }
 
+    if (event.type === "stream") {
+      setResult((current) =>
+        current
+          ? upsertTurnIntoResult(
+              {
+                ...current,
+                roster: current.roster.map((participant) =>
+                  participant.id === event.turn.speakerId ? { ...participant, model: event.turn.model } : participant,
+                ),
+              },
+              event.turn,
+            )
+          : current,
+      );
+      return;
+    }
+
     if (event.type === "status") {
       return;
     }
@@ -3125,46 +3201,7 @@ export function PitStudio({
         ...current,
         usage: addUsage(current.usage, event.usage),
       };
-
-      switch (event.type) {
-        case "opening":
-          return { ...next, opening: event.turn };
-        case "member_turn": {
-          const existingRounds = next.rounds ?? [];
-          const index = existingRounds.findIndex((round) => round.round === event.turn.round);
-          if (index >= 0) {
-            const updatedRounds = existingRounds.map((round, roundIndex) =>
-              roundIndex === index ? { ...round, turns: [...round.turns, event.turn] } : round,
-            );
-            return { ...next, rounds: updatedRounds };
-          }
-
-          return {
-            ...next,
-            rounds: [...existingRounds, { round: event.turn.round ?? 1, turns: [event.turn] }],
-          };
-        }
-        case "intervention": {
-          const existingRounds = next.rounds ?? [];
-          const index = existingRounds.findIndex((round) => round.round === event.turn.round);
-
-          if (index >= 0) {
-            const updatedRounds = existingRounds.map((round, roundIndex) =>
-              roundIndex === index ? { ...round, intervention: event.turn } : round,
-            );
-            return { ...next, rounds: updatedRounds };
-          }
-
-          return {
-            ...next,
-            rounds: [...existingRounds, { round: event.turn.round ?? 1, turns: [], intervention: event.turn }],
-          };
-        }
-        case "synthesis":
-          return { ...next, synthesis: event.turn };
-        case "consensus":
-          return { ...next, consensus: event.turn };
-      }
+      return upsertTurnIntoResult(next, event.turn);
     });
   }
 

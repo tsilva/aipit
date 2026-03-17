@@ -46,6 +46,7 @@ export type RunProgressEvent =
       kind: PitTurn["kind"];
       round?: number;
     }
+  | { type: "stream"; turn: PitTurn }
   | { type: "opening"; turn: PitTurn; usage: UsageSummary }
   | { type: "member_turn"; turn: PitTurn; usage: UsageSummary }
   | { type: "intervention"; turn: PitTurn; usage: UsageSummary }
@@ -59,10 +60,30 @@ type ChatMessage = {
   content: string;
 };
 
+type OpenRouterChoice = {
+  text?: string | null;
+  finish_reason?: string | null;
+  delta?: {
+    content?: OpenRouterContent | null;
+    refusal?: string | null;
+    tool_calls?: unknown[];
+  };
+  message?: {
+    content?: OpenRouterContent | null;
+    refusal?: string | null;
+    tool_calls?: unknown[];
+  };
+};
+
 type OpenRouterResponse = {
   choices?: Array<{
     text?: string | null;
     finish_reason?: string | null;
+    delta?: {
+      content?: OpenRouterContent | null;
+      refusal?: string | null;
+      tool_calls?: unknown[];
+    };
     message?: {
       content?: OpenRouterContent | null;
       refusal?: string | null;
@@ -87,6 +108,7 @@ type OpenRouterContent = string | OpenRouterContentPart[] | undefined;
 const OPENROUTER_MAX_RETRIES = 3;
 const OPENROUTER_MAX_COMPLETION_TOKENS = 4000;
 const OPENROUTER_RETRY_DELAY_MS = 350;
+const OPENROUTER_STREAM_DONE_TOKEN = "[DONE]";
 const PARTICIPANT_RESPONSE_TIMEOUT_MS = 30_000;
 const PARTICIPANT_RESPONSE_TIMEOUT_FALLBACK = "Err... I don't know what to say...";
 
@@ -341,19 +363,225 @@ function extractContentPart(part: OpenRouterContentPart): string {
   return part.text ?? part.content ?? part.value ?? part.refusal ?? "";
 }
 
-function extractContent(content: OpenRouterContent | null): string {
+function extractContent(content: OpenRouterContent | null, trim = true): string {
   if (typeof content === "string") {
-    return content.trim();
+    return trim ? content.trim() : content;
   }
 
   if (Array.isArray(content)) {
-    return content
+    const joined = content
       .map((part) => extractContentPart(part))
       .join("")
-      .trim();
+    ;
+
+    return trim ? joined.trim() : joined;
   }
 
   return "";
+}
+
+function buildUsageSummary(payload: OpenRouterResponse): UsageSummary {
+  return {
+    promptTokens: payload.usage?.prompt_tokens ?? 0,
+    completionTokens: payload.usage?.completion_tokens ?? 0,
+    totalTokens: payload.usage?.total_tokens ?? 0,
+    cost: payload.usage?.cost ?? 0,
+  };
+}
+
+function extractChoiceContent(choice?: OpenRouterChoice, trim = true): string {
+  return (
+    extractContent(choice?.message?.content, trim) ||
+    extractContent(choice?.text, trim) ||
+    extractContent(choice?.message?.refusal, trim) ||
+    extractContent(choice?.delta?.content, trim) ||
+    extractContent(choice?.delta?.refusal, trim)
+  );
+}
+
+function buildStreamingTurn({
+  id,
+  participant,
+  model,
+  content,
+  rawPrompt,
+  kind,
+  round,
+}: {
+  id: string;
+  participant: ParticipantConfig;
+  model: string;
+  content: string;
+  rawPrompt: string;
+  kind: PitTurn["kind"];
+  round?: number;
+}): PitTurn {
+  return createTurn({
+    id,
+    kind,
+    round,
+    participant,
+    model,
+    content,
+    rawPrompt,
+  });
+}
+
+async function parseOpenRouterStreamResponse({
+  response,
+  fallbackResponse,
+  participant,
+  resolvedModel,
+  rawPrompt,
+  turnId,
+  thinkingEvent,
+  execution,
+}: {
+  response: Response;
+  fallbackResponse: Response;
+  participant: ParticipantConfig;
+  resolvedModel: string;
+  rawPrompt: string;
+  turnId: string;
+  thinkingEvent: ThinkingProgressEvent;
+  execution: RunExecutionOptions;
+}): Promise<{
+  content: string;
+  finishReason?: string;
+  hasToolCalls: boolean;
+  resolvedModel: string;
+  usage: UsageSummary;
+}> {
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  if (!contentType.includes("text/event-stream") || !response.body) {
+    const payload = (await response.json()) as OpenRouterResponse;
+    return {
+      content: extractChoiceContent(payload.choices?.[0]),
+      finishReason: payload.choices?.[0]?.finish_reason ?? undefined,
+      hasToolCalls: Boolean(payload.choices?.[0]?.message?.tool_calls?.length),
+      resolvedModel: payload.model || resolvedModel,
+      usage: buildUsageSummary(payload),
+    };
+  }
+
+  let buffered = "";
+  let accumulatedContent = "";
+  let streamedAnyContent = false;
+  let sawStructuredChunk = false;
+  let hasToolCalls = false;
+  let finishReason: string | undefined;
+  let streamedModel = resolvedModel;
+  let usage = emptyUsage();
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  const flushEventBlock = (block: string) => {
+    const normalizedBlock = block.replace(/\r/g, "");
+    const dataLines = normalizedBlock
+      .split("\n")
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).trimStart());
+
+    if (dataLines.length === 0) {
+      return;
+    }
+
+    const payloadText = dataLines.join("\n").trim();
+
+    if (!payloadText) {
+      return;
+    }
+
+    if (payloadText === OPENROUTER_STREAM_DONE_TOKEN) {
+      return;
+    }
+
+    const payload = JSON.parse(payloadText) as OpenRouterResponse;
+    sawStructuredChunk = true;
+    streamedModel = payload.model || streamedModel;
+
+    if (payload.usage) {
+      usage = buildUsageSummary(payload);
+    }
+
+    const choice = payload.choices?.[0];
+    if (!choice) {
+      return;
+    }
+
+    finishReason = choice.finish_reason ?? finishReason;
+    hasToolCalls = hasToolCalls || Boolean(choice.delta?.tool_calls?.length || choice.message?.tool_calls?.length);
+
+    const delta =
+      extractContent(choice.delta?.content, false) ||
+      extractContent(choice.text, false) ||
+      extractContent(choice.message?.content, false) ||
+      extractContent(choice.delta?.refusal, false) ||
+      extractContent(choice.message?.refusal, false);
+
+    if (!delta) {
+      return;
+    }
+
+    accumulatedContent += delta;
+    streamedAnyContent = true;
+    execution.onProgress?.({
+      type: "stream",
+      turn: buildStreamingTurn({
+        id: turnId,
+        participant,
+        model: streamedModel,
+        content: accumulatedContent,
+        rawPrompt,
+        kind: thinkingEvent.kind,
+        round: thinkingEvent.round,
+      }),
+    });
+  };
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      buffered += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+
+      let boundary = buffered.indexOf("\n\n");
+      while (boundary >= 0) {
+        const eventBlock = buffered.slice(0, boundary);
+        buffered = buffered.slice(boundary + 2);
+        flushEventBlock(eventBlock);
+        boundary = buffered.indexOf("\n\n");
+      }
+
+      if (done) {
+        const trailing = buffered.trim();
+        if (trailing) {
+          flushEventBlock(trailing);
+        }
+        break;
+      }
+    }
+  } catch (error) {
+    if (streamedAnyContent || sawStructuredChunk) {
+      throw error;
+    }
+
+    const payload = (await fallbackResponse.json()) as OpenRouterResponse;
+    return {
+      content: extractChoiceContent(payload.choices?.[0]),
+      finishReason: payload.choices?.[0]?.finish_reason ?? undefined,
+      hasToolCalls: Boolean(payload.choices?.[0]?.message?.tool_calls?.length),
+      resolvedModel: payload.model || resolvedModel,
+      usage: buildUsageSummary(payload),
+    };
+  }
+
+  return {
+    content: accumulatedContent.trim(),
+    finishReason,
+    hasToolCalls,
+    resolvedModel: streamedModel,
+    usage,
+  };
 }
 
 function formatRawPrompt(messages: ChatMessage[]): string {
@@ -499,6 +727,7 @@ async function callOpenRouter(
   role: "coordinator" | "member",
   frame: PromptFrame,
   thinkingEvent: ThinkingProgressEvent,
+  turnId: string,
   sessionId: string,
   execution: RunExecutionOptions,
   warnings: string[],
@@ -507,6 +736,7 @@ async function callOpenRouter(
   const apiKey = execution.apiKey?.trim();
   const siteUrl = execution.siteUrl || resolveSiteUrl();
   const requestMessages = buildPromptMessages(input, participant, role, frame, messages);
+  const rawPrompt = formatRawPrompt(requestMessages);
   const requestedModels = buildOpenRouterModelFallbackOrder(participant.model);
   let lastFailureMessage = `OpenRouter returned no visible text for ${participant.name}.`;
   const turnAbort = createTurnAbortController(execution.signal);
@@ -536,6 +766,10 @@ async function callOpenRouter(
               max_completion_tokens: maxCompletionTokens,
               session_id: sessionId,
               cache_control: cacheControl,
+              stream: true,
+              stream_options: {
+                include_usage: true,
+              },
             },
           });
 
@@ -564,31 +798,31 @@ async function callOpenRouter(
             throw new Error(`OpenRouter error for ${participant.name} on ${requestedModel}: ${detail}`);
           }
 
-          const payload = (await response.json()) as OpenRouterResponse;
-          const firstChoice = payload.choices?.[0];
-          const content =
-            extractContent(firstChoice?.message?.content) ||
-            extractContent(firstChoice?.text) ||
-            extractContent(firstChoice?.message?.refusal);
+          const streamedResponse = await parseOpenRouterStreamResponse({
+            response,
+            fallbackResponse: response.clone(),
+            participant,
+            resolvedModel,
+            rawPrompt,
+            turnId,
+            thinkingEvent,
+            execution,
+          });
+          const content = streamedResponse.content;
 
           if (content) {
             participant.model = requestedModel;
 
             return {
               content,
-              rawPrompt: formatRawPrompt(requestMessages),
-              resolvedModel: payload.model || resolvedModel,
-              usage: {
-                promptTokens: payload.usage?.prompt_tokens ?? 0,
-                completionTokens: payload.usage?.completion_tokens ?? 0,
-                totalTokens: payload.usage?.total_tokens ?? 0,
-                cost: payload.usage?.cost ?? 0,
-              },
+              rawPrompt,
+              resolvedModel: streamedResponse.resolvedModel,
+              usage: streamedResponse.usage,
             };
           }
 
-          const finishReason = firstChoice?.finish_reason ?? undefined;
-          const hasToolCalls = Boolean(firstChoice?.message?.tool_calls && firstChoice.message.tool_calls.length > 0);
+          const finishReason = streamedResponse.finishReason ?? undefined;
+          const hasToolCalls = streamedResponse.hasToolCalls;
           const finishReasonText = finishReason ? ` Finish reason: ${finishReason}.` : "";
           const toolCallNote = hasToolCalls ? " The model returned tool calls, which this app does not support yet." : "";
 
@@ -645,7 +879,7 @@ async function callOpenRouter(
             );
             return {
               content: PARTICIPANT_RESPONSE_TIMEOUT_FALLBACK,
-              rawPrompt: formatRawPrompt(requestMessages),
+              rawPrompt,
               resolvedModel,
               usage: emptyUsage(),
             };
@@ -695,6 +929,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     model: input.coordinator.model,
     kind: "opening",
   };
+  const openingTurnId = crypto.randomUUID();
   execution.onProgress?.(openingThinkingEvent);
 
   const openingResult = await callOpenRouter(
@@ -708,6 +943,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
       speakingOrder,
     },
     openingThinkingEvent,
+    openingTurnId,
     sessionId,
     execution,
     warnings,
@@ -722,6 +958,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
   usage = addUsage(usage, openingResult.usage);
 
   const opening: PitTurn = createTurn({
+    id: openingTurnId,
     kind: "opening",
     participant: input.coordinator,
     model: openingResult.resolvedModel,
@@ -756,6 +993,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         kind: "member_turn",
         round,
       };
+      const memberTurnId = crypto.randomUUID();
       execution.onProgress?.(memberThinkingEvent);
       const memberResult = await callOpenRouter(
         input,
@@ -767,6 +1005,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
           transcript: [...transcript],
         },
         memberThinkingEvent,
+        memberTurnId,
         sessionId,
         execution,
         warnings,
@@ -781,6 +1020,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
       usage = addUsage(usage, memberResult.usage);
 
       const turn: PitTurn = createTurn({
+        id: memberTurnId,
         kind: "member_turn",
         round,
         participant: member,
@@ -811,6 +1051,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         kind: "intervention",
         round,
       };
+      const interventionTurnId = crypto.randomUUID();
       execution.onProgress?.(interventionThinkingEvent);
 
       const interventionPacket = buildModeratorInterventionPacket({
@@ -826,6 +1067,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         "coordinator",
         interventionPacket.frame,
         interventionThinkingEvent,
+        interventionTurnId,
         sessionId,
         execution,
         warnings,
@@ -840,6 +1082,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
       usage = addUsage(usage, interventionResult.usage);
 
       const intervention: PitTurn = createTurn({
+        id: interventionTurnId,
         kind: "intervention",
         round,
         participant: input.coordinator,
@@ -869,6 +1112,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
     model: input.coordinator.model,
     kind: "consensus",
   };
+  const consensusTurnId = crypto.randomUUID();
   execution.onProgress?.(consensusThinkingEvent);
   const consensusResult = await callOpenRouter(
     input,
@@ -880,6 +1124,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
       transcript: [...transcript],
     },
     consensusThinkingEvent,
+    consensusTurnId,
     sessionId,
     execution,
     warnings,
@@ -894,6 +1139,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
   usage = addUsage(usage, consensusResult.usage);
 
   const consensus: PitTurn = createTurn({
+    id: consensusTurnId,
     kind: "consensus",
     participant: input.coordinator,
     model: consensusResult.resolvedModel,

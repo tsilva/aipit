@@ -16,11 +16,15 @@ describe("openrouter-server helpers", () => {
       temperature: 0.7,
       session_id: "session-123",
       cache_control: { type: "ephemeral" },
+      stream: true,
+      stream_options: { include_usage: true },
     });
 
     expect(normalized.max_completion_tokens).toBe(2400);
     expect(normalized.messages).toHaveLength(1);
     expect(normalized.cache_control).toEqual({ type: "ephemeral" });
+    expect(normalized.stream).toBe(true);
+    expect(normalized.stream_options).toEqual({ include_usage: true });
   });
 
   it("rejects cross-origin hosted requests", () => {

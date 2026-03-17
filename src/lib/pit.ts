@@ -298,7 +298,7 @@ export function createRosterSnapshot(input: RunInput): ParticipantConfig[] {
   }));
 }
 
-function parseTurnBubbles(content: string): TurnBubble[] {
+function parseTurnBubbles(content: string, turnId: string): TurnBubble[] {
   const normalized = content.trim();
 
   if (!normalized) {
@@ -310,12 +310,13 @@ function parseTurnBubbles(content: string): TurnBubble[] {
     .map((part) => part.trim())
     .filter(Boolean)
     .map((part, index) => ({
-      id: makeId(`bubble-${index + 1}`),
+      id: `${turnId}-bubble-${index + 1}`,
       content: part,
     }));
 }
 
 export function createTurn({
+  id,
   kind,
   round,
   participant,
@@ -323,6 +324,7 @@ export function createTurn({
   content,
   rawPrompt,
 }: {
+  id?: string;
   kind: TurnKind;
   round?: number;
   participant: ParticipantConfig;
@@ -330,10 +332,11 @@ export function createTurn({
   content: string;
   rawPrompt?: string;
 }): PitTurn {
+  const turnId = id ?? makeId("turn");
   const normalized = content.trim();
 
   return {
-    id: makeId("turn"),
+    id: turnId,
     kind,
     round,
     speakerId: participant.id,
@@ -341,7 +344,7 @@ export function createTurn({
     model,
     character: buildCharacterProfileSummary(participant.characterProfile),
     content: normalized,
-    bubbles: parseTurnBubbles(normalized),
+    bubbles: parseTurnBubbles(normalized, turnId),
     rawPrompt: rawPrompt?.trim() ?? "",
   };
 }

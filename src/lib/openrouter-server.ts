@@ -29,6 +29,10 @@ type HostedChatBody = {
   max_completion_tokens?: number;
   session_id?: string;
   cache_control?: OpenRouterPromptCacheControl;
+  stream?: boolean;
+  stream_options?: {
+    include_usage?: boolean;
+  };
 };
 
 export class OpenRouterProxyError extends Error {
@@ -197,6 +201,21 @@ export function normalizeHostedChatBody(body: unknown): HostedChatBody {
     throw new OpenRouterProxyError("Hosted chat cache_control is invalid.", 400);
   }
 
+  const stream = body.stream;
+  if (stream !== undefined && typeof stream !== "boolean") {
+    throw new OpenRouterProxyError("Hosted chat stream must be a boolean.", 400);
+  }
+
+  const rawStreamOptions = body.stream_options;
+  if (rawStreamOptions !== undefined && !isJsonObject(rawStreamOptions)) {
+    throw new OpenRouterProxyError("Hosted chat stream_options is invalid.", 400);
+  }
+
+  const includeUsage = rawStreamOptions?.include_usage;
+  if (includeUsage !== undefined && typeof includeUsage !== "boolean") {
+    throw new OpenRouterProxyError("Hosted chat stream_options.include_usage must be a boolean.", 400);
+  }
+
   return {
     model,
     messages,
@@ -205,6 +224,8 @@ export function normalizeHostedChatBody(body: unknown): HostedChatBody {
       maxCompletionTokens === undefined ? undefined : Math.min(Math.trunc(maxCompletionTokens), HOSTED_MAX_COMPLETION_TOKENS),
     session_id: sessionId === undefined ? undefined : sessionId,
     cache_control: cacheControl === undefined ? undefined : { type: "ephemeral" },
+    stream: stream === undefined ? undefined : stream,
+    stream_options: includeUsage === true ? { include_usage: true } : undefined,
   };
 }
 
