@@ -27,7 +27,7 @@
 - ⚡ **Server-rendered setup view** — the initial bundle, roster, and hosted-key availability are rendered on the server to reduce first-load flicker
 - 🔐 **Server-side OpenRouter proxy** — requests flow through Next.js route handlers, with optional Vercel-hosted API key
 - 🛡️ **Hosted-key abuse guardrails** — same-origin enforcement, per-IP rate limits, model allowlisting, payload caps, and no server-key metadata exposure
-- 📣 **Topic-aware SEO previews** — the homepage and each starter-bundle deep link publish tuned titles, descriptions, canonicals, generated OG images, landing-page FAQ schema, and crawlable featured-topic links for richer search and social sharing
+- 📣 **Topic-aware SEO previews** — the homepage and each starter-bundle deep link publish tuned titles, descriptions, canonicals, and generated OG images for richer search and social sharing
 - 🧭 **Installable web metadata** — ships a web manifest, Gemini-generated platform icon set, and branded social card so browsers, crawlers, and share targets all get the right assets
 - 📈 **Region-aware analytics + observability** — EU visitors must opt in before GA loads, non-EU visitors are tracked by default unless they decline, runtime failures can be reported to Sentry, and proxy responses carry request IDs for debugging
 - ✅ **CI-backed release gate** — lint, typecheck, unit tests, build, and Playwright smoke coverage run in GitHub Actions

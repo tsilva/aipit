@@ -5,15 +5,11 @@ import { AnalyticsConsentBanner } from "@/components/analytics-consent-banner";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { SITE_URL } from "@/lib/site";
 import {
-  LANDING_FAQ_ITEMS,
   SITE_BACKGROUND_COLOR,
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_THEME_COLOR,
   buildDefaultMetadata,
-  buildBundleDescription,
-  getBundleUrl,
-  getFeaturedStarterBundles,
 } from "@/lib/seo";
 import "./globals.css";
 
@@ -33,8 +29,6 @@ export const viewport: Viewport = {
   themeColor: SITE_THEME_COLOR,
   colorScheme: "dark",
 };
-
-const featuredBundles = getFeaturedStarterBundles();
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -93,30 +87,6 @@ const jsonLd = {
         name: SITE_NAME,
         url: SITE_URL,
       },
-    },
-    {
-      "@type": "FAQPage",
-      name: `${SITE_NAME} FAQ`,
-      url: `${SITE_URL}/#faq`,
-      mainEntity: LANDING_FAQ_ITEMS.map((item) => ({
-        "@type": "Question",
-        name: item.question,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: item.answer,
-        },
-      })),
-    },
-    {
-      "@type": "ItemList",
-      name: "Featured AI debate prompts",
-      itemListElement: featuredBundles.map((bundle, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        name: bundle.name,
-        url: getBundleUrl(bundle.id),
-        description: buildBundleDescription(bundle),
-      })),
     },
   ],
 };

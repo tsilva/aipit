@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PARTICIPANT_CHARACTER_PRESETS } from "@/lib/character-presets";
 import { SITE_URL } from "@/lib/site";
-import { STARTER_BUNDLES, type StarterBundleDefinition } from "@/lib/starter-bundles";
+import type { StarterBundleDefinition } from "@/lib/starter-bundles";
 
 export const SITE_NAME = "The AI Pit";
 export const SITE_TITLE = "The AI Pit | Watch AI Characters Debate Anything";
@@ -14,37 +14,6 @@ const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
 const DEFAULT_SOCIAL_IMAGE_PATH = "/social-card.png";
 const characterNameById = new Map(PARTICIPANT_CHARACTER_PRESETS.map((preset) => [preset.id, preset.name] as const));
-const starterBundleById = new Map(STARTER_BUNDLES.map((bundle) => [bundle.id, bundle] as const));
-
-export const FEATURED_STARTER_BUNDLE_IDS = [
-  "ai-liability-meltdown",
-  "office-return-bloodsport",
-  "social-media-age-ban",
-  "portugal-housing-war",
-] as const;
-
-export const LANDING_FAQ_ITEMS = [
-  {
-    question: "What is The AI Pit?",
-    answer:
-      "The AI Pit is a browser-based AI debate simulator where a moderator and multiple character-driven debaters argue through structured rounds powered by OpenRouter models.",
-  },
-  {
-    question: "How do debates work in The AI Pit?",
-    answer:
-      "You choose a topic, set the lineup, and start the run. The moderator opens the session, debaters respond in order, the moderator intervenes between rounds, and the debate ends with a synthesized wrap-up.",
-  },
-  {
-    question: "Can I use my own OpenRouter API key?",
-    answer:
-      "Yes. You can paste your own OpenRouter key in the setup screen, or leave the field empty when the app has a configured server-side key available.",
-  },
-  {
-    question: "Can I deep-link a specific debate prompt?",
-    answer:
-      "Yes. Starter bundles are available through query-string deep links such as /?id=ai-liability-meltdown, which lets you share or index a specific debate setup.",
-  },
-] as const;
 
 function truncate(value: string, maxLength: number): string {
   if (value.length <= maxLength) {
@@ -90,12 +59,6 @@ export function buildOgImageUrl(title: string, subtitle: string): string {
 
 export function getBundleUrl(bundleId: string): string {
   return `${SITE_URL}/?id=${encodeURIComponent(bundleId)}`;
-}
-
-export function getFeaturedStarterBundles(): StarterBundleDefinition[] {
-  return FEATURED_STARTER_BUNDLE_IDS.map((bundleId) => starterBundleById.get(bundleId)).filter(
-    (bundle): bundle is StarterBundleDefinition => Boolean(bundle),
-  );
 }
 
 export function buildBundleDescription(bundle: StarterBundleDefinition): string {
