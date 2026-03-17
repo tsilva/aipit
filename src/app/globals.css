@@ -2377,7 +2377,7 @@ select.field {
   color: rgba(36, 31, 27, 0.82);
 }
 
-.speaker-focus-share-button {
+.action-button.speaker-focus-share-button {
   border-color: rgba(123, 77, 47, 0.18);
   background: linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(244, 232, 215, 0.92));
   color: #5f341d;
@@ -2389,11 +2389,21 @@ select.field {
   padding-block: 0.72rem;
 }
 
-.speaker-focus-share-button:hover:not(:disabled),
-.speaker-focus-share-button:focus-visible:not(:disabled) {
+.action-button.speaker-focus-share-button:hover:not(:disabled),
+.action-button.speaker-focus-share-button:focus-visible:not(:disabled) {
   border-color: rgba(216, 122, 59, 0.34);
   background: linear-gradient(180deg, rgba(255, 247, 236, 0.98), rgba(240, 225, 204, 0.96));
   color: #7b4d2f;
+}
+
+.action-button.speaker-focus-share-button:disabled {
+  opacity: 0.72;
+  border-color: rgba(123, 77, 47, 0.12);
+  background: linear-gradient(180deg, rgba(255, 250, 243, 0.94), rgba(242, 232, 218, 0.9));
+  color: rgba(95, 52, 29, 0.72);
+  box-shadow:
+    0 0.45rem 1rem rgba(95, 52, 29, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .subtitle-ribbon {
