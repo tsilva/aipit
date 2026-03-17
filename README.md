@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo.png" width="512" alt="aipit logo" />
+  <img src="https://raw.githubusercontent.com/tsilva/aipit/main/logo.png" width="512" alt="aipit logo" />
 
   # aipit
 
@@ -22,6 +22,7 @@
 - 🚦 **Playback-aware generation backpressure** — once the opening is out, the engine keeps at most one unseen turn buffered ahead of the live playback to avoid spending tokens on debate branches the user never watches
 - 🎛️ **Configurable parameters** — rounds, temperature, max tokens, shared directives
 - 💬 **Bubble-based playback** — conversation and transcript views
+- 🔗 **Shareable replay links** — finished debates can be published as immutable snapshots and replayed later without calling any LLMs
 - 📊 **Token and cost tracking** — per-debate usage summary
 - 🐛 **Raw prompt debug mode** — inspect exactly what each model receives
 - ⚡ **Server-rendered setup view** — the initial bundle, roster, and hosted-key availability are rendered on the server to reduce first-load flicker
@@ -38,6 +39,7 @@
 2. **Opening** — The moderator (José Rodrigues dos Santos or Anderson Cooper, depending on the starter bundle) frames the prompt and sets the stage.
 3. **Rounds** — Each debater argues in sequence for N rounds. The moderator intervenes between rounds to sharpen the discussion.
 4. **Consensus** — The moderator closes with a balanced wrap-up synthesizing the key arguments.
+5. **Sharing** — Once a debate finishes, you can publish an immutable snapshot and get a `/s/<slug>` replay link. Shared replays boot straight into playback mode, never call OpenRouter, and only work for the current `historyVersion`.
 
 Each fresh page load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`, for example `http://localhost:3000/?id=ai-liability-meltdown`. The default starter pool is chosen on the server from the browser locale or geolocation headers when available: `CF-IPCountry=PT` is used when the app sits behind Cloudflare, `X-Vercel-IP-Country=PT` is used on Vercel, and Portuguese visitors default to Portugal-focused debates while everyone else defaults to the global roster. An explicit `?id=` bundle still wins, and the wand rerolls within that same detected pool. That starter bundle is resolved on the server so the first HTML already contains the real setup UI instead of a client-side loading shell. If you want the dumbest possible cold open, `?id=silliest` resolves to `ocean-democracy-meltdown`.
 
@@ -104,6 +106,11 @@ Transcript views intentionally render prompt and model output as plain text insi
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | Google Analytics 4 measurement ID; EU visitors must opt in before it loads, non-EU visitors can decline per browser |
 | `NEXT_PUBLIC_SENTRY_DSN` | No | Browser-side Sentry DSN for client error reporting |
 | `OPENROUTER_API_KEY` | No | Server-side OpenRouter API key used by the internal proxy when present |
+| `R2_ACCOUNT_ID` | Required for share links | Cloudflare account ID for the private R2 bucket |
+| `R2_BUCKET_NAME` | Required for share links | Private Cloudflare R2 bucket name used for shared conversation snapshots |
+| `R2_ACCESS_KEY_ID` | Required for share links | S3-compatible access key ID for the R2 bucket |
+| `R2_SECRET_ACCESS_KEY` | Required for share links | S3-compatible secret access key for the R2 bucket |
+| `R2_OBJECT_PREFIX` | No | Object prefix for shared snapshots. Defaults to `shares/` |
 | `SENTRY_DSN` | No | Server-side Sentry DSN for API route and server runtime error reporting |
 
 If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, the app uses Cloudflare or Vercel geolocation headers to decide whether consent is required. EU visitors are prompted before the GA4 tag loads; outside the EU the tag loads by default unless analytics was previously declined in that browser. The app then emits events for page views, starter bundle rerolls, character additions, debate starts, debate completions, debate cancellations, debate failures, and transcript copies.
@@ -114,7 +121,7 @@ This app is a standard Next.js App Router project, so Vercel can deploy it witho
 
 To prepare a shared hosted key on Vercel, add `OPENROUTER_API_KEY` to the project environment variables. The UI now supports both modes: users can bring their own key, or leave the field empty and rely on the hosted server key.
 
-For production deployments, also set `NEXT_PUBLIC_SITE_URL` to the final canonical origin. If you want production error reporting, set `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`.
+For production deployments, also set `NEXT_PUBLIC_SITE_URL` to the final canonical origin. If you want shareable replay links, configure the private R2 bucket env vars as well. If you want production error reporting, set `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`.
 
 ```bash
 # Preview deployment
@@ -161,6 +168,7 @@ src/
 - `OPENROUTER_API_KEY` is server-only and should not be prefixed with `NEXT_PUBLIC_`.
 - `NEXT_PUBLIC_SITE_URL` should be set explicitly in production so metadata, manifest URLs, and OG links use the canonical domain.
 - Starter bundles and personal API keys are not persisted in browser storage; reloads start from a fresh random bundle unless `?id=` is provided.
+- Shared replay links are immutable R2-backed JSON snapshots. They are public by URL, marked `noindex`, and intentionally reject older `historyVersion` payloads after a format bump instead of attempting backward-compat migrations.
 - EU visitors must opt in before analytics loads. Outside the EU, declining analytics in the current browser keeps the app fully usable and prevents GA from loading.
 - `/sitemap.xml` is generated by Next.js metadata routes from the starter bundle list and includes each deep-linkable `/?id=<bundle-id>` route.
 - The app also publishes a web manifest at `/manifest.webmanifest` and exposes Gemini-generated favicon, Apple touch, Android Chrome, and social-card assets for richer browser and sharing metadata.

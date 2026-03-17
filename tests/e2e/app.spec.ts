@@ -82,6 +82,60 @@ test("shows a recoverable upstream failure message", async ({ page }) => {
   await expect(page.getByText("Failed to reach OpenRouter.")).toBeVisible({ timeout: 30_000 });
 });
 
+test("creates a share link after a mocked debate finishes", async ({ page }) => {
+  let chatCalls = 0;
+  let shareCalls = 0;
+
+  await page.route("**/api/openrouter/chat/completions", async (route) => {
+    chatCalls += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        model: "mock/model",
+        choices: [
+          {
+            message: {
+              content: `Shareable debate line ${chatCalls}\n<<<BALLOON>>>\nShareable follow-up ${chatCalls}`,
+            },
+          },
+        ],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 20,
+          total_tokens: 30,
+          cost: 0.01,
+        },
+      }),
+    });
+  });
+  await page.route("**/api/share", async (route) => {
+    shareCalls += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        slug: "mock-share-1",
+        url: "http://127.0.0.1:3000/s/mock-share-1",
+      }),
+    });
+  });
+
+  await page.goto("/");
+  await dismissConsentBannerIfVisible(page);
+
+  const minimumExpectedChatCalls = 1 + (await page.locator(".hero-roster-card").count() - 1) * PIT_RUN_DEFAULTS.rounds + 1;
+
+  await page.getByRole("button", { name: "START", exact: true }).click();
+  await expect.poll(() => chatCalls, { timeout: 45_000 }).toBeGreaterThanOrEqual(minimumExpectedChatCalls);
+  await expect(page.getByRole("button", { name: "Share" })).toBeVisible({ timeout: 45_000 });
+
+  await page.getByRole("button", { name: "Share" }).click();
+
+  await expect.poll(() => shareCalls).toBe(1);
+  await expect(page.getByRole("button", { name: /Link copied|Copy link/ })).toBeVisible();
+});
+
 test("keeps an invalid API key editable after failed validation", async ({ page }) => {
   await page.route("**/api/openrouter/key", async (route) => {
     await route.fulfill({
@@ -212,6 +266,13 @@ test("resets the scroll position when entering simulation on short screens", asy
   await expect(page.locator(".chamber-shell")).toBeVisible();
 
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test("shows a notice when an old shared replay link is unsupported", async ({ page }) => {
+  await page.goto("/?share=unsupported");
+  await dismissConsentBannerIfVisible(page);
+
+  await expect(page.getByText("This shared conversation is no longer supported by the current version of aipit.")).toBeVisible();
 });
 
 test.describe("audience-aware setup", () => {

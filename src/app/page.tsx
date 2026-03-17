@@ -14,6 +14,7 @@ import {
   resolveStarterBundle,
 } from "@/lib/pit";
 import { readCountryCodeFromHeaders } from "@/lib/region";
+import { resolveShareNotice } from "@/lib/share-replay";
 import { buildStarterBundleMetadata } from "@/lib/seo";
 
 type HomePageProps = {
@@ -65,12 +66,19 @@ async function buildInitialStudioState(bundleId: string | undefined): Promise<In
       ? serverOpenRouterKeyMessage()
       : missingOpenRouterKeyMessage(),
     draftApiKey: "",
+    initialResult: null,
+    initialStudioView: "setup",
+    isReplayOnly: false,
+    shareUrl: null,
+    shareNotice: null,
   };
 }
 
 export default async function Home({ searchParams }: HomePageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const initialState = await buildInitialStudioState(resolveBundleIdParam(resolvedSearchParams?.id));
+
+  initialState.shareNotice = resolveShareNotice(resolvedSearchParams?.share);
 
   return <PitStudioEntry initialState={initialState} />;
 }

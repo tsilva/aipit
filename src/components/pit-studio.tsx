@@ -64,6 +64,7 @@ import {
   type RuntimeTurnIdentity,
   type RuntimeWarningNotice,
 } from "@/lib/runtime-warning";
+import { isCompletedRunResult } from "@/lib/share-snapshot";
 import { trackEvent } from "@/lib/google-analytics";
 
 export type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
@@ -192,6 +193,11 @@ export type InitialStudioState = {
   apiKeyStatus: ApiKeyStatus;
   apiKeyStatusMessage: string;
   draftApiKey: string;
+  initialResult: RunResult | null;
+  initialStudioView: StudioView;
+  isReplayOnly: boolean;
+  shareUrl: string | null;
+  shareNotice: string | null;
 };
 
 async function validateApiKey({
@@ -1990,9 +1996,15 @@ function ChamberStage({
   isPlaybackPlaying,
   isAwaitingTurnResponse,
   pendingTurn,
+  shareError,
+  shareActionLabel,
+  shareActionCopied,
+  shareActionDisabled,
+  allowRawPromptDebug,
   onPanelModeChange,
   onOpenParticipant,
   onExit,
+  onShareAction,
   onPausePlayback,
   onTogglePlayback,
   onPreviousFrame,
@@ -2020,9 +2032,15 @@ function ChamberStage({
   isPlaybackPlaying: boolean;
   isAwaitingTurnResponse: boolean;
   pendingTurn: PendingTurnPreview | null;
+  shareError: string | null;
+  shareActionLabel?: string;
+  shareActionCopied: boolean;
+  shareActionDisabled: boolean;
+  allowRawPromptDebug: boolean;
   onPanelModeChange: (mode: StagePanelMode) => void;
   onOpenParticipant: (id: string) => void;
   onExit: () => void;
+  onShareAction?: () => void;
   onPausePlayback: () => void;
   onTogglePlayback: () => void;
   onPreviousFrame: () => void;
@@ -2066,7 +2084,8 @@ function ChamberStage({
   const canGoNext = activeFrameIndex < maxNavigableFrameIndex;
   const isPlayButtonActive = isPlaybackPlaying && (isRunning || canGoNext || isBubbleStreaming);
   const [debugFrame, setDebugFrame] = useState<PlaybackFrame | null>(null);
-  const showBubbleDebugButton = useSyncExternalStore(subscribeToRuntime, isLocalRuntime, () => false);
+  const isLocalRuntimeDebug = useSyncExternalStore(subscribeToRuntime, isLocalRuntime, () => false);
+  const showBubbleDebugButton = allowRawPromptDebug && isLocalRuntimeDebug;
   const activeQueueItemRef = useRef<HTMLDivElement | null>(null);
   const queueListRef = useRef<HTMLDivElement | null>(null);
 
@@ -2105,11 +2124,24 @@ function ChamberStage({
               <span>Back</span>
             </button>
             {hasPlaybackStarted ? (
-                <div className="chamber-panel-tools">
-                  <div className="mode-toggle mode-toggle-compact stage-panel-toggle" aria-label="Stage panel mode">
-                    {(["conversation", "transcript"] as const).map((nextPanelMode) => (
-                      <button
-                        key={nextPanelMode}
+              <div className="chamber-panel-tools">
+                {onShareAction && shareActionLabel ? (
+                  <button
+                    type="button"
+                    onClick={onShareAction}
+                    disabled={shareActionDisabled}
+                    className={`action-button action-button-compact ${shareActionCopied ? "action-button-primary" : ""}`.trim()}
+                  >
+                    <span className="action-button-icon">
+                      {shareActionCopied ? <CheckGlyph /> : <CopyGlyph />}
+                    </span>
+                    {shareActionLabel}
+                  </button>
+                ) : null}
+                <div className="mode-toggle mode-toggle-compact stage-panel-toggle" aria-label="Stage panel mode">
+                  {(["conversation", "transcript"] as const).map((nextPanelMode) => (
+                    <button
+                      key={nextPanelMode}
                       type="button"
                       onClick={() => onPanelModeChange(nextPanelMode)}
                       className={`mode-toggle-button mode-toggle-button-compact ${panelMode === nextPanelMode ? "is-selected" : ""}`}
@@ -2338,6 +2370,7 @@ function ChamberStage({
         ) : null}
 
         {error ? <div className="notice-row notice-row-error">{error}</div> : null}
+        {shareError ? <div className="notice-row notice-row-error">{shareError}</div> : null}
         {warning ? <div className="notice-row notice-row-warning">{warning}</div> : null}
       </section>
 
@@ -2357,7 +2390,7 @@ export function PitStudio({
   const [audience] = useState<PresetAudience>(initialStudioState.audience);
   const [lineupOrder, setLineupOrder] = useState<string[]>(initialStudioState.lineupOrder);
   const [starterBundleId, setStarterBundleId] = useState<string | undefined>(initialStudioState.starterBundleId);
-  const [result, setResult] = useState<RunResult | null>(null);
+  const [result, setResult] = useState<RunResult | null>(initialStudioState.initialResult);
   const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [apiKey, setApiKey] = useState(initialStudioState.apiKey);
@@ -2366,7 +2399,7 @@ export function PitStudio({
   const [draftApiKey, setDraftApiKey] = useState(initialStudioState.draftApiKey);
   const [hasPendingApiKeyChanges, setHasPendingApiKeyChanges] = useState(false);
   const [showCharacterSelectorModal, setShowCharacterSelectorModal] = useState(false);
-  const [studioView, setStudioView] = useState<StudioView>("setup");
+  const [studioView, setStudioView] = useState<StudioView>(initialStudioState.initialStudioView);
   const [panelMode, setPanelMode] = useState<StagePanelMode>("conversation");
   const [activeEditorId, setActiveEditorId] = useState<string | null>(null);
   const [activeFrameIndex, setActiveFrameIndex] = useState(0);
@@ -2379,6 +2412,14 @@ export function PitStudio({
   const [pendingTurn, setPendingTurn] = useState<PendingTurnPreview | null>(null);
   const [activeRuntimeTurn, setActiveRuntimeTurn] = useState<RuntimeTurnIdentity | null>(null);
   const [activeWarning, setActiveWarning] = useState<RuntimeWarningNotice | null>(null);
+  const [submittedRunInput, setSubmittedRunInput] = useState<RunInput | null>(
+    initialStudioState.initialResult ? initialStudioState.config : null,
+  );
+  const [shareUrl, setShareUrl] = useState<string | null>(initialStudioState.shareUrl);
+  const [shareState, setShareState] = useState<"idle" | "uploading" | "copied">("idle");
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [shareNotice] = useState<string | null>(initialStudioState.shareNotice);
+  const [isReplayOnly] = useState(initialStudioState.isReplayOnly);
   const keyValidationRequestIdRef = useRef(0);
   const runAbortControllerRef = useRef<AbortController | null>(null);
   const activeRunIdRef = useRef(0);
@@ -2431,7 +2472,12 @@ export function PitStudio({
       ? Math.max(0, playbackTurnIds.findIndex((turnId) => turnId === currentFrame.turnId))
       : hasPendingFrame
         ? playbackTurnIds.length
-        : 0;
+      : 0;
+  const canShareCompletedRun =
+    submittedRunInput !== null && result !== null && !isRunning && isCompletedRunResult(submittedRunInput, result);
+  const showShareAction = canShareCompletedRun && (!!shareUrl || !isReplayOnly);
+  const shareActionLabel =
+    shareState === "uploading" ? "Sharing..." : shareState === "copied" ? "Link copied" : shareUrl ? "Copy link" : "Share";
 
   const releaseBufferedTurnWaiters = useCallback(() => {
     if (generatedTurnCountRef.current - acknowledgedTurnCountRef.current >= 2) {
@@ -2515,6 +2561,18 @@ export function PitStudio({
 
     return () => window.clearTimeout(timeoutId);
   }, [currentFrame, isPlaybackActive, revealedBubbleChars, revealedBubbleId]);
+
+  useEffect(() => {
+    if (shareState !== "copied") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShareState("idle");
+    }, 1_800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [shareState]);
 
   useEffect(() => {
     if (!isPlaybackActive || !currentFrame || revealedBubbleId !== currentFrame.id) {
@@ -2700,9 +2758,18 @@ export function PitStudio({
     setPendingTurn(null);
     setActiveRuntimeTurn(null);
     setActiveWarning(null);
+    setSubmittedRunInput(null);
+    setShareUrl(null);
+    setShareState("idle");
+    setShareError(null);
   }, []);
 
   const exitSimulation = useCallback(() => {
+    if (isReplayOnly) {
+      window.location.assign("/");
+      return;
+    }
+
     const activeResult = result;
     const activeConfig = config;
 
@@ -2717,10 +2784,82 @@ export function PitStudio({
     runAbortControllerRef.current?.abort();
     runAbortControllerRef.current = null;
     resetSimulationState();
-  }, [config, isRunning, resetSimulationState, result]);
+  }, [config, isReplayOnly, isRunning, resetSimulationState, result]);
+
+  async function handleShareAction() {
+    if (shareState === "uploading") {
+      return;
+    }
+
+    if (shareUrl) {
+      try {
+        await copyTextToClipboard(shareUrl);
+        setShareState("copied");
+        setShareError(null);
+      } catch (copyError) {
+        setShareState("idle");
+        setShareError(copyError instanceof Error ? copyError.message : "Failed to copy the share link.");
+      }
+      return;
+    }
+
+    if (!submittedRunInput || !result || isReplayOnly) {
+      return;
+    }
+
+    setShareState("uploading");
+    setShareError(null);
+
+    try {
+      const response = await fetch("/api/share", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          input: submittedRunInput,
+          result,
+        }),
+      });
+      const payload = (await response.json()) as {
+        slug?: unknown;
+        url?: unknown;
+        error?: { message?: unknown };
+      };
+
+      if (!response.ok) {
+        throw new Error(
+          typeof payload.error?.message === "string" ? payload.error.message : "Failed to create a shared conversation.",
+        );
+      }
+
+      if (typeof payload.url !== "string" || typeof payload.slug !== "string") {
+        throw new Error("The server returned an invalid share response.");
+      }
+
+      setShareUrl(payload.url);
+
+      try {
+        await copyTextToClipboard(payload.url);
+        setShareState("copied");
+      } catch {
+        setShareState("idle");
+        setShareError("Share link created. Use Copy link to try again.");
+      }
+    } catch (shareRequestError) {
+      setShareState("idle");
+      setShareError(
+        shareRequestError instanceof Error ? shareRequestError.message : "Failed to create a shared conversation.",
+      );
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isReplayOnly) {
+      return;
+    }
+
     if (!hasPrompt) {
       setError("Enter a prompt before starting The AI Pit.");
       return;
@@ -2751,6 +2890,9 @@ export function PitStudio({
     setPendingTurn(null);
     setActiveRuntimeTurn(null);
     setActiveWarning(null);
+    setShareUrl(null);
+    setShareState("idle");
+    setShareError(null);
     bufferedTurnWaitersRef.current.clear();
     generatedTurnCountRef.current = 0;
     acknowledgedTurnCountRef.current = 0;
@@ -2761,6 +2903,7 @@ export function PitStudio({
       coordinator: config.coordinator,
       members: shuffleParticipants(config.members),
     };
+    setSubmittedRunInput(payload);
 
     trackEvent("pit_start", {
       starter_bundle_id: starterBundleId,
@@ -3013,6 +3156,7 @@ export function PitStudio({
 
   return (
     <main className="studio-page">
+      {shareNotice ? <div className="notice-row notice-row-warning">{shareNotice}</div> : null}
       <form
         onSubmit={handleSubmit}
         className={`studio-form flex w-full flex-col gap-5 px-2 py-2 sm:px-5 lg:px-6 lg:py-5 ${
@@ -3029,7 +3173,7 @@ export function PitStudio({
             draftApiKey={draftApiKey}
             hasPendingApiKeyChanges={hasPendingApiKeyChanges}
             hasApiKey={hasApiKey}
-            canSubmit={hasValidatedApiKey && hasPrompt && config.members.length >= 2}
+            canSubmit={!isReplayOnly && hasValidatedApiKey && hasPrompt && config.members.length >= 2}
             isRunning={isRunning}
             onDraftApiKeyChange={handleDraftApiKeyChange}
             onSaveApiKey={saveApiKey}
@@ -3042,7 +3186,7 @@ export function PitStudio({
         ) : (
           <ChamberStage
             roster={result?.roster ?? roster}
-            plannedRounds={PIT_RUN_DEFAULTS.rounds}
+            plannedRounds={submittedRunInput?.rounds ?? config.rounds}
             usage={result?.usage ?? emptyUsage()}
             currentFrame={currentFrame}
             displayedBubbleContent={displayedBubbleContent}
@@ -3062,9 +3206,15 @@ export function PitStudio({
             isPlaybackPlaying={isPlaybackPlaying}
             isAwaitingTurnResponse={isAwaitingTurnResponse}
             pendingTurn={pendingTurn}
+            shareError={shareError}
+            shareActionLabel={showShareAction ? shareActionLabel : undefined}
+            shareActionCopied={shareState === "copied"}
+            shareActionDisabled={shareState === "uploading"}
+            allowRawPromptDebug={!isReplayOnly}
             onPanelModeChange={setPanelMode}
             onOpenParticipant={openParticipantEditor}
             onExit={exitSimulation}
+            onShareAction={showShareAction ? handleShareAction : undefined}
             onPausePlayback={pausePlayback}
             onTogglePlayback={togglePlayback}
             onPreviousFrame={selectPreviousFrame}
