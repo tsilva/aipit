@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { PIT_RUN_DEFAULTS } from "../../src/lib/pit";
 import { STARTER_BUNDLES } from "../../src/lib/starter-bundles";
 
 const GLOBAL_STARTER_PROMPTS = STARTER_BUNDLES.filter((bundle) => bundle.audience === "global").map((bundle) => bundle.prompt);
@@ -11,10 +12,16 @@ async function expectStarterPromptFromAudience(page: Page, prompts: string[]) {
 }
 
 async function dismissConsentBannerIfVisible(page: Page) {
-  const declineButton = page.getByRole("button", { name: "Decline" });
-  if (await declineButton.count()) {
-    await declineButton.click();
+  const banner = page.getByRole("dialog", { name: "Analytics consent" });
+
+  try {
+    await banner.waitFor({ state: "visible", timeout: 2_000 });
+  } catch {
+    return;
   }
+
+  await page.getByRole("button", { name: "Decline" }).click();
+  await expect(banner).toBeHidden();
 }
 
 test("gates analytics by consent and completes a mocked debate", async ({ page }) => {
@@ -49,11 +56,12 @@ test("gates analytics by consent and completes a mocked debate", async ({ page }
   await expect(page.locator('script[src*="googletagmanager.com/gtag/js"]')).toHaveCount(0);
   await page.getByRole("button", { name: "Accept" }).click();
   await expect(page.locator('script[src*="googletagmanager.com/gtag/js"]')).toHaveCount(1);
+  const minimumExpectedChatCalls = 1 + (await page.locator(".hero-roster-card").count() - 1) * PIT_RUN_DEFAULTS.rounds + 1;
 
   await page.getByRole("button", { name: "START", exact: true }).click();
 
-  await expect.poll(() => chatCalls, { timeout: 45_000 }).toBeGreaterThanOrEqual(9);
-  await expect(page.getByText("Mock debate line 1")).toBeVisible({ timeout: 45_000 });
+  await expect.poll(() => chatCalls, { timeout: 45_000 }).toBeGreaterThanOrEqual(minimumExpectedChatCalls);
+  await expect(page.getByText(/Mock debate line \d+/)).toBeVisible({ timeout: 45_000 });
 });
 
 test("shows a recoverable upstream failure message", async ({ page }) => {
