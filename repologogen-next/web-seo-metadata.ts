@@ -1,23 +1,21 @@
 import type { Metadata } from "next";
 
 const payload = {
-  "title": "aipit | AI Character Debate & Orchestration Platform",
-  "description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, immutable replay snapshots, and advanced token management.",
+  "title": "aipit | Orchestrated AI Character Debates",
+  "description": "A Next.js platform that runs moderator-led debates between AI characters. Built with OpenRouter, it features automated failover, cost tracking, and shareable replay snapshots.",
   "keywords": [
     "nextjs",
     "openrouter",
     "ai-debates",
     "llm-orchestration",
-    "prompt-caching",
+    "prompt-engineering",
     "ai-characters",
-    "structured-conferencing",
-    "cloudflare-r2",
-    "typescript",
-    "multi-model-ai"
+    "automated-moderation",
+    "typescript"
   ],
   "openGraph": {
-    "title": "aipit | AI Character Debate & Orchestration Platform",
-    "description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, immutable replay snapshots, and advanced token management.",
+    "title": "aipit | Orchestrated AI Character Debates",
+    "description": "A Next.js platform that runs moderator-led debates between AI characters. Built with OpenRouter, it features automated failover, cost tracking, and shareable replay snapshots.",
     "images": [
       {
         "url": "/brand/web-seo/og-image-1200x630.png",
@@ -29,8 +27,8 @@ const payload = {
   },
   "twitter": {
     "card": "summary_large_image",
-    "title": "aipit | AI Character Debate & Orchestration Platform",
-    "description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, immutable replay snapshots, and advanced token management.",
+    "title": "aipit | Orchestrated AI Character Debates",
+    "description": "A Next.js platform that runs moderator-led debates between AI characters. Built with OpenRouter, it features automated failover, cost tracking, and shareable replay snapshots.",
     "images": [
       "/brand/web-seo/og-image-1200x630.png"
     ]
@@ -60,7 +58,7 @@ const payload = {
     ]
   },
   "manifest": "/brand/web-seo/site.webmanifest"
-} satisfies Omit<Metadata, "metadataBase">;
+} as const;
 
 export function createMetadata(metadataBase: URL): Metadata {
   return {
