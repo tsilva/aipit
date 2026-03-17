@@ -3,55 +3,43 @@
 
   # aipit
 
-  🔥 Where AI characters clash in moderator-led debates 🔥
+  Where AI characters clash in moderator-led debates.
 
-  A Next.js app that throws richly profiled AI characters against each other in structured, moderator-led debates powered by [OpenRouter](https://openrouter.ai/).
-
+  Next.js app for running structured debates between profiled AI participants through [OpenRouter](https://openrouter.ai/).
 </div>
 
 ## ✨ Features
 
-- 🎭 **Rich character profiles** — 12-field character sheets (role, personality, perspective, temperament, debate style, speech style, guardrails, language, gender, nationality, birth date, prompt notes)
-- 👥 **28 built-in debater presets** — includes Portuguese political voices plus globally recognizable media and pop-culture characters
-- 🎬 **20 curated starter bundles** — cold-start debates seed a moderator, three debaters, and a high-friction topic in one click, with locale-aware audience defaults
-- 🏟️ **Structured debate flow** — opening → rounds → interventions → consensus
-- 🔗 **Character relationships** — pairwise awareness so debaters know how to engage each other
-- 🤖 **Multi-model support via OpenRouter** — characters default to Grok 4.1 Fast, with other supported models still available in the editor
-- 🔁 **Automatic model failover** — recoverable model/provider failures rotate to another supported model and the live queue reflects the replacement
-- 🧠 **Cache-friendly prompt envelopes** — stable system and session-prefix messages improve OpenRouter prompt-cache reuse and sticky routing during a debate run
-- 🌊 **Live streamed turns** — OpenRouter responses stream into the stage and transcript as they arrive instead of appearing only after full completion
-- 🚦 **Playback-aware generation backpressure** — once the opening is out, the engine keeps at most one unseen turn buffered ahead of the live playback to avoid spending tokens on debate branches the user never watches
-- 🎛️ **Configurable parameters** — rounds, temperature, max tokens, shared directives
-- 💬 **Bubble-based playback** — conversation and transcript views
-- 🔗 **Shareable replay links** — finished debates can be published as immutable snapshots and replayed later without calling any LLMs
-- 📊 **Token and cost tracking** — per-debate usage summary
-- 🐛 **Raw prompt debug mode** — inspect exactly what each model receives
-- ⚡ **Server-rendered setup view** — the initial bundle, roster, and hosted-key availability are rendered on the server to reduce first-load flicker
-- 🔐 **Server-side OpenRouter proxy** — requests flow through Next.js route handlers, with optional Vercel-hosted API key
-- 🛡️ **Hosted-key abuse guardrails** — same-origin enforcement, per-IP rate limits, model allowlisting, payload caps, and no server-key metadata exposure
-- 📣 **Topic-aware SEO previews** — the homepage and each starter-bundle deep link publish tuned titles, descriptions, canonicals, and generated OG images for richer search and social sharing
-- 🧭 **Installable web metadata** — ships a web manifest, Gemini-generated platform icon set, and branded social card so browsers, crawlers, and share targets all get the right assets
-- 📈 **Region-aware analytics + observability** — EU visitors must opt in before GA loads, non-EU visitors are tracked by default unless they decline, runtime failures can be reported to Sentry, and proxy responses carry request IDs for debugging
-- ✅ **CI-backed release gate** — lint, typecheck, unit tests, build, and Playwright smoke coverage run in GitHub Actions
+- Rich character profiles with editable debate traits, guardrails, and prompt notes
+- 28 built-in presets and 20 starter bundles for quick debate setup
+- Structured flow: opening, rounds, moderator interventions, and closing synthesis
+- Multi-model OpenRouter support with streaming responses and automatic failover
+- Shareable replay links for completed debates, backed by immutable snapshots
+- Token and cost tracking, plus a raw prompt debug view
+- Server-rendered setup state to reduce first-load flicker
+- Server-side OpenRouter proxy with optional hosted key support
+- Hosted-key guardrails: same-origin checks, rate limiting, model allowlisting, and payload caps
+- SEO, analytics consent handling, and optional Sentry reporting
+- CI coverage for lint, typecheck, tests, build, and Playwright smoke checks
 
 ## 🏗️ How It Works
 
-1. **Setup** — Start from a curated bundle or customize manually: each starter bundle seeds a moderator, three debaters, and a topic; the wand rerolls a fresh starter bundle from the same auto-detected audience pool.
-2. **Opening** — The moderator (José Rodrigues dos Santos or Anderson Cooper, depending on the starter bundle) frames the prompt and sets the stage.
-3. **Rounds** — Each debater argues in sequence for N rounds. The moderator intervenes between rounds to sharpen the discussion.
-4. **Consensus** — The moderator closes with a balanced wrap-up synthesizing the key arguments.
-5. **Sharing** — Once a debate finishes, you can publish an immutable snapshot and get a `/s/<slug>` replay link. Shared replays boot straight into playback mode, never call OpenRouter, and only work for the current `historyVersion`.
+1. **Setup**: Start from a curated bundle or build the panel manually.
+2. **Opening**: The moderator frames the topic and establishes the debate tone.
+3. **Rounds**: Debaters argue in sequence, with moderator interventions between rounds.
+4. **Consensus**: The moderator closes with a synthesis of the strongest points.
+5. **Sharing**: Completed debates can be published to `/s/<slug>` and replayed without new model calls.
 
-Each fresh page load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`, for example `http://localhost:3000/?id=ai-liability-meltdown`. The default starter pool is chosen on the server from the browser locale or geolocation headers when available: `CF-IPCountry=PT` is used when the app sits behind Cloudflare, `X-Vercel-IP-Country=PT` is used on Vercel, and Portuguese visitors default to Portugal-focused debates while everyone else defaults to the global roster. An explicit `?id=` bundle still wins, and the wand rerolls within that same detected pool. That starter bundle is resolved on the server so the first HTML already contains the real setup UI instead of a client-side loading shell. If you want the dumbest possible cold open, `?id=silliest` resolves to `ocean-democracy-meltdown`.
+Each fresh load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`. Starter bundles are chosen from Portugal-focused or global pools using browser locale or geolocation headers when available, and the initial setup is resolved on the server so the first HTML already matches the selected bundle.
 
-The orchestration engine lives in [`pit-engine.ts`](src/lib/pit-engine.ts) and the full UI in [`pit-studio.tsx`](src/components/pit-studio.tsx).
+Core orchestration lives in [`src/lib/pit-engine.ts`](src/lib/pit-engine.ts) and the main UI lives in [`src/components/pit-studio.tsx`](src/components/pit-studio.tsx).
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18+)
-- An [OpenRouter](https://openrouter.ai/) API key if you are running in bring-your-own-key mode
+- [Node.js](https://nodejs.org/) 18+
+- An [OpenRouter](https://openrouter.ai/) API key if you are not using a hosted server key
 
 ### Setup
 
@@ -59,19 +47,11 @@ The orchestration engine lives in [`pit-engine.ts`](src/lib/pit-engine.ts) and t
 git clone https://github.com/tsilva/aipit.git
 cd aipit
 npm install
-```
-
-Create local environment variables:
-
-```bash
 cp .env.example .env.local
-```
-
-Start the dev server:
-
-```bash
 npm run dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000).
 
 Run the full verification suite:
 
@@ -83,48 +63,31 @@ npm run build
 npm run test:e2e
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-OpenRouter traffic is proxied through internal Next.js API routes under `src/app/api/openrouter`.
-When the shared server key is used, the proxy only accepts browser requests whose `Origin` exactly matches the request URL origin, rate-limits them with best-effort trusted IP detection, clamps completion budgets, strips unsupported OpenRouter options, and only forwards the supported model list exposed in the editor. The hosted payload caps are tuned for debate-sized prompts, so moderator turns can carry character setup plus rolling transcript context without tripping generic chat limits. Hosted key validation also returns an empty success response instead of relaying server-key metadata from OpenRouter. Arbitrary forwarded host/proto/IP headers are not trusted as proof of origin or client identity.
-
-Every debate request now uses a stable prompt prefix per speaker while still sending the full transcript as the live turn packet. That preserves debate quality and makes OpenRouter prompt caching more likely to pay off on cache-capable providers because more of the repeated prompt prefix stays unchanged from turn to turn. The session anchor intentionally avoids repeating the debate topic and shared directive, and the transcript packet uses a compact line-based format to reduce prompt overhead without dropping debate content.
-
-Debate turns now request OpenRouter chat completions in streaming mode. The browser parses the server-sent event stream directly, incrementally updates the active turn with a stable turn id, and still keeps the final usage totals from the stream footer when the provider includes them.
-
-The live studio also applies generation backpressure while a debate is running. After the first response is produced, the client only lets the engine stay one turn ahead of the playback cursor. If the viewer pauses or leaves early, the app stops precomputing deeper turns until playback advances again, which cuts avoidable token spend.
-
-If you deploy behind a custom reverse proxy, sanitize and verify any forwarding metadata there instead of expecting the app to trust raw forwarded headers automatically.
-
-If `OPENROUTER_API_KEY` is configured on the server, the proxy uses that key whenever the browser does not send a user-provided key. Users can still paste their own key, and that key takes precedence for validation and debate runs. Personal keys are kept in memory for the current page session only and are cleared on reload.
-
-Transcript views intentionally render prompt and model output as plain text inside the markdown shell so generated links, images, and other markdown syntax do not become active content.
+OpenRouter traffic goes through internal Next.js route handlers under `src/app/api/openrouter`. If `OPENROUTER_API_KEY` is configured on the server, the app can use that hosted key when the browser does not provide its own; a user-supplied key still takes precedence. Shared replays are immutable snapshots stored separately from live debate execution.
 
 ## ⚙️ Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEXT_PUBLIC_SITE_URL` | Yes in production | Canonical site URL used for metadata, manifest entries, and OG links |
-| `NEXT_PUBLIC_OPENROUTER_APP_NAME` | No | OpenRouter attribution title for client-side requests |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | Google Analytics 4 measurement ID; EU visitors must opt in before it loads, non-EU visitors can decline per browser |
-| `NEXT_PUBLIC_SENTRY_DSN` | No | Browser-side Sentry DSN for client error reporting |
-| `OPENROUTER_API_KEY` | No | Server-side OpenRouter API key used by the internal proxy when present |
-| `R2_ACCOUNT_ID` | Required for share links | Cloudflare account ID for the private R2 bucket |
-| `R2_BUCKET_NAME` | Required for share links | Private Cloudflare R2 bucket name used for shared conversation snapshots |
-| `R2_ACCESS_KEY_ID` | Required for share links | S3-compatible access key ID for the R2 bucket |
-| `R2_SECRET_ACCESS_KEY` | Required for share links | S3-compatible secret access key for the R2 bucket |
-| `R2_OBJECT_PREFIX` | No | Object prefix for shared snapshots. Defaults to `shares/` |
-| `SENTRY_DSN` | No | Server-side Sentry DSN for API route and server runtime error reporting |
+| `NEXT_PUBLIC_SITE_URL` | Yes in production | Canonical site URL for metadata, manifest entries, and OG links |
+| `NEXT_PUBLIC_OPENROUTER_APP_NAME` | No | OpenRouter attribution label |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | Google Analytics 4 measurement ID |
+| `NEXT_PUBLIC_SENTRY_DSN` | No | Browser Sentry DSN |
+| `OPENROUTER_API_KEY` | No | Server-side OpenRouter key for the internal proxy |
+| `R2_ACCOUNT_ID` | Required for share links | Cloudflare account ID |
+| `R2_BUCKET_NAME` | Required for share links | Private R2 bucket name |
+| `R2_ACCESS_KEY_ID` | Required for share links | R2 access key ID |
+| `R2_SECRET_ACCESS_KEY` | Required for share links | R2 secret access key |
+| `R2_OBJECT_PREFIX` | No | Snapshot object prefix, defaults to `shares/` |
+| `SENTRY_DSN` | No | Server-side Sentry DSN |
 
-If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, the app uses Cloudflare or Vercel geolocation headers to decide whether consent is required. EU visitors are prompted before the GA4 tag loads; outside the EU the tag loads by default unless analytics was previously declined in that browser. The app then emits events for page views, starter bundle rerolls, character additions, debate starts, debate completions, debate cancellations, debate failures, and transcript copies.
+If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, EU visitors must opt in before GA loads. Outside the EU, analytics loads by default unless previously declined in that browser.
 
 ## ☁️ Deploy to Vercel
 
-This app is a standard Next.js App Router project, so Vercel can deploy it without extra adapters.
+This is a standard Next.js App Router project and deploys directly on Vercel.
 
-To prepare a shared hosted key on Vercel, add `OPENROUTER_API_KEY` to the project environment variables. The UI now supports both modes: users can bring their own key, or leave the field empty and rely on the hosted server key.
-
-For production deployments, also set `NEXT_PUBLIC_SITE_URL` to the final canonical origin. If you want shareable replay links, configure the private R2 bucket env vars as well. If you want production error reporting, set `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`.
+For a hosted-key deployment, set `OPENROUTER_API_KEY`. In production, also set `NEXT_PUBLIC_SITE_URL`. If you want share links, add the R2 variables. If you want runtime error reporting, set `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`.
 
 ```bash
 # Preview deployment
@@ -136,47 +99,41 @@ vercel deploy --prod -y
 
 ## 🛠️ Tech Stack
 
-- [Next.js](https://nextjs.org/) 16 — App Router, React Server Components
+- [Next.js](https://nextjs.org/) 16
 - [React](https://react.dev/) 19
 - [TypeScript](https://www.typescriptlang.org/) 5
 - [Tailwind CSS](https://tailwindcss.com/) 4
-- [react-markdown](https://github.com/remarkjs/react-markdown) — Markdown rendering in debate bubbles
-- [OpenRouter](https://openrouter.ai/) — Multi-model AI gateway
-- [Vercel](https://vercel.com/) — Deployment platform
+- [react-markdown](https://github.com/remarkjs/react-markdown)
+- [OpenRouter](https://openrouter.ai/)
+- [Vercel](https://vercel.com/)
 
 ## 📁 Project Structure
 
-```
+```text
 src/
 ├── app/
-│   ├── layout.tsx              # Root layout
-│   └── page.tsx                # Main page (renders pit-studio)
+│   ├── layout.tsx
+│   └── page.tsx
 ├── components/
-│   ├── pit-studio.tsx          # Main UI component (debate studio)
-│   └── pit-studio-entry.tsx    # Entry point / setup screen
+│   ├── pit-studio.tsx
+│   └── pit-studio-entry.tsx
 └── lib/
-    ├── pit-engine.ts           # Debate orchestration engine
-    ├── pit.ts                  # Core types and interfaces
-    ├── openrouter.ts           # OpenRouter proxy client helpers
-    ├── openrouter-server.ts    # Server-side OpenRouter proxy helpers
-    ├── openrouter-models.ts    # Available model definitions
-    ├── character-presets.ts      # 28 predefined debate characters
-    ├── character-profile.ts      # Character profile types/utilities
-    └── ...
+    ├── pit-engine.ts
+    ├── pit.ts
+    ├── openrouter.ts
+    ├── openrouter-server.ts
+    ├── openrouter-models.ts
+    ├── character-presets.ts
+    └── character-profile.ts
 ```
 
 ## 📝 Notes
 
-- OpenRouter requests are sent through internal route handlers in `src/app/api/openrouter`.
-- `OPENROUTER_API_KEY` is server-only and should not be prefixed with `NEXT_PUBLIC_`.
-- `NEXT_PUBLIC_SITE_URL` should be set explicitly in production so metadata, manifest URLs, and OG links use the canonical domain.
-- Starter bundles and personal API keys are not persisted in browser storage; reloads start from a fresh random bundle unless `?id=` is provided.
-- Shared replay links are immutable R2-backed JSON snapshots. They are public by URL, marked `noindex`, and intentionally reject older `historyVersion` payloads after a format bump instead of attempting backward-compat migrations.
-- EU visitors must opt in before analytics loads. Outside the EU, declining analytics in the current browser keeps the app fully usable and prevents GA from loading.
-- `/sitemap.xml` is generated by Next.js metadata routes from the starter bundle list and includes each deep-linkable `/?id=<bundle-id>` route.
-- The app uses repologogen-generated branding assets from `public/brand/web-seo`, including the manifest at `/brand/web-seo/site.webmanifest` plus matching favicon, Apple touch, Android Chrome, and OG card metadata.
-- The UI is implemented in `src/components/pit-studio.tsx`.
-- The orchestration logic lives in `src/lib/pit-engine.ts`.
+- OpenRouter requests are proxied through `src/app/api/openrouter`.
+- `OPENROUTER_API_KEY` is server-only and should not use a `NEXT_PUBLIC_` prefix.
+- Starter bundles and personal API keys are not persisted across page reloads.
+- Shared replay links are public-by-URL, immutable, and reject unsupported history versions.
+- Transcript content is rendered as plain text inside the markdown shell so generated links and images do not become active content.
 
 ## 📄 License
 
