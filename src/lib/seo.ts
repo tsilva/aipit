@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import createGeneratedMetadata from "../../repologogen-next/web-seo-metadata";
+import createGeneratedMetadata from "../../web-seo-metadata";
 import { PARTICIPANT_CHARACTER_PRESETS } from "@/lib/character-presets";
 import { SITE_TWITTER_HANDLE, SITE_URL } from "@/lib/site";
 import type { StarterBundleDefinition } from "@/lib/starter-bundles";
