@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { SITE_CONTACT_EMAIL, SITE_CONTACT_MAILTO } from "@/lib/site";
+
 export const metadata: Metadata = {
   title: "Privacy | The AI Pit",
   description:
@@ -16,7 +18,11 @@ export default function PrivacyPage() {
         <div className="legal-copy">
           <p>
             The AI Pit is provided by the operator of this deployment. Questions about this policy should be directed
-            to the contact channel made available with the deployment.
+            to{" "}
+            <a href={SITE_CONTACT_MAILTO} className="underline decoration-white/30 underline-offset-4">
+              {SITE_CONTACT_EMAIL}
+            </a>
+            .
           </p>
           <p>
             The AI Pit supports two OpenRouter usage modes. If you provide your own OpenRouter API key, requests are
@@ -50,6 +56,13 @@ export default function PrivacyPage() {
           <p>
             This app is intended for interactive experimentation, not regulated or high-sensitivity processing. If you
             need stronger confidentiality guarantees, use your own API key or do not submit the content.
+          </p>
+          <p>
+            Privacy requests or questions about this policy can be sent to{" "}
+            <a href={SITE_CONTACT_MAILTO} className="underline decoration-white/30 underline-offset-4">
+              {SITE_CONTACT_EMAIL}
+            </a>
+            .
           </p>
         </div>
         <div className="legal-actions">

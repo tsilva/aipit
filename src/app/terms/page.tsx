@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { SITE_CONTACT_EMAIL, SITE_CONTACT_MAILTO } from "@/lib/site";
+
 export const metadata: Metadata = {
   title: "Terms | The AI Pit",
   description: "Terms for using The AI Pit, including optional hosted OpenRouter access.",
@@ -45,6 +47,13 @@ export default function TermsPage() {
           <p>
             The AI Pit may block or restrict hosted access for excessive usage, attempts to evade limits, policy
             violations, or conduct that threatens service stability, cost control, or safety.
+          </p>
+          <p>
+            Questions about these terms can be sent to{" "}
+            <a href={SITE_CONTACT_MAILTO} className="underline decoration-white/30 underline-offset-4">
+              {SITE_CONTACT_EMAIL}
+            </a>
+            .
           </p>
         </div>
         <div className="legal-actions">
