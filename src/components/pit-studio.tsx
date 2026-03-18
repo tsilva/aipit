@@ -1074,7 +1074,7 @@ function StudioHero({
           <div>
             <p className="hero-kicker">Debate Topic</p>
             <h2 className="hero-panel-title">What is the debate topic about?</h2>
-            <p className="hero-panel-copy">The wand rerolls a fresh starter debate that fits the detected audience.</p>
+            <p className="hero-panel-copy">Fresh loads follow detected audience. The wand rerolls from the full starter pool.</p>
           </div>
         </div>
 
@@ -2714,7 +2714,7 @@ export function PitStudio({
   }
 
   function rerollStarterBundle() {
-    const nextStarter = createRandomStarterInput(starterBundleId, audience);
+    const nextStarter = createRandomStarterInput(starterBundleId, audience, { ignoreAudience: true });
     setStarterBundleId(nextStarter.bundle.id);
     setConfig(nextStarter.input);
     trackEvent("starter_bundle_reroll", {

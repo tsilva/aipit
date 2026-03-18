@@ -30,7 +30,7 @@
 4. **Consensus**: The moderator closes with a synthesis of the strongest points.
 5. **Sharing**: Completed debates can be published to `/s/<slug>` and replayed without new model calls.
 
-Each fresh load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`. Starter bundles are chosen from Portugal-focused or global pools using browser locale or geolocation headers when available, and the initial setup is resolved on the server so the first HTML already matches the selected bundle.
+Each fresh load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`. First-load starter bundles are chosen from Portugal-focused or global pools using browser locale or geolocation headers when available, and the initial setup is resolved on the server so the first HTML already matches the selected bundle. After that, the landing-page wand rerolls from the full starter bundle pool without audience restrictions.
 
 Core orchestration lives in [`src/lib/pit-engine.ts`](src/lib/pit-engine.ts) and the main UI lives in [`src/components/pit-studio.tsx`](src/components/pit-studio.tsx).
 

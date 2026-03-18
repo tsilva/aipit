@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { filterParticipantCharacterPresets } from "@/lib/character-presets";
 import {
   createRandomStarterInput,
@@ -22,6 +22,19 @@ describe("audience-aware starter selection", () => {
 
     expect(starter.bundle.audience).toBe("global");
     expect(starter.bundle.id).not.toBe(current?.id);
+  });
+
+  it("can reroll across all audiences when explicitly unrestricted", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.2);
+
+    try {
+      const starter = createRandomStarterInput("portugal-housing-war", "portugal", { ignoreAudience: true });
+
+      expect(starter.bundle.audience).toBe("global");
+      expect(starter.bundle.id).not.toBe("portugal-housing-war");
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 });
 
