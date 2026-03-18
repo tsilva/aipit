@@ -175,6 +175,46 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     memberPresetIds: ["joe-rogan", "lex-fridman", "saul-goodman"],
     audience: "global",
   },
+  {
+    id: "war-peace-reckoning",
+    name: "War Peace Reckoning",
+    prompt: "Should democracies accept an ugly negotiated peace with an invading power if the alternative is years more war and mass death?",
+    moderatorPresetId: "christiane-amanpour",
+    memberPresetIds: ["donald-trump", "mariana-mortagua", "henrique-gouveia-e-melo"],
+    audience: "global",
+  },
+  {
+    id: "rewilding-last-exit",
+    name: "Rewilding Last Exit",
+    prompt: "Should rich countries force people and industry out of fragile ecosystems to restore biodiversity, even at major economic cost?",
+    moderatorPresetId: "david-attenborough",
+    memberPresetIds: ["ines-sousa-real", "gordon-ramsay", "elon-musk"],
+    audience: "global",
+  },
+  {
+    id: "corruption-comedy-court",
+    name: "Corruption Comedy Court",
+    prompt: "Should politicians be banned from trading stocks, taking lobbying jobs, and cashing in on media fame for five years after leaving office?",
+    moderatorPresetId: "jon-stewart",
+    memberPresetIds: ["saul-goodman", "donald-trump", "alex-jones"],
+    audience: "global",
+  },
+  {
+    id: "china-dependency-trap",
+    name: "China Dependency Trap",
+    prompt: "Should democracies accept higher prices and slower growth to break their dependence on Chinese manufacturing and strategic supply chains?",
+    moderatorPresetId: "fareed-zakaria",
+    memberPresetIds: ["elon-musk", "joao-cotrim-de-figueiredo", "mariana-mortagua"],
+    audience: "global",
+  },
+  {
+    id: "elite-trust-collapse",
+    name: "Elite Trust Collapse",
+    prompt: "Should public institutions lose funding if they are seen as politically biased by a large share of the population, even if experts defend their standards?",
+    moderatorPresetId: "tucker-carlson",
+    memberPresetIds: ["joe-rogan", "alex-jones", "luis-marques-mendes"],
+    audience: "global",
+  },
 ];
 
 export const STARTER_BUNDLE_ALIAS_MAP = new Map<string, string>([

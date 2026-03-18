@@ -11,7 +11,7 @@
 ## ✨ Features
 
 - Rich character profiles with editable debate traits, guardrails, and prompt notes
-- 28 built-in presets and 20 starter bundles for quick debate setup
+- 28 built-in character presets, 7 moderator presets, and 25 starter bundles for quick debate setup
 - Structured flow: opening, rounds, moderator interventions, and closing synthesis
 - Multi-model OpenRouter support with streaming responses and automatic failover
 - Shareable replay links for completed debates, backed by immutable snapshots

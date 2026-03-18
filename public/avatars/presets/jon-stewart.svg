@@ -1,0 +1,15 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="128" fill="#1A1F2A"/>
+  <circle cx="256" cy="256" r="232" fill="url(#bg)"/>
+  <circle cx="256" cy="208" r="104" fill="#EDC9AF"/>
+  <path d="M136 420C136 344.889 189.726 304 256 304C322.274 304 376 344.889 376 420V448H136V420Z" fill="#223146"/>
+  <path d="M160 196C160 120.889 206.562 80 256 80C305.438 80 352 120.889 352 196V220H160V196Z" fill="#6C747E"/>
+  <path d="M176 224C192 170 224 136 256 136C288 136 320 170 336 224H176Z" fill="#454A52"/>
+  <text x="256" y="438" text-anchor="middle" fill="#F6F1E8" font-size="72" font-family="Arial, sans-serif" font-weight="700">JS</text>
+  <defs>
+    <linearGradient id="bg" x1="72" y1="72" x2="440" y2="440" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D4369"/>
+      <stop offset="1" stop-color="#AA4B32"/>
+    </linearGradient>
+  </defs>
+</svg>
