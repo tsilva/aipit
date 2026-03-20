@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="./logo.png" width="600" alt="aipit logo" />
+  <img src="./logo.png" width="520" alt="The AI Pit logo" />
 
-  # aipit
+  # The AI Pit
 
   AI debate simulator for turning any topic into a moderator-led showdown between custom or preset AI characters.
 

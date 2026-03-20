@@ -1,5 +1,5 @@
 {
-  "project_name": "aipit",
+  "project_name": "The AI Pit",
   "project_type": "nodejs",
   "bundle": "core-brand",
   "targets": [
@@ -10,19 +10,19 @@
     "cli_args"
   ],
   "metadata": {
-    "title": "aipit | AI-Driven Debate Platform",
-    "short_description": "A Next.js application for running structured, multi-round debates between customizable AI characters using OpenRouter, featuring automated moderation and shareable replays.",
-    "social_title": "aipit: AI Character Debates with Automated Moderation",
-    "social_description": "Build, watch, and share structured debates between AI personalities. Features multi-model support, character presets, and immutable replay snapshots.",
+    "title": "The AI Pit | Next.js AI Debate Simulator",
+    "short_description": "A Next.js-based AI debate simulator using OpenRouter to orchestrate structured, moderator-led discussions between customizable AI characters on any topic.",
+    "social_title": "The AI Pit: Orchestrate Structured Multi-Model AI Debates",
+    "social_description": "Run custom AI showdowns with unique character profiles, moderator interventions, and streaming responses via OpenRouter. Includes built-in presets and shareable replay snapshots.",
     "keywords": [
-      "nextjs",
+      "next.js",
       "openrouter",
       "ai-debate",
       "llm-orchestration",
-      "structured-output",
-      "ai-characters",
+      "react",
       "typescript",
-      "tailwind-css",
+      "ai-simulator",
+      "streaming-responses",
       "ai-agents"
     ]
   },

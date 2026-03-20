@@ -1,7 +1,7 @@
 {
-  "name": "aipit",
-  "short_name": "aipit",
-  "description": "Launch moderator-led debates between AI characters, remix the lineup, and share the replay.",
+  "name": "The AI Pit",
+  "short_name": "AI Pit",
+  "description": "A Next.js-based AI debate simulator using OpenRouter to orchestrate structured, moderator-led discussions between customizable AI characters on any topic.",
   "icons": [
     {
       "src": "android-chrome-192.png",
