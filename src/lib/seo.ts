@@ -5,9 +5,9 @@ import { SITE_TWITTER_HANDLE, SITE_URL } from "@/lib/site";
 import type { StarterBundleDefinition } from "@/lib/starter-bundles";
 
 export const SITE_NAME = "The AI Pit";
-export const SITE_TITLE = "The AI Pit | Watch AI Characters Debate Anything";
+export const SITE_TITLE = "The AI Pit | Make AI Characters Debate Any Topic";
 export const SITE_DESCRIPTION =
-  "Pit AI characters against each other in live, moderator-led debates. Launch hot-button scenarios, remix the roster, and share the chaos.";
+  "Turn any topic into a moderator-led AI debate. Mix custom characters, run multi-round clashes, and share the replay.";
 export const SITE_THEME_COLOR = "#d87a3b";
 export const SITE_BACKGROUND_COLOR = "#0c1118";
 
@@ -143,19 +143,23 @@ export function buildDefaultMetadata(): Metadata {
     manifest: DEFAULT_MANIFEST_PATH,
     keywords: [
       "AI debate simulator",
+      "AI character debate",
       "AI debate app",
       "AI characters",
       "AI debate",
+      "AI debate generator",
       "character debate",
       "LLM debate",
-      "AI debate generator",
       "moderated AI debate",
+      "AI panel simulator",
+      "AI versus generator",
       "AI argument simulator",
       "OpenRouter",
       "AI roleplay",
       "AI conversation simulator",
       "debate generator",
       "viral debate prompts",
+      "shareable AI debates",
       "AI discourse",
       "interactive AI",
     ],

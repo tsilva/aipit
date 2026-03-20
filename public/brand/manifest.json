@@ -6,23 +6,24 @@
     "web-seo"
   ],
   "sources": [
-    "bundled_defaults"
+    "built_in_defaults",
+    "cli_args"
   ],
   "metadata": {
-    "title": "aipit | AI Character Debate Orchestrator",
-    "short_description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, character profiles, streaming responses, and shareable snapshots.",
-    "social_title": "aipit - Structured AI Character Debates",
-    "social_description": "Watch richly-profiled AI characters clash in moderator-led discussions. Powered by Next.js and OpenRouter with multi-model support and live streaming.",
+    "title": "aipit | AI-Driven Debate Platform",
+    "short_description": "A Next.js application for running structured, multi-round debates between customizable AI characters using OpenRouter, featuring automated moderation and shareable replays.",
+    "social_title": "aipit: AI Character Debates with Automated Moderation",
+    "social_description": "Build, watch, and share structured debates between AI personalities. Features multi-model support, character presets, and immutable replay snapshots.",
     "keywords": [
       "nextjs",
       "openrouter",
-      "ai-debates",
+      "ai-debate",
       "llm-orchestration",
+      "structured-output",
       "ai-characters",
-      "streaming-llm",
-      "structured-debate",
-      "react-server-components",
-      "ai-simulation"
+      "typescript",
+      "tailwind-css",
+      "ai-agents"
     ]
   },
   "assets": [

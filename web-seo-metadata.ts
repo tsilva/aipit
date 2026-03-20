@@ -1,35 +1,35 @@
 import type { Metadata } from "next";
 
 const payload: Omit<Metadata, "metadataBase"> = {
-  "title": "aipit | AI Character Debate Orchestrator",
-  "description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, character profiles, streaming responses, and shareable snapshots.",
+  "title": "aipit | AI Character Debate Simulator",
+  "description": "Launch moderator-led debates between AI characters, remix the lineup, and share the replay. Built with Next.js and OpenRouter.",
   "keywords": [
-    "nextjs",
-    "openrouter",
-    "ai-debates",
-    "llm-orchestration",
+    "ai debate simulator",
+    "ai character debate",
+    "ai debate generator",
+    "openrouter app",
+    "llm debate",
     "ai-characters",
-    "streaming-llm",
-    "structured-debate",
-    "react-server-components",
-    "ai-simulation"
+    "shareable ai debates",
+    "moderator-led ai debate",
+    "nextjs ai app"
   ],
   "openGraph": {
-    "title": "aipit | AI Character Debate Orchestrator",
-    "description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, character profiles, streaming responses, and shareable snapshots.",
+    "title": "aipit | AI Character Debate Simulator",
+    "description": "Launch moderator-led debates between AI characters, remix the lineup, and share the replay. Built with Next.js and OpenRouter.",
     "images": [
       {
         "url": "/brand/web-seo/og-image-1200x630.png",
         "width": 1200,
         "height": 630,
-        "alt": "aipit brand card"
+        "alt": "aipit AI character debate simulator brand card"
       }
     ]
   },
   "twitter": {
     "card": "summary_large_image",
-    "title": "aipit | AI Character Debate Orchestrator",
-    "description": "A Next.js platform for structured, moderator-led debates between AI characters. Features multi-model OpenRouter support, character profiles, streaming responses, and shareable snapshots.",
+    "title": "aipit | AI Character Debate Simulator",
+    "description": "Launch moderator-led debates between AI characters, remix the lineup, and share the replay. Built with Next.js and OpenRouter.",
     "images": [
       "/brand/web-seo/og-image-1200x630.png"
     ]

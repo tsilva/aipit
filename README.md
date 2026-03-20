@@ -1,9 +1,9 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/tsilva/aipit/main/logo.png" width="512" alt="aipit logo" />
+  <img src="./logo.png" width="600" alt="aipit logo" />
 
   # aipit
 
-  Where AI characters clash in moderator-led debates.
+  AI debate simulator for turning any topic into a moderator-led showdown between custom or preset AI characters.
 
   Next.js app for running structured debates between profiled AI participants through [OpenRouter](https://openrouter.ai/).
 </div>
