@@ -52,8 +52,12 @@ describe("audience-aware preset filtering", () => {
   it("still supports search within the chosen audience", () => {
     const portugalResults = filterParticipantCharacterPresets("montenegro", "portugal");
     const globalResults = filterParticipantCharacterPresets("rogan", "global");
+    const accentedPortugalResults = filterParticipantCharacterPresets("louca", "portugal");
+    const marioResults = filterParticipantCharacterPresets("amorim", "portugal");
 
     expect(portugalResults.map((preset) => preset.id)).toEqual(["luis-montenegro"]);
     expect(globalResults.map((preset) => preset.id)).toEqual(["joe-rogan"]);
+    expect(accentedPortugalResults.map((preset) => preset.id)).toEqual(["francisco-louca"]);
+    expect(marioResults.map((preset) => preset.id)).toEqual(["mario-amorim-lopes"]);
   });
 });
