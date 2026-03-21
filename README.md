@@ -11,7 +11,7 @@
 ## ✨ Features
 
 - Rich character profiles with editable debate traits, guardrails, and prompt notes
-- 28 built-in character presets, 7 moderator presets, and 25 starter bundles for quick debate setup
+- 41 built-in character presets, 7 moderator presets, and 31 starter bundles for quick debate setup
 - Structured flow: opening, rounds, moderator interventions, and closing synthesis
 - Multi-model OpenRouter support with streaming responses and automatic failover
 - Shareable replay links for completed debates, backed by immutable snapshots
@@ -30,7 +30,7 @@
 4. **Consensus**: The moderator closes with a synthesis of the strongest points.
 5. **Sharing**: Completed debates can be published to `/s/<slug>` and replayed without new model calls.
 
-Each fresh load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`. First-load starter bundles are chosen from Portugal-focused or global pools using browser locale or geolocation headers when available, and the initial setup is resolved on the server so the first HTML already matches the selected bundle. After that, the landing-page wand rerolls from the full starter bundle pool without audience restrictions.
+Each fresh load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`. First-load starter bundles are chosen from Portugal-focused or global pools using browser locale or geolocation headers when available, and the initial setup is resolved on the server so the first HTML already matches the selected bundle. Every built-in participant preset appears in at least one curated starter bundle, and after first load the landing-page wand rerolls from the full starter bundle pool without audience restrictions.
 
 Core orchestration lives in [`src/lib/pit-engine.ts`](src/lib/pit-engine.ts) and the main UI lives in [`src/components/pit-studio.tsx`](src/components/pit-studio.tsx).
 

@@ -128,6 +128,51 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     audience: "portugal",
   },
   {
+    id: "revolving-door-purge",
+    name: "Revolving Door Purge",
+    prompt:
+      "Should Portugal ban former ministers, regulators, and senior judges from taking corporate, lobbying, or prime-time media jobs for 10 years after leaving office?",
+    moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["ana-gomes", "paulo-portas", "ricardo-costa"],
+    audience: "portugal",
+  },
+  {
+    id: "chega-firewall-lab",
+    name: "Chega Firewall Lab",
+    prompt:
+      "Should Portugal's democratic parties refuse any governing deal with Chega even if voters keep producing deadlocked elections and political paralysis?",
+    moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["rui-tavares", "miguel-morgado", "pacheco-pereira"],
+    audience: "portugal",
+  },
+  {
+    id: "austerity-second-coming",
+    name: "Austerity Second Coming",
+    prompt:
+      "If Portugal hits another debt crisis, should it cut public spending fast even if that means lower pensions, weaker services, and years of social anger?",
+    moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["francisco-louca", "pedro-passos-coelho", "antonio-jose-seguro"],
+    audience: "portugal",
+  },
+  {
+    id: "liberal-shock-portugal",
+    name: "Liberal Shock Portugal",
+    prompt:
+      "Should Portugal slash taxes, deregulate labor, and radically shrink bureaucracy in one legislature to break out of permanent stagnation?",
+    moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["luis-montenegro", "rui-rocha", "mario-amorim-lopes"],
+    audience: "portugal",
+  },
+  {
+    id: "prime-time-populism-ban",
+    name: "Prime-Time Populism Ban",
+    prompt:
+      "Should Portuguese television stop booking anti-system populists for prime-time panels even if ratings and online attention collapse?",
+    moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["joao-miguel-tavares", "pedro-marques-lopes", "daniel-oliveira"],
+    audience: "portugal",
+  },
+  {
     id: "social-media-age-ban",
     name: "Social Media Age Ban",
     prompt: "Should governments ban social media for everyone under 16 even if parents strongly object?",
@@ -213,6 +258,15 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     prompt: "Should public institutions lose funding if they are seen as politically biased by a large share of the population, even if experts defend their standards?",
     moderatorPresetId: "tucker-carlson",
     memberPresetIds: ["joe-rogan", "alex-jones", "luis-marques-mendes"],
+    audience: "global",
+  },
+  {
+    id: "robot-cop-circus",
+    name: "Robot Cop Circus",
+    prompt:
+      "Should democracies replace most police patrols and border screening with autonomous machines if they are cheaper, less corruptible, and more obedient than humans?",
+    moderatorPresetId: "jon-stewart",
+    memberPresetIds: ["t-800", "borat", "saul-goodman"],
     audience: "global",
   },
 ];
