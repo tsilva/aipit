@@ -1,5 +1,10 @@
 import type { PresetAudience } from "@/lib/audience";
-import { createCharacterProfile, type ParticipantCharacterProfile } from "@/lib/character-profile";
+import {
+  createCharacterProfile,
+  createVoiceProfile,
+  type CharacterVoiceProfile,
+  type ParticipantCharacterProfile,
+} from "@/lib/character-profile";
 import {
   OPENROUTER_MODEL_COMBATIVE,
 } from "@/lib/openrouter-models";
@@ -18,11 +23,164 @@ export interface ParticipantCharacterPreset {
   characterProfile: ParticipantCharacterProfile;
 }
 
+const LOW_DISFLUENCY_STYLE_PATTERN =
+  /measured|elegant|precise|reflective|documentary|serene|calm|austere|polished|clean|controlled|academic|composed|broadcast|anchor|steady/i;
+const HIGH_DISFLUENCY_STYLE_PATTERN =
+  /rapid|blunt|punchy|volatile|performative|aggressive|reactive|combative|hyperactive|chaos|goofy|distractible|shrieking|furious|provocative|insult|taunt|improvised|rally|stump speech|tv hit/i;
+
+const DEFAULT_RELEVANCE_FLOOR =
+  "However messy the cadence gets, answer at least one live claim, accusation, or pressure point from the transcript and stay understandable enough that a listener can follow the point.";
+const DEFAULT_FORBIDDEN_CLEANUPS =
+  "Do not rewrite this voice into tidy moderator prose, generic debate-club transitions, balanced essay structure, or polished broadcast-neutral wording.";
+
+const PRESET_VOICE_OVERRIDES: Record<string, Partial<CharacterVoiceProfile>> = {
+  "donald-trump": {
+    syntax:
+      "Fragments, restarts, stacked emphasis, repeated adjectives, and self-interruptions are normal. Let sentences lurch forward through confidence and instinct instead of formal structure.",
+    disfluencies:
+      "Allow verbal clutter, repeated fillers, abrupt restarts, and half-finished clauses. Do not clean obvious tangents or jumbled transitions into polished argument prose.",
+    segueStyle:
+      "Pivot through vibes, status comparisons, grievances, anecdotes, and crowd-energy jumps rather than neat logical bridges.",
+    lexicalHabits:
+      "Reuse superlatives, winner-loser framing, public-image language, and simple brand-like descriptors instead of precise technocratic vocabulary.",
+  },
+  "joe-rogan": {
+    segueStyle:
+      "Let the conversation wander through gut checks, examples, mini-stories, and spontaneous curiosity before circling back to the main point.",
+    lexicalHabits:
+      "Favor casual spoken English, recurring everyday words, and broad intuitive framing over formal policy jargon.",
+  },
+  "alex-jones": {
+    syntax:
+      "Rants can pile clause on clause with bursts of interruption and escalation. The point can arrive through pressure and alarm rather than careful sequencing.",
+    disfluencies:
+      "High disfluency is fine: repetitions, shouted pivots, invented emphasis, and breathless restarts should survive.",
+    segueStyle:
+      "Jump fast between threat signals, conspiratorial links, and urgent warnings without smoothing every bridge.",
+  },
+  "lex-fridman": {
+    disfluencies:
+      "Keep disfluencies sparse but human: light pauses, restarts, and reflective hedges are fine when he is thinking aloud.",
+    segueStyle:
+      "Transition through curiosity, first-principles reframing, and patient follow-up questions rather than combative jumps.",
+  },
+  "gordon-ramsay": {
+    syntax:
+      "Short bursts, clipped fragments, escalating follow-ups, and punchy verdicts are normal. The syntax can snap instead of unfold politely.",
+    lexicalHabits:
+      "Favor blunt kitchen-floor language, hard judgments, and standards-driven phrasing over abstract management vocabulary.",
+  },
+  "eric-cartman": {
+    disfluencies:
+      "Let whining repetition, petty escalations, and childish verbal derailments show up without tidying them away.",
+  },
+  "homer-simpson": {
+    syntax:
+      "Simple spoken syntax, occasional incomplete thoughts, and distracted resets are normal. Let instinct outrun discipline.",
+    disfluencies:
+      "Keep the disfluencies obvious but readable: muttered shifts, appetite-driven distractions, and clumsy self-corrections are welcome.",
+  },
+  cornholio: {
+    syntax:
+      "Chaotic fragments, repeated demands, shrill resets, and nonsensical procedural jumps are part of the voice.",
+    disfluencies:
+      "Extreme verbal clutter is allowed. Preserve the breakdown energy instead of normalizing it into coherent panel-show speech.",
+  },
+  "rick-sanchez": {
+    syntax:
+      "Fast clause stacking, contemptuous interruptions, abrupt course corrections, and half-finished thoughts are normal when the next idea arrives faster than the sentence.",
+    disfluencies:
+      "Keep the disfluencies sharp and intentional: stumbling into the next idea, impatient restarts, and irritated verbal swerves are part of the texture.",
+  },
+  "elon-musk": {
+    syntax:
+      "Mix compact declaratives with abrupt technical fragments, speculative asides, and occasional online-style deadpan pivots.",
+    segueStyle:
+      "Move by first-principles reframing, engineering examples, and sudden futuristic tangents rather than polished rhetorical scaffolding.",
+  },
+};
+
 function normalizeSearchText(value: string): string {
   return value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+}
+
+function buildVoiceSyntax(profile: ParticipantCharacterProfile): string {
+  const source = [profile.speechStyle, profile.temperament, profile.promptNotes].join(" ");
+
+  if (HIGH_DISFLUENCY_STYLE_PATTERN.test(source)) {
+    return "Fragments, restarted clauses, stacked emphasis, and broken-off sentences are natural here. Let the syntax feel spoken, pressured, and a little unruly when the character would actually sound that way.";
+  }
+
+  if (LOW_DISFLUENCY_STYLE_PATTERN.test(source)) {
+    return "Mostly complete spoken sentences with deliberate sequencing and controlled clause structure. Keep it human, but do not inject clutter the character would not naturally produce.";
+  }
+
+  return "Use natural spoken syntax rather than essay structure. Incomplete clauses, small restarts, and sentence-shape variation are fine when they suit the character.";
+}
+
+function buildVoiceDisfluencies(profile: ParticipantCharacterProfile): string {
+  const source = [profile.speechStyle, profile.temperament, profile.promptNotes].join(" ");
+
+  if (HIGH_DISFLUENCY_STYLE_PATTERN.test(source)) {
+    return "Allow repetitions, false starts, verbal clutter, abrupt pivots, and self-corrections when pressure or instinct would make them happen.";
+  }
+
+  if (LOW_DISFLUENCY_STYLE_PATTERN.test(source)) {
+    return "Keep disfluencies light and selective. Small pauses or restarts are fine, but the voice should mostly stay composed and controlled.";
+  }
+
+  return "Allow some natural spoken roughness, but do not force constant filler or chaos if the character does not need it.";
+}
+
+function buildVoiceSegueStyle(profile: ParticipantCharacterProfile): string {
+  const source = [profile.debateStyle, profile.speechStyle, profile.promptNotes].join(" ");
+
+  if (/anecdote|curious|follow-up/i.test(source)) {
+    return "Segue through anecdotes, curiosity, follow-up questions, and lived examples rather than formal signposting.";
+  }
+
+  if (HIGH_DISFLUENCY_STYLE_PATTERN.test(source)) {
+    return "Abrupt pivots, looping callbacks, and side-lane detours are acceptable if the voice would naturally move that way.";
+  }
+
+  if (LOW_DISFLUENCY_STYLE_PATTERN.test(source)) {
+    return "Transitions should stay intentional and legible, but still sound spoken rather than essayistic.";
+  }
+
+  return "Move between points with spoken momentum instead of tidy debate-club transitions.";
+}
+
+function buildVoiceLexicalHabits(profile: ParticipantCharacterProfile): string {
+  return [
+    "Reuse a few favored framing words, contrasts, and recurring terms instead of paraphrasing every idea into neutral synonyms.",
+    profile.language ? `Let the word choice sound natively ${profile.language}.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildPresetVoiceProfile(
+  id: string,
+  profile: ParticipantCharacterProfile,
+): CharacterVoiceProfile {
+  return createVoiceProfile({
+    ...profile.voiceProfile,
+    cadence:
+      profile.speechStyle ||
+      profile.promptNotes ||
+      "Match the character's real-life pacing, rhythm, and spoken energy instead of defaulting to generic debate cadence.",
+    syntax: buildVoiceSyntax(profile),
+    rhetoricalMoves: [profile.debateStyle, profile.promptNotes].filter(Boolean).join(" "),
+    disfluencies: buildVoiceDisfluencies(profile),
+    segueStyle: buildVoiceSegueStyle(profile),
+    lexicalHabits: buildVoiceLexicalHabits(profile),
+    forbiddenCleanups: DEFAULT_FORBIDDEN_CLEANUPS,
+    relevanceFloor: DEFAULT_RELEVANCE_FLOOR,
+    ...PRESET_VOICE_OVERRIDES[id],
+  });
 }
 
 export const PARTICIPANT_CHARACTER_RELATIONSHIPS: Record<string, Record<string, string>> = {
@@ -308,9 +466,15 @@ function definePreset({
   audience?: PresetAudience;
   searchTerms: string[];
 }): ParticipantCharacterPreset {
+  const characterProfile = createCharacterProfile({
+    ...preset.characterProfile,
+    voiceProfile: buildPresetVoiceProfile(preset.id, preset.characterProfile),
+  });
+
   return {
     ...preset,
     audience,
+    characterProfile,
     relationships: preset.relationships ?? PARTICIPANT_CHARACTER_RELATIONSHIPS[preset.id] ?? {},
     searchText: normalizeSearchText([
       preset.name,
@@ -318,18 +482,26 @@ function definePreset({
       preset.summary,
       audience,
       preset.language,
-      preset.characterProfile.role,
-      preset.characterProfile.personality,
-      preset.characterProfile.perspective,
-      preset.characterProfile.temperament,
-      preset.characterProfile.debateStyle,
-      preset.characterProfile.speechStyle,
-      preset.characterProfile.guardrails,
-      preset.characterProfile.language,
-      preset.characterProfile.gender,
-      preset.characterProfile.nationality,
-      preset.characterProfile.birthDate,
-      preset.characterProfile.promptNotes,
+      characterProfile.role,
+      characterProfile.personality,
+      characterProfile.perspective,
+      characterProfile.temperament,
+      characterProfile.debateStyle,
+      characterProfile.speechStyle,
+      characterProfile.guardrails,
+      characterProfile.language,
+      characterProfile.gender,
+      characterProfile.nationality,
+      characterProfile.birthDate,
+      characterProfile.promptNotes,
+      characterProfile.voiceProfile.cadence,
+      characterProfile.voiceProfile.syntax,
+      characterProfile.voiceProfile.rhetoricalMoves,
+      characterProfile.voiceProfile.disfluencies,
+      characterProfile.voiceProfile.segueStyle,
+      characterProfile.voiceProfile.lexicalHabits,
+      characterProfile.voiceProfile.forbiddenCleanups,
+      characterProfile.voiceProfile.relevanceFloor,
       ...searchTerms,
     ].join(" ")),
   };

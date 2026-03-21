@@ -56,7 +56,7 @@ import {
   validateOpenRouterKey,
 } from "@/lib/openrouter";
 import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
-import { buildCharacterProfilePreview } from "@/lib/character-profile";
+import { buildCharacterProfilePreview, cloneCharacterProfile } from "@/lib/character-profile";
 import type { ParticipantCharacterPreset } from "@/lib/character-presets";
 import { buildTranscriptMarkdown } from "@/lib/transcript-markdown";
 import {
@@ -824,7 +824,7 @@ function buildPresetParticipant(preset: ParticipantCharacterPreset, index: numbe
     name: preset.name,
     model: preset.recommendedModel,
     presetId: preset.id,
-    characterProfile: { ...preset.characterProfile },
+    characterProfile: cloneCharacterProfile(preset.characterProfile),
     avatarUrl: preset.avatarUrl,
   };
 }

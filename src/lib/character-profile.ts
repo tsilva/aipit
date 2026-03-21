@@ -1,3 +1,14 @@
+export interface CharacterVoiceProfile {
+  cadence: string;
+  syntax: string;
+  rhetoricalMoves: string;
+  disfluencies: string;
+  segueStyle: string;
+  lexicalHabits: string;
+  forbiddenCleanups: string;
+  relevanceFloor: string;
+}
+
 export interface ParticipantCharacterProfile {
   role: string;
   personality: string;
@@ -11,6 +22,25 @@ export interface ParticipantCharacterProfile {
   nationality: string;
   birthDate: string;
   promptNotes: string;
+  voiceProfile: CharacterVoiceProfile;
+}
+
+type ParticipantCharacterProfileOverrides = Omit<Partial<ParticipantCharacterProfile>, "voiceProfile"> & {
+  voiceProfile?: Partial<CharacterVoiceProfile>;
+};
+
+export function createVoiceProfile(overrides: Partial<CharacterVoiceProfile> = {}): CharacterVoiceProfile {
+  return {
+    cadence: "",
+    syntax: "",
+    rhetoricalMoves: "",
+    disfluencies: "",
+    segueStyle: "",
+    lexicalHabits: "",
+    forbiddenCleanups: "",
+    relevanceFloor: "",
+    ...overrides,
+  };
 }
 
 function resolveCharacterLanguage(profile: ParticipantCharacterProfile): string {
@@ -33,8 +63,10 @@ function resolveCharacterLanguage(profile: ParticipantCharacterProfile): string 
   return "";
 }
 export function createCharacterProfile(
-  overrides: Partial<ParticipantCharacterProfile> = {},
+  overrides: ParticipantCharacterProfileOverrides = {},
 ): ParticipantCharacterProfile {
+  const { voiceProfile, ...profileOverrides } = overrides;
+
   return {
     role: "",
     personality: "",
@@ -48,26 +80,18 @@ export function createCharacterProfile(
     nationality: "",
     birthDate: "",
     promptNotes: "",
-    ...overrides,
+    ...profileOverrides,
+    voiceProfile: createVoiceProfile(voiceProfile),
   };
 }
 
 export function cloneCharacterProfile(profile: ParticipantCharacterProfile): ParticipantCharacterProfile {
-  return { ...profile };
+  return createCharacterProfile(profile);
 }
 
 export function buildCompactCharacterPrompt(profile: ParticipantCharacterProfile): string {
   const characterParts = [profile.personality, profile.temperament].filter(Boolean);
   const styleParts = [profile.debateStyle, profile.speechStyle].filter(Boolean);
-  const populatedFields = [
-    profile.role,
-    profile.personality,
-    profile.perspective,
-    profile.temperament,
-    profile.debateStyle,
-    profile.speechStyle,
-    profile.guardrails,
-  ].filter(Boolean).length;
 
   const lines = [
     profile.role ? `Role: ${profile.role}` : "",
@@ -75,7 +99,23 @@ export function buildCompactCharacterPrompt(profile: ParticipantCharacterProfile
     profile.perspective ? `Perspective: ${profile.perspective}` : "",
     styleParts.length > 0 ? `Style: ${styleParts.join("; ")}` : "",
     profile.guardrails ? `Guardrails: ${profile.guardrails}` : "",
-    profile.promptNotes && populatedFields < 3 ? `Additional guidance: ${profile.promptNotes}` : "",
+    profile.promptNotes ? `Additional guidance: ${profile.promptNotes}` : "",
+  ].filter(Boolean);
+
+  return lines.join("\n");
+}
+
+export function buildCharacterVoiceProfilePrompt(profile: ParticipantCharacterProfile): string {
+  const voiceProfile = createVoiceProfile(profile.voiceProfile);
+  const lines = [
+    voiceProfile.cadence ? `Cadence: ${voiceProfile.cadence}` : "",
+    voiceProfile.syntax ? `Syntax: ${voiceProfile.syntax}` : "",
+    voiceProfile.rhetoricalMoves ? `Rhetorical moves: ${voiceProfile.rhetoricalMoves}` : "",
+    voiceProfile.disfluencies ? `Disfluencies: ${voiceProfile.disfluencies}` : "",
+    voiceProfile.segueStyle ? `Segues: ${voiceProfile.segueStyle}` : "",
+    voiceProfile.lexicalHabits ? `Lexical habits: ${voiceProfile.lexicalHabits}` : "",
+    voiceProfile.forbiddenCleanups ? `Forbidden cleanups: ${voiceProfile.forbiddenCleanups}` : "",
+    voiceProfile.relevanceFloor ? `Relevance floor: ${voiceProfile.relevanceFloor}` : "",
   ].filter(Boolean);
 
   return lines.join("\n");

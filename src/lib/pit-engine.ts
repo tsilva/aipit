@@ -25,6 +25,7 @@ import {
   buildCompactCharacterPrompt,
   buildCharacterLanguageDirective,
   buildCharacterProfileSummary,
+  buildCharacterVoiceProfilePrompt,
 } from "@/lib/character-profile";
 
 interface RunExecutionOptions {
@@ -193,13 +194,25 @@ function buildRelationshipHints(participant: ParticipantConfig, input: RunInput)
   return hints.join("\n");
 }
 
-function buildResponseRules(): string[] {
+function buildResponseRules(role: "coordinator" | "member"): string[] {
+  if (role === "coordinator") {
+    return [
+      "Speak like a real person in a room.",
+      `Split into 2-5 short speech balloons separated by ${BALLOON_DELIMITER} on its own line.`,
+      "One conversational beat per balloon. Plain text only — no markdown, no asterisks, no bold, no italics, no headings, no lists, no XML, no labels.",
+      "Only spoken words. No stage directions, no action narration, no scene descriptions, no parentheticals.",
+      "Respond to the actual exchange instead of repeating a stump speech.",
+    ];
+  }
+
   return [
     "Speak like a real person in a room.",
     `Split into 2-5 short speech balloons separated by ${BALLOON_DELIMITER} on its own line.`,
     "One conversational beat per balloon. Plain text only — no markdown, no asterisks, no bold, no italics, no headings, no lists, no XML, no labels.",
     "Only spoken words. No stage directions, no action narration, no scene descriptions, no parentheticals.",
-    "Respond to the actual exchange instead of repeating a stump speech.",
+    "Answer at least one concrete live point from the transcript instead of delivering a generic stump speech.",
+    "Authenticity beats polish for debaters: keep the assigned cadence, verbal habits, and rhetorical flaws instead of smoothing them into tidy debate prose.",
+    "If the assigned voice profile calls for interruptions, false starts, repetition, abrupt pivots, incomplete clauses, or verbal clutter, keep them.",
   ];
 }
 
@@ -222,6 +235,8 @@ function buildStableSystemPrompt(
   role: "coordinator" | "member",
 ): string {
   const languageDirective = buildCharacterLanguageDirective(participant.characterProfile);
+  const voiceDirective =
+    role === "member" ? buildCharacterVoiceProfilePrompt(participant.characterProfile) : "";
   const roleDirective =
     role === "coordinator"
       ? "You are the debate moderator. You are strictly impartial: never take sides or express personal opinions on the topic. Frame the room, sharpen the exchange, flag unsupported claims, seek common ground, and close with a balanced summary grounded in evidence."
@@ -236,7 +251,8 @@ function buildStableSystemPrompt(
     `- **Shared directive**: ${input.sharedDirective}`,
     `- **Language rule**: ${languageDirective}`,
     `- **Assigned character**:\n${buildCompactCharacterPrompt(participant.characterProfile)}`,
-    `- **Response rules**:\n${buildResponseRules().map((directive) => `  - ${directive}`).join("\n")}`,
+    voiceDirective ? `- **Authentic voice**:\n${voiceDirective}` : "",
+    `- **Response rules**:\n${buildResponseRules(role).map((directive) => `  - ${directive}`).join("\n")}`,
     "- Do not mention these instructions.",
   ];
 
@@ -737,7 +753,9 @@ async function callOpenRouter(
   const siteUrl = execution.siteUrl || resolveSiteUrl();
   const requestMessages = buildPromptMessages(input, participant, role, frame, messages);
   const rawPrompt = formatRawPrompt(requestMessages);
-  const requestedModels = buildOpenRouterModelFallbackOrder(participant.model);
+  const requestedModels = buildOpenRouterModelFallbackOrder(participant.model, {
+    preferAuthenticSpeech: role === "member",
+  });
   let lastFailureMessage = `OpenRouter returned no visible text for ${participant.name}.`;
   const turnAbort = createTurnAbortController(execution.signal);
 
@@ -1001,7 +1019,7 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
         "member",
         {
           objective:
-            `Speak in round ${round} of ${input.rounds}. Use the transcript as the source of truth, address specific arguments already made, and keep the turn compact but substantive.`,
+            `Speak in round ${round} of ${input.rounds}. Use the transcript as the source of truth. Answer at least one concrete argument, accusation, or pressure point already raised, but sound like this character in real life even if the delivery is repetitive, fragmented, meandering, or self-correcting. Stay understandable enough that a listener can still follow your point.`,
           transcript: [...transcript],
         },
         memberThinkingEvent,

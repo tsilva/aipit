@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PARTICIPANT_CHARACTER_PRESET_MAP } from "@/lib/character-presets";
+import { cloneCharacterProfile } from "@/lib/character-profile";
 import { createDefaultInput, createTurn } from "@/lib/pit";
 import {
   buildModeratorInterventionPacket,
@@ -11,6 +13,35 @@ import {
 
 describe("pit-engine helpers", () => {
   const fetchMock = vi.fn<typeof fetch>();
+
+  function createStreamingResponse(content: string, model: string): Response {
+    const chunks = [
+      `data: ${JSON.stringify({
+        model,
+        choices: [{ delta: { content }, finish_reason: "stop" }],
+        usage: {
+          prompt_tokens: 12,
+          completion_tokens: 18,
+          total_tokens: 30,
+          cost: 0.01,
+        },
+      })}\n\n`,
+      "data: [DONE]\n\n",
+    ];
+
+    return new Response(
+      new ReadableStream({
+        start(controller) {
+          chunks.forEach((chunk) => controller.enqueue(new TextEncoder().encode(chunk)));
+          controller.close();
+        },
+      }),
+      {
+        status: 200,
+        headers: { "content-type": "text/event-stream" },
+      },
+    );
+  }
 
   beforeEach(() => {
     vi.stubGlobal("fetch", fetchMock);
@@ -77,6 +108,52 @@ describe("pit-engine helpers", () => {
     expect(firstMessages[1]?.content).not.toContain(input.sharedDirective);
   });
 
+  it("renders a dedicated authentic voice section for member prompts", () => {
+    const input = createDefaultInput();
+    const trumpPreset = PARTICIPANT_CHARACTER_PRESET_MAP.get("donald-trump");
+
+    expect(trumpPreset).toBeDefined();
+
+    const participant = {
+      ...input.members[0]!,
+      name: trumpPreset!.name,
+      model: trumpPreset!.recommendedModel,
+      presetId: trumpPreset!.id,
+      characterProfile: cloneCharacterProfile(trumpPreset!.characterProfile),
+      avatarUrl: trumpPreset!.avatarUrl,
+    };
+    const prompt = buildSystemPrompt(
+      { ...input, members: [participant, ...input.members.slice(1)] },
+      participant,
+      "member",
+      {
+        objective: "Answer the latest attack.",
+        transcript: [],
+        speakingOrder: [participant, ...input.members.slice(1)],
+      },
+    );
+
+    expect(prompt).toContain("**Authentic voice**");
+    expect(prompt).toContain("Cadence:");
+    expect(prompt).toContain("Relevance floor:");
+    expect(prompt).toContain("Authenticity beats polish for debaters");
+    expect(prompt).toContain("false starts");
+  });
+
+  it("keeps moderator prompts strict instead of inheriting debater looseness", () => {
+    const input = createDefaultInput();
+    const prompt = buildSystemPrompt(input, input.coordinator, "coordinator", {
+      objective: "Open neutrally.",
+      transcript: [],
+      speakingOrder: input.members,
+    });
+
+    expect(prompt).not.toContain("**Authentic voice**");
+    expect(prompt).not.toContain("Authenticity beats polish for debaters");
+    expect(prompt).not.toContain("false starts");
+    expect(prompt).toContain("You are the debate moderator. You are strictly impartial");
+  });
+
   it("retries transient provider failures and falls back on model availability errors", () => {
     expect(shouldRetryOpenRouterRequest(429, "rate limit")).toBe(true);
     expect(shouldFallbackToAnotherModel(503, "provider routing failed")).toBe(true);
@@ -103,6 +180,41 @@ describe("pit-engine helpers", () => {
     expect(packet.frame.speakingOrder).toEqual(input.members);
     expect(packet.frame.objective).toContain(`it must be ${input.members[0]!.name}`);
     expect(packet.userMessage).toContain(`Next round first speaker: ${input.members[0]!.name}.`);
+  });
+
+  it("uses authenticity-first objectives for member turns during workflow execution", async () => {
+    const input = createDefaultInput();
+    input.rounds = 1;
+    input.members = input.members.slice(0, 2);
+
+    const requestBodies: Array<{
+      model: string;
+      messages: Array<{ role: string; content: string }>;
+    }> = [];
+
+    fetchMock.mockImplementation(async (_url, init) => {
+      const payload = JSON.parse(String(init?.body)) as {
+        body: {
+          model: string;
+          messages: Array<{ role: string; content: string }>;
+        };
+      };
+      requestBodies.push(payload.body);
+
+      return createStreamingResponse(`Turn ${requestBodies.length}`, payload.body.model);
+    });
+
+    await runPitWorkflow(input, {
+      apiKey: "test-key",
+      siteUrl: "https://aipit.example",
+    });
+
+    const firstMemberRequest = requestBodies[1];
+
+    expect(firstMemberRequest).toBeDefined();
+    expect(JSON.stringify(firstMemberRequest.messages)).toContain("Answer at least one concrete argument, accusation, or pressure point");
+    expect(JSON.stringify(firstMemberRequest.messages)).toContain("repetitive, fragmented, meandering, or self-correcting");
+    expect(JSON.stringify(firstMemberRequest.messages)).not.toContain("compact but substantive");
   });
 
   it("emits streaming turn updates before the final turn event", async () => {
