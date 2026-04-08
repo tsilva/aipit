@@ -48,9 +48,9 @@ Core orchestration lives in [`src/lib/pit-engine.ts`](src/lib/pit-engine.ts) and
 ```bash
 git clone https://github.com/tsilva/aipit.git
 cd aipit
-pnpm install
+npm install
 cp .env.example .env.local
-pnpm dev
+npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -58,11 +58,11 @@ Open [http://localhost:3000](http://localhost:3000).
 Run the full verification suite:
 
 ```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm test:e2e
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+npm run test:e2e
 ```
 
 OpenRouter traffic goes through internal Next.js route handlers under `src/app/api/openrouter`. If `OPENROUTER_API_KEY` is configured on the server, the app can use that hosted key when the browser does not provide its own; a user-supplied key still takes precedence. Shared replays are immutable snapshots stored separately from live debate execution.
