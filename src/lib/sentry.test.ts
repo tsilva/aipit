@@ -3,6 +3,7 @@ import {
   getSentryConnectOrigins,
   hasSentryBuildUploadConfig,
   isSentryRuntimeEnabled,
+  resolveSentryBuildConfig,
   resolveSentryDsn,
   resolveSentryRuntimeConfig,
 } from "@/lib/sentry";
@@ -91,20 +92,45 @@ describe("getSentryConnectOrigins", () => {
 });
 
 describe("hasSentryBuildUploadConfig", () => {
-  it("requires the auth token, org, and project to enable upload", () => {
+  it("uses the repo defaults for org and project when the token is present", () => {
     expect(
       hasSentryBuildUploadConfig({
         SENTRY_AUTH_TOKEN: "token",
-        SENTRY_ORG: "org",
-        SENTRY_PROJECT: "project",
       }),
     ).toBe(true);
+  });
 
+  it("treats the placeholder token as missing", () => {
     expect(
       hasSentryBuildUploadConfig({
-        SENTRY_AUTH_TOKEN: "token",
-        SENTRY_ORG: "org",
+        SENTRY_AUTH_TOKEN: "sntrys_your_token_here",
       }),
     ).toBe(false);
+  });
+});
+
+describe("resolveSentryBuildConfig", () => {
+  it("falls back to the repo defaults", () => {
+    expect(resolveSentryBuildConfig({})).toEqual({
+      authToken: undefined,
+      org: "tsilva",
+      project: "aipit",
+      sentryUrl: "https://sentry.io",
+    });
+  });
+
+  it("accepts SENTRY_BASE_URL ahead of SENTRY_URL", () => {
+    expect(
+      resolveSentryBuildConfig({
+        SENTRY_AUTH_TOKEN: "token",
+        SENTRY_BASE_URL: "https://self-hosted.example.com",
+        SENTRY_URL: "https://ignored.example.com",
+      }),
+    ).toEqual({
+      authToken: "token",
+      org: "tsilva",
+      project: "aipit",
+      sentryUrl: "https://self-hosted.example.com",
+    });
   });
 });

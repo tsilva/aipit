@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 
 const DEFAULT_BASE_URL = "https://sentry.io";
 const DEFAULT_LIMIT = 10;
+const PLACEHOLDER_AUTH_TOKEN = "sntrys_your_token_here";
 const HELP_TEXT = `Usage: node scripts/sentry-issues.mjs [options]
 
 List Sentry issues for one configured project.
@@ -18,9 +19,9 @@ Options:
 
 Environment:
   Copy .env.sentry-mcp.example to .env.sentry-mcp and set:
-    SENTRY_AUTH_TOKEN
-    SENTRY_ORG
-    SENTRY_PROJECT
+    SENTRY_AUTH_TOKEN   Read-only token with org:read, project:read, and event:read
+    SENTRY_ORG          Optional, defaults to tsilva
+    SENTRY_PROJECT      Optional, defaults to aipit
     SENTRY_BASE_URL   Optional, defaults to https://sentry.io
 `;
 
@@ -180,12 +181,12 @@ async function main() {
   };
 
   const authToken = mergedEnv.SENTRY_AUTH_TOKEN?.trim();
-  const org = mergedEnv.SENTRY_ORG?.trim();
-  const project = mergedEnv.SENTRY_PROJECT?.trim();
+  const org = mergedEnv.SENTRY_ORG?.trim() || "tsilva";
+  const project = mergedEnv.SENTRY_PROJECT?.trim() || "aipit";
   const baseUrl = normalizeBaseUrl(mergedEnv.SENTRY_BASE_URL?.trim() || mergedEnv.SENTRY_URL?.trim());
 
-  if (!authToken || !org || !project) {
-    console.error("Missing Sentry credentials. Configure SENTRY_AUTH_TOKEN, SENTRY_ORG, and SENTRY_PROJECT.");
+  if (!authToken || authToken === PLACEHOLDER_AUTH_TOKEN) {
+    console.error("Missing Sentry credentials. Configure SENTRY_AUTH_TOKEN in .env.sentry-mcp or the shell environment.");
     process.exitCode = 1;
     return;
   }

@@ -16,10 +16,24 @@ type SentryBuildConfig = {
 
 const SENTRY_ENABLE_VALUES = new Set(["1", "true", "yes", "on"]);
 const SENTRY_TRACES_SAMPLE_RATE = 0.1;
+const SENTRY_AUTH_TOKEN_PLACEHOLDER = "sntrys_your_token_here";
+const DEFAULT_SENTRY_ORG = "tsilva";
+const DEFAULT_SENTRY_PROJECT = "aipit";
+const DEFAULT_SENTRY_BASE_URL = "https://sentry.io";
 
 function normalizeOptional(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
+}
+
+function normalizeSentryAuthToken(value: string | undefined): string | undefined {
+  const normalized = normalizeOptional(value);
+
+  if (!normalized || normalized === SENTRY_AUTH_TOKEN_PLACEHOLDER) {
+    return undefined;
+  }
+
+  return normalized;
 }
 
 function isSentryDevOverrideEnabled(source: Record<string, string | undefined>): boolean {
@@ -106,10 +120,10 @@ export function resolveSentryBuildConfig(
   source: Record<string, string | undefined> = process.env,
 ): SentryBuildConfig {
   return {
-    authToken: normalizeOptional(source.SENTRY_AUTH_TOKEN),
-    org: normalizeOptional(source.SENTRY_ORG),
-    project: normalizeOptional(source.SENTRY_PROJECT),
-    sentryUrl: normalizeOptional(source.SENTRY_URL),
+    authToken: normalizeSentryAuthToken(source.SENTRY_AUTH_TOKEN),
+    org: normalizeOptional(source.SENTRY_ORG) ?? DEFAULT_SENTRY_ORG,
+    project: normalizeOptional(source.SENTRY_PROJECT) ?? DEFAULT_SENTRY_PROJECT,
+    sentryUrl: normalizeOptional(source.SENTRY_BASE_URL) ?? normalizeOptional(source.SENTRY_URL) ?? DEFAULT_SENTRY_BASE_URL,
   };
 }
 

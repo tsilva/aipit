@@ -11,7 +11,6 @@ declare global {
 
 Sentry.init({
   ...sentryConfig,
-  integrations: [],
 });
 
 if (typeof window !== "undefined") {

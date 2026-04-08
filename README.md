@@ -88,19 +88,19 @@ If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, EU visitors must opt in before GA loa
 
 Runtime Sentry reporting is production-only by default when a DSN is present. To validate Sentry locally or on preview deploys, set `NEXT_PUBLIC_SENTRY_ENABLED=true`.
 
-For source map upload during builds, copy `.env.sentry-build-plugin.example` to `.env.sentry-build-plugin` and set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT`. `next.config.ts` loads that file automatically for local builds, while hosted builds can use the same variables from the deployment environment.
+For source map upload during builds, copy `.env.sentry-build-plugin.example` to `.env.sentry-build-plugin` and replace the placeholder `SENTRY_AUTH_TOKEN`. The repo defaults `SENTRY_ORG` to `tsilva`, `SENTRY_PROJECT` to `aipit`, and `SENTRY_BASE_URL` to `https://sentry.io`; override them only if you need a different Sentry org, project, or self-hosted base URL. `next.config.ts` loads that file automatically for local builds, while hosted builds can use the same variables from the deployment environment.
 
-For read-only issue queries, copy `.env.sentry-mcp.example` to `.env.sentry-mcp` and set a token with `org:read`, `project:read`, and `event:read`. Then run:
+For read-only issue queries, copy `.env.sentry-mcp.example` to `.env.sentry-mcp` and replace the placeholder token with one that has `org:read`, `project:read`, and `event:read`. The same default org, project, and base URL apply there too. Then run:
 
 ```bash
-node scripts/sentry-issues.mjs --help
+npm run sentry:issues -- --help
 ```
 
 ## ☁️ Deploy to Vercel
 
 This is a standard Next.js App Router project and deploys directly on Vercel.
 
-For a hosted-key deployment, set `OPENROUTER_API_KEY`. In production, also set `NEXT_PUBLIC_SITE_URL`. If you want share links, add the R2 variables. If you want runtime error reporting, set `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`. If you want build-time source map upload, also set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT`.
+For a hosted-key deployment, set `OPENROUTER_API_KEY`. In production, also set `NEXT_PUBLIC_SITE_URL`. If you want share links, add the R2 variables. If you want runtime error reporting, set `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`. If you want build-time source map upload, set `SENTRY_AUTH_TOKEN`; `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_BASE_URL` only need to be set when you want to override the repo defaults.
 
 ```bash
 # Preview deployment
