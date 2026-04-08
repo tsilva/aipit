@@ -64,6 +64,8 @@ logs/
 /build
 .pnpm-debug.log*
 .env*
+!.env.example
+!.env.*.example
 .vercel
 *.tsbuildinfo
 next-env.d.ts

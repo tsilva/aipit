@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
+import { resolveSentryRuntimeConfig } from "./src/lib/sentry";
 
-const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN?.trim();
+const sentryConfig = resolveSentryRuntimeConfig("client");
 
 declare global {
   interface Window {
@@ -9,14 +10,16 @@ declare global {
 }
 
 Sentry.init({
-  dsn,
-  enabled: Boolean(dsn),
+  ...sentryConfig,
   integrations: [],
-  tracesSampleRate: 0.1,
 });
 
 if (typeof window !== "undefined") {
   window.__sentryTest = () => {
+    if (!sentryConfig.enabled) {
+      return "Sentry client capture is disabled. Set NEXT_PUBLIC_SENTRY_ENABLED=true to test outside production.";
+    }
+
     const error = new Error("Sentry test exception from window.__sentryTest()");
 
     return Sentry.captureException(error, {

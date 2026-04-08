@@ -1,9 +1,19 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import { loadOptionalEnvFile } from "./src/lib/local-env-file";
 import { resolveAppEnv } from "./src/lib/env";
+import {
+  getSentryConnectOrigins,
+  hasSentryBuildUploadConfig,
+  resolveSentryBuildConfig,
+} from "./src/lib/sentry";
+
+loadOptionalEnvFile(".env.sentry-build-plugin");
 
 const isProduction = process.env.NODE_ENV === "production";
 const appEnv = resolveAppEnv();
+const sentryBuildConfig = resolveSentryBuildConfig();
+const hasSentryBuildUpload = hasSentryBuildUploadConfig();
 
 function getAllowedConnectSources(): string {
   const connectSources = new Set([
@@ -14,16 +24,11 @@ function getAllowedConnectSources(): string {
     "https://stats.g.doubleclick.net",
   ]);
 
-  for (const dsn of [appEnv.publicSentryDsn, appEnv.sentryDsn]) {
-    if (!dsn) {
-      continue;
-    }
-
-    try {
-      connectSources.add(new URL(dsn).origin);
-    } catch {
-      // Ignore malformed DSNs and keep the rest of the policy intact.
-    }
+  for (const origin of getSentryConnectOrigins({
+    NEXT_PUBLIC_SENTRY_DSN: appEnv.publicSentryDsn,
+    SENTRY_DSN: appEnv.sentryDsn,
+  })) {
+    connectSources.add(origin);
   }
 
   return Array.from(connectSources).join(" ");
@@ -69,5 +74,9 @@ const nextConfig: NextConfig = {
 };
 
 export default withSentryConfig(nextConfig, {
+  ...sentryBuildConfig,
   silent: true,
+  sourcemaps: {
+    disable: !hasSentryBuildUpload,
+  },
 });

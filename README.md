@@ -19,7 +19,7 @@
 - Server-rendered setup state to reduce first-load flicker
 - Server-side OpenRouter proxy with optional hosted key support
 - Hosted-key guardrails: same-origin checks, rate limiting, model allowlisting, and payload caps
-- SEO, analytics consent handling, and optional Sentry reporting
+- SEO, analytics consent handling, optional Sentry reporting, and optional Sentry source map upload
 - CI coverage for lint, typecheck, tests, build, and Playwright smoke checks
 
 ## 🏗️ How It Works
@@ -48,9 +48,9 @@ Core orchestration lives in [`src/lib/pit-engine.ts`](src/lib/pit-engine.ts) and
 ```bash
 git clone https://github.com/tsilva/aipit.git
 cd aipit
-npm install
+pnpm install
 cp .env.example .env.local
-npm run dev
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -58,11 +58,11 @@ Open [http://localhost:3000](http://localhost:3000).
 Run the full verification suite:
 
 ```bash
-npm run lint
-npm run typecheck
-npm run test
-npm run build
-npm run test:e2e
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm test:e2e
 ```
 
 OpenRouter traffic goes through internal Next.js route handlers under `src/app/api/openrouter`. If `OPENROUTER_API_KEY` is configured on the server, the app can use that hosted key when the browser does not provide its own; a user-supplied key still takes precedence. Shared replays are immutable snapshots stored separately from live debate execution.
@@ -75,6 +75,7 @@ OpenRouter traffic goes through internal Next.js route handlers under `src/app/a
 | `NEXT_PUBLIC_OPENROUTER_APP_NAME` | No | OpenRouter attribution label |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | Google Analytics 4 measurement ID |
 | `NEXT_PUBLIC_SENTRY_DSN` | No | Browser Sentry DSN |
+| `NEXT_PUBLIC_SENTRY_ENABLED` | No | Force-enable Sentry outside production for local or preview validation |
 | `OPENROUTER_API_KEY` | No | Server-side OpenRouter key for the internal proxy |
 | `R2_ACCOUNT_ID` | Required for share links | Cloudflare account ID |
 | `R2_BUCKET_NAME` | Required for share links | Private R2 bucket name |
@@ -85,11 +86,21 @@ OpenRouter traffic goes through internal Next.js route handlers under `src/app/a
 
 If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, EU visitors must opt in before GA loads. Outside the EU, analytics loads by default unless previously declined in that browser.
 
+Runtime Sentry reporting is production-only by default when a DSN is present. To validate Sentry locally or on preview deploys, set `NEXT_PUBLIC_SENTRY_ENABLED=true`.
+
+For source map upload during builds, copy `.env.sentry-build-plugin.example` to `.env.sentry-build-plugin` and set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT`. `next.config.ts` loads that file automatically for local builds, while hosted builds can use the same variables from the deployment environment.
+
+For read-only issue queries, copy `.env.sentry-mcp.example` to `.env.sentry-mcp` and set a token with `org:read`, `project:read`, and `event:read`. Then run:
+
+```bash
+node scripts/sentry-issues.mjs --help
+```
+
 ## ☁️ Deploy to Vercel
 
 This is a standard Next.js App Router project and deploys directly on Vercel.
 
-For a hosted-key deployment, set `OPENROUTER_API_KEY`. In production, also set `NEXT_PUBLIC_SITE_URL`. If you want share links, add the R2 variables. If you want runtime error reporting, set `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`.
+For a hosted-key deployment, set `OPENROUTER_API_KEY`. In production, also set `NEXT_PUBLIC_SITE_URL`. If you want share links, add the R2 variables. If you want runtime error reporting, set `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`. If you want build-time source map upload, also set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT`.
 
 ```bash
 # Preview deployment
