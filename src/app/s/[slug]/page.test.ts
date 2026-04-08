@@ -26,9 +26,23 @@ vi.mock("@/components/pit-studio-entry", () => ({
   PitStudioEntry: () => null,
 }));
 
-import SharedReplayPage from "@/app/s/[slug]/page";
+import SharedReplayPage, { generateMetadata } from "@/app/s/[slug]/page";
 
 describe("/s/[slug]", () => {
+  it("marks shared replays as noindex and nofollow", async () => {
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ slug: "mock-share-1" }),
+    });
+
+    expect(metadata.alternates?.canonical).toBe("/s/mock-share-1");
+    expect(metadata.robots).toEqual(
+      expect.objectContaining({
+        index: false,
+        follow: false,
+      }),
+    );
+  });
+
   it("loads a valid shared replay into read-only simulation mode", async () => {
     const { input, result } = createCompletedShareFixture();
     readSharedConversationSnapshot.mockResolvedValue({

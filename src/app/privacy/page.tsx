@@ -2,12 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SITE_CONTACT_EMAIL, SITE_CONTACT_MAILTO } from "@/lib/site";
+import { buildStaticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildStaticPageMetadata({
   title: "Privacy | The AI Pit",
   description:
     "Privacy details for The AI Pit, including hosted OpenRouter processing, region-aware analytics consent, and service providers.",
-};
+  path: "/privacy",
+  index: false,
+  follow: true,
+});
 
 export default function PrivacyPage() {
   return (

@@ -56,6 +56,9 @@ const nextConfig: NextConfig = {
   experimental: {
     inlineCss: true,
   },
+  turbopack: {
+    root: process.cwd(),
+  },
   async headers() {
     return [
       {

@@ -43,6 +43,7 @@ import {
   createRosterSnapshot,
   createDefaultInput,
   createRandomStarterInput,
+  hydrateRunInputFromPresets,
   createMember,
   emptyUsage,
   type PitTurn,
@@ -2457,7 +2458,10 @@ export function PitStudio({
 }: {
   initialState: InitialStudioState;
 }) {
-  const initialStudioStateRef = useRef(initialState);
+  const initialStudioStateRef = useRef<InitialStudioState>({
+    ...initialState,
+    config: hydrateRunInputFromPresets(initialState.config),
+  });
   const initialStudioState = initialStudioStateRef.current;
   const [config, setConfig] = useState<RunInput>(initialStudioState.config);
   const [audience] = useState<PresetAudience>(initialStudioState.audience);

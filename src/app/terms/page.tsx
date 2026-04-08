@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SITE_CONTACT_EMAIL, SITE_CONTACT_MAILTO } from "@/lib/site";
+import { buildStaticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildStaticPageMetadata({
   title: "Terms | The AI Pit",
   description: "Terms for using The AI Pit, including optional hosted OpenRouter access.",
-};
+  path: "/terms",
+  index: false,
+  follow: true,
+});
 
 export default function TermsPage() {
   return (

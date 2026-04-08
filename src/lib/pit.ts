@@ -276,6 +276,17 @@ const MODERATOR_CHARACTER_PRESET_MAP = new Map(MODERATOR_CHARACTER_PRESETS.map((
 const STARTER_BUNDLE_MAP = new Map(STARTER_BUNDLES.map((bundle) => [bundle.id, bundle] as const));
 const PARTICIPANT_PRESET_MAP = new Map(PARTICIPANT_CHARACTER_PRESETS.map((preset) => [preset.id, preset] as const));
 
+function resolvePresetProfile(presetId: string | undefined): ParticipantCharacterProfile | undefined {
+  if (!presetId) {
+    return undefined;
+  }
+
+  return (
+    MODERATOR_CHARACTER_PRESET_MAP.get(presetId)?.characterProfile ??
+    PARTICIPANT_PRESET_MAP.get(presetId)?.characterProfile
+  );
+}
+
 function createCoordinatorFromPreset(presetId: string): ParticipantConfig {
   const preset = MODERATOR_CHARACTER_PRESET_MAP.get(presetId) ?? MODERATOR_CHARACTER_PRESET_MAP.get(DEFAULT_COORDINATOR_PRESET_ID)!;
 
@@ -386,6 +397,56 @@ export function createRandomStarterInput(
 
 export function createDefaultInput(audience?: PresetAudience): RunInput {
   return createRandomStarterInput(undefined, audience).input;
+}
+
+export function compactParticipantForSerialization(participant: ParticipantConfig): ParticipantConfig {
+  const presetProfile = resolvePresetProfile(participant.presetId);
+
+  if (!presetProfile) {
+    return participant;
+  }
+
+  return {
+    ...participant,
+    characterProfile: createCharacterProfile({
+      role: participant.characterProfile.role,
+      personality: participant.characterProfile.personality,
+      perspective: participant.characterProfile.perspective,
+      language: participant.characterProfile.language,
+      nationality: participant.characterProfile.nationality,
+      birthDate: participant.characterProfile.birthDate,
+      promptNotes: participant.characterProfile.promptNotes,
+    }),
+  };
+}
+
+export function hydrateParticipantFromPreset(participant: ParticipantConfig): ParticipantConfig {
+  const presetProfile = resolvePresetProfile(participant.presetId);
+
+  if (!presetProfile) {
+    return participant;
+  }
+
+  return {
+    ...participant,
+    characterProfile: cloneCharacterProfile(presetProfile),
+  };
+}
+
+export function compactRunInputForSerialization(input: RunInput): RunInput {
+  return {
+    ...input,
+    coordinator: compactParticipantForSerialization(input.coordinator),
+    members: input.members.map(compactParticipantForSerialization),
+  };
+}
+
+export function hydrateRunInputFromPresets(input: RunInput): RunInput {
+  return {
+    ...input,
+    coordinator: hydrateParticipantFromPreset(input.coordinator),
+    members: input.members.map(hydrateParticipantFromPreset),
+  };
 }
 
 export function emptyUsage(): UsageSummary {

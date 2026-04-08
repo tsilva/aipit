@@ -3,12 +3,8 @@ import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import { Suspense } from "react";
 import { AnalyticsConsentBanner } from "@/components/analytics-consent-banner";
 import { GoogleAnalytics } from "@/components/google-analytics";
-import { SITE_URL } from "@/lib/site";
 import {
-  DEFAULT_SOCIAL_IMAGE_URL,
   SITE_BACKGROUND_COLOR,
-  SITE_DESCRIPTION,
-  SITE_NAME,
   SITE_THEME_COLOR,
   buildDefaultMetadata,
 } from "@/lib/seo";
@@ -31,67 +27,6 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "WebSite",
-      name: SITE_NAME,
-      url: SITE_URL,
-      description: SITE_DESCRIPTION,
-      inLanguage: "en-US",
-      author: {
-        "@type": "Organization",
-        name: SITE_NAME,
-      },
-    },
-    {
-      "@type": "SoftwareApplication",
-      name: SITE_NAME,
-      url: SITE_URL,
-      description: SITE_DESCRIPTION,
-      applicationCategory: "BrowserApplication",
-      operatingSystem: "Any",
-      offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "USD",
-      },
-      isAccessibleForFree: true,
-      applicationSubCategory: "AI Debate Simulator",
-      browserRequirements: "Requires JavaScript. Requires a modern browser.",
-      image: DEFAULT_SOCIAL_IMAGE_URL,
-      featureList: [
-        "Moderator-led AI debates",
-        "Character presets and custom rosters",
-        "OpenRouter model support",
-        "Transcript playback and export",
-      ],
-      author: {
-        "@type": "Organization",
-        name: SITE_NAME,
-      },
-    },
-    {
-      "@type": "WebPage",
-      name: SITE_NAME,
-      url: SITE_URL,
-      description: SITE_DESCRIPTION,
-      primaryImageOfPage: {
-        "@type": "ImageObject",
-        url: DEFAULT_SOCIAL_IMAGE_URL,
-        width: 1200,
-        height: 630,
-      },
-      isPartOf: {
-        "@type": "WebSite",
-        name: SITE_NAME,
-        url: SITE_URL,
-      },
-    },
-  ],
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -105,10 +40,6 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content={SITE_THEME_COLOR} />
         <meta name="msapplication-TileColor" content={SITE_BACKGROUND_COLOR} />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
       </head>
       <body className={`${displayFont.variable} ${monoFont.variable} antialiased`}>
         <Suspense fallback={null}>

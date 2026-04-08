@@ -9,13 +9,18 @@ import {
 } from "@/lib/openrouter";
 import { hasServerOpenRouterKey } from "@/lib/openrouter-server";
 import {
+  compactRunInputForSerialization,
   createInputFromStarterBundle,
   createRandomStarterInput,
   resolveStarterBundle,
 } from "@/lib/pit";
 import { readCountryCodeFromHeaders } from "@/lib/region";
 import { resolveShareNotice } from "@/lib/share-replay";
-import { buildStarterBundleMetadata } from "@/lib/seo";
+import {
+  buildHomeStructuredData,
+  buildStarterBundleMetadata,
+  buildStarterBundleStructuredData,
+} from "@/lib/seo";
 
 type HomePageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -56,7 +61,7 @@ async function buildInitialStudioState(bundleId: string | undefined): Promise<In
   const hostedKeyAvailable = hasServerOpenRouterKey();
 
   return {
-    config,
+    config: compactRunInputForSerialization(config),
     audience,
     lineupOrder,
     starterBundleId: starter.bundle.id,
@@ -76,9 +81,20 @@ async function buildInitialStudioState(bundleId: string | undefined): Promise<In
 
 export default async function Home({ searchParams }: HomePageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const initialState = await buildInitialStudioState(resolveBundleIdParam(resolvedSearchParams?.id));
+  const bundleId = resolveBundleIdParam(resolvedSearchParams?.id);
+  const bundle = bundleId ? resolveStarterBundle(bundleId) : undefined;
+  const initialState = await buildInitialStudioState(bundleId);
+  const structuredData = bundle ? buildStarterBundleStructuredData(bundle) : buildHomeStructuredData();
 
   initialState.shareNotice = resolveShareNotice(resolvedSearchParams?.share);
 
-  return <PitStudioEntry initialState={initialState} />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <PitStudioEntry initialState={initialState} />
+    </>
+  );
 }
