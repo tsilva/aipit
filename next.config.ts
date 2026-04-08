@@ -5,6 +5,7 @@ import {
   getSentryConnectOrigins,
   hasSentryBuildUploadConfig,
   resolveSentryBuildConfig,
+  resolveSentryClientBuildEnv,
   validateSentryProductionConfig,
 } from "./src/lib/sentry";
 
@@ -59,6 +60,10 @@ const nextConfig: NextConfig = {
   experimental: {
     inlineCss: true,
   },
+  env: resolveSentryClientBuildEnv({
+    NEXT_PUBLIC_SENTRY_DSN: appEnv.publicSentryDsn,
+    SENTRY_DSN: appEnv.sentryDsn,
+  }),
   turbopack: {
     root: process.cwd(),
   },

@@ -4,6 +4,7 @@ import {
   hasSentryBuildUploadConfig,
   isSentryRuntimeEnabled,
   resolveSentryBuildConfig,
+  resolveSentryClientBuildEnv,
   resolveSentryDsn,
   resolveSentryRuntimeConfig,
   validateSentryProductionConfig,
@@ -148,6 +149,39 @@ describe("resolveSentryBuildConfig", () => {
       org: "tsilva",
       project: "aipit",
       sentryUrl: "https://self-hosted.example.com",
+    });
+  });
+});
+
+describe("resolveSentryClientBuildEnv", () => {
+  it("publishes the explicit public DSN for the client build", () => {
+    expect(
+      resolveSentryClientBuildEnv({
+        NEXT_PUBLIC_SENTRY_DSN: "https://public@example.ingest.sentry.io/123",
+        SENTRY_DSN: "https://server@example.ingest.sentry.io/456",
+        VERCEL_ENV: "production",
+      }),
+    ).toEqual({
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: "production",
+      NEXT_PUBLIC_SENTRY_DSN: "https://public@example.ingest.sentry.io/123",
+    });
+  });
+
+  it("publishes the server DSN when the public DSN is omitted", () => {
+    expect(
+      resolveSentryClientBuildEnv({
+        SENTRY_DSN: "https://server@example.ingest.sentry.io/456",
+        VERCEL_ENV: "preview",
+      }),
+    ).toEqual({
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: "preview",
+      NEXT_PUBLIC_SENTRY_DSN: "https://server@example.ingest.sentry.io/456",
+    });
+  });
+
+  it("leaves the client build env empty when no DSN is configured", () => {
+    expect(resolveSentryClientBuildEnv({ NODE_ENV: "development" })).toEqual({
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: "development",
     });
   });
 });

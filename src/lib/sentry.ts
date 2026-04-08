@@ -132,6 +132,22 @@ export function resolveSentryBuildConfig(
   };
 }
 
+export function resolveSentryClientBuildEnv(
+  source: Record<string, string | undefined> = process.env,
+): Record<string, string> {
+  const dsn = resolveSentryDsn("client", source);
+  const environment = resolveSentryEnvironment(source);
+  const buildEnv: Record<string, string> = {
+    NEXT_PUBLIC_SENTRY_ENVIRONMENT: environment,
+  };
+
+  if (dsn) {
+    buildEnv.NEXT_PUBLIC_SENTRY_DSN = dsn;
+  }
+
+  return buildEnv;
+}
+
 export function hasSentryBuildUploadConfig(source: Record<string, string | undefined> = process.env): boolean {
   const buildConfig = resolveSentryBuildConfig(source);
 

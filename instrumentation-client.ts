@@ -1,7 +1,12 @@
 import * as Sentry from "@sentry/nextjs";
 import { resolveSentryRuntimeConfig } from "./src/lib/sentry";
 
-const sentryConfig = resolveSentryRuntimeConfig("client");
+const sentryConfig = resolveSentryRuntimeConfig("client", {
+  NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  NEXT_PUBLIC_SENTRY_ENABLED: process.env.NEXT_PUBLIC_SENTRY_ENABLED,
+  NODE_ENV: process.env.NODE_ENV,
+  SENTRY_ENVIRONMENT: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
+});
 
 declare global {
   interface Window {
