@@ -16,6 +16,10 @@ Sentry.init({
 if (typeof window !== "undefined") {
   window.__sentryTest = () => {
     if (!sentryConfig.enabled) {
+      if (!sentryConfig.dsn) {
+        return "Sentry client capture is disabled because NEXT_PUBLIC_SENTRY_DSN is not set for this deployment.";
+      }
+
       return "Sentry client capture is disabled. Set NEXT_PUBLIC_SENTRY_ENABLED=true to test outside production.";
     }
 

@@ -22,6 +22,8 @@ export function resolveAppEnv(source: Record<string, string | undefined> = proce
   const explicitSiteUrl = normalizeOptional(source.NEXT_PUBLIC_SITE_URL);
   const previewUrl = normalizeOptional(source.VERCEL_URL);
   const productionUrl = normalizeOptional(source.VERCEL_PROJECT_PRODUCTION_URL);
+  const publicSentryDsn = normalizeOptional(source.NEXT_PUBLIC_SENTRY_DSN);
+  const sentryDsn = normalizeOptional(source.SENTRY_DSN);
   const fallbackSiteUrl = previewUrl ? toHttps(previewUrl) : productionUrl ? toHttps(productionUrl) : "http://localhost:3000";
 
   if (!explicitSiteUrl && vercelEnv === "production" && !productionUrl && !previewUrl) {
@@ -33,8 +35,8 @@ export function resolveAppEnv(source: Record<string, string | undefined> = proce
   return {
     gaMeasurementId: normalizeOptional(source.NEXT_PUBLIC_GA_MEASUREMENT_ID),
     nodeEnv,
-    publicSentryDsn: normalizeOptional(source.NEXT_PUBLIC_SENTRY_DSN),
-    sentryDsn: normalizeOptional(source.SENTRY_DSN),
+    publicSentryDsn: publicSentryDsn ?? sentryDsn,
+    sentryDsn: sentryDsn ?? publicSentryDsn,
     siteUrl: explicitSiteUrl ? toHttps(explicitSiteUrl) : fallbackSiteUrl,
     vercelEnv,
   };

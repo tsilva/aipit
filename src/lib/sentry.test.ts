@@ -6,6 +6,7 @@ import {
   resolveSentryBuildConfig,
   resolveSentryDsn,
   resolveSentryRuntimeConfig,
+  validateSentryProductionConfig,
 } from "@/lib/sentry";
 
 describe("resolveSentryDsn", () => {
@@ -31,6 +32,22 @@ describe("resolveSentryDsn", () => {
   it("falls back to the public DSN for edge when the server DSN is missing", () => {
     expect(
       resolveSentryDsn("edge", {
+        NEXT_PUBLIC_SENTRY_DSN: "https://public@example.ingest.sentry.io/123",
+      }),
+    ).toBe("https://public@example.ingest.sentry.io/123");
+  });
+
+  it("falls back to the server DSN for the browser runtime when the public DSN is missing", () => {
+    expect(
+      resolveSentryDsn("client", {
+        SENTRY_DSN: "https://server@example.ingest.sentry.io/456",
+      }),
+    ).toBe("https://server@example.ingest.sentry.io/456");
+  });
+
+  it("falls back to the public DSN for the server runtime when the server DSN is missing", () => {
+    expect(
+      resolveSentryDsn("server", {
         NEXT_PUBLIC_SENTRY_DSN: "https://public@example.ingest.sentry.io/123",
       }),
     ).toBe("https://public@example.ingest.sentry.io/123");
@@ -132,5 +149,27 @@ describe("resolveSentryBuildConfig", () => {
       project: "aipit",
       sentryUrl: "https://self-hosted.example.com",
     });
+  });
+});
+
+describe("validateSentryProductionConfig", () => {
+  it("accepts a production config when only the server DSN is set", () => {
+    expect(
+      validateSentryProductionConfig({
+        NODE_ENV: "production",
+        SENTRY_DSN: "https://server@example.ingest.sentry.io/456",
+      }).errors,
+    ).toEqual([]);
+  });
+
+  it("requires at least one runtime DSN when source map upload is enabled", () => {
+    expect(
+      validateSentryProductionConfig({
+        NODE_ENV: "production",
+        SENTRY_AUTH_TOKEN: "token",
+      }).errors,
+    ).toEqual([
+      "Production source map upload is configured, but no runtime Sentry DSN is available. Set NEXT_PUBLIC_SENTRY_DSN or SENTRY_DSN.",
+    ]);
   });
 });

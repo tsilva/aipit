@@ -1,19 +1,22 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
-import { loadOptionalEnvFile } from "./src/lib/local-env-file";
 import { resolveAppEnv } from "./src/lib/env";
 import {
   getSentryConnectOrigins,
   hasSentryBuildUploadConfig,
   resolveSentryBuildConfig,
+  validateSentryProductionConfig,
 } from "./src/lib/sentry";
-
-loadOptionalEnvFile(".env.sentry-build-plugin");
 
 const isProduction = process.env.NODE_ENV === "production";
 const appEnv = resolveAppEnv();
 const sentryBuildConfig = resolveSentryBuildConfig();
 const hasSentryBuildUpload = hasSentryBuildUploadConfig();
+const sentryValidation = validateSentryProductionConfig();
+
+if (sentryValidation.errors.length > 0) {
+  throw new Error(`Invalid production Sentry configuration:\n- ${sentryValidation.errors.join("\n- ")}`);
+}
 
 function getAllowedConnectSources(): string {
   const connectSources = new Set([

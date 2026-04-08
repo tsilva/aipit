@@ -14,6 +14,10 @@ type SentryBuildConfig = {
   sentryUrl?: string;
 };
 
+type SentryConfigValidation = {
+  errors: string[];
+};
+
 const SENTRY_ENABLE_VALUES = new Set(["1", "true", "yes", "on"]);
 const SENTRY_TRACES_SAMPLE_RATE = 0.1;
 const SENTRY_AUTH_TOKEN_PLACEHOLDER = "sntrys_your_token_here";
@@ -69,14 +73,15 @@ export function resolveSentryDsn(
 ): string | undefined {
   const publicDsn = normalizeOptional(source.NEXT_PUBLIC_SENTRY_DSN);
   const serverDsn = normalizeOptional(source.SENTRY_DSN);
+  const sharedDsn = publicDsn ?? serverDsn;
 
   switch (runtime) {
     case "client":
-      return publicDsn;
+      return sharedDsn;
     case "server":
-      return serverDsn;
-    case "edge":
       return serverDsn ?? publicDsn;
+    case "edge":
+      return serverDsn ?? sharedDsn;
   }
 }
 
@@ -131,4 +136,25 @@ export function hasSentryBuildUploadConfig(source: Record<string, string | undef
   const buildConfig = resolveSentryBuildConfig(source);
 
   return Boolean(buildConfig.authToken && buildConfig.org && buildConfig.project);
+}
+
+export function validateSentryProductionConfig(
+  source: Record<string, string | undefined> = process.env,
+): SentryConfigValidation {
+  const errors: string[] = [];
+  const isProductionRuntime = resolveSentryEnvironment(source) === "production";
+  const hasRuntimeDsn = Boolean(resolveSentryDsn("client", source) || resolveSentryDsn("server", source));
+  const hasBuildUpload = hasSentryBuildUploadConfig(source);
+
+  if (!isProductionRuntime) {
+    return { errors };
+  }
+
+  if (hasBuildUpload && !hasRuntimeDsn) {
+    errors.push(
+      "Production source map upload is configured, but no runtime Sentry DSN is available. Set NEXT_PUBLIC_SENTRY_DSN or SENTRY_DSN.",
+    );
+  }
+
+  return { errors };
 }
