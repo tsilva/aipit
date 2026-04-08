@@ -20,6 +20,7 @@ const monoFont = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
 });
+const hasGoogleAnalytics = Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim());
 
 export const metadata: Metadata = buildDefaultMetadata();
 export const viewport: Viewport = {
@@ -42,10 +43,14 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content={SITE_BACKGROUND_COLOR} />
       </head>
       <body className={`${displayFont.variable} ${monoFont.variable} antialiased`}>
-        <Suspense fallback={null}>
-          <GoogleAnalytics />
-        </Suspense>
-        <AnalyticsConsentBanner />
+        {hasGoogleAnalytics ? (
+          <>
+            <Suspense fallback={null}>
+              <GoogleAnalytics />
+            </Suspense>
+            <AnalyticsConsentBanner />
+          </>
+        ) : null}
         {children}
       </body>
     </html>

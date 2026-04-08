@@ -411,11 +411,9 @@ export function compactParticipantForSerialization(participant: ParticipantConfi
     characterProfile: createCharacterProfile({
       role: participant.characterProfile.role,
       personality: participant.characterProfile.personality,
-      perspective: participant.characterProfile.perspective,
       language: participant.characterProfile.language,
       nationality: participant.characterProfile.nationality,
       birthDate: participant.characterProfile.birthDate,
-      promptNotes: participant.characterProfile.promptNotes,
     }),
   };
 }

@@ -38,28 +38,19 @@ import {
   type PresetAudience,
 } from "@/lib/audience";
 import {
-  PIT_RUN_DEFAULTS,
-  addUsage,
-  createRosterSnapshot,
-  createDefaultInput,
-  createRandomStarterInput,
-  hydrateRunInputFromPresets,
-  createMember,
-  emptyUsage,
   type PitTurn,
   type ParticipantConfig,
   type RunInput,
   type RunResult,
 } from "@/lib/pit";
-import { SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
+import { OPENROUTER_MODEL_COMBATIVE, SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
 import {
-  invalidOpenRouterKeyMessage,
-  validateOpenRouterKey,
-} from "@/lib/openrouter";
-import { runPitWorkflow, type RunProgressEvent } from "@/lib/pit-engine";
-import { buildCharacterProfilePreview, cloneCharacterProfile } from "@/lib/character-profile";
+  buildCharacterProfilePreview,
+  cloneCharacterProfile,
+  createCharacterProfile,
+} from "@/lib/character-profile";
 import type { ParticipantCharacterPreset } from "@/lib/character-presets";
-import { buildTranscriptMarkdown } from "@/lib/transcript-markdown";
+import type { RunProgressEvent } from "@/lib/pit-engine";
 import {
   shouldDisplayRuntimeWarning,
   type RuntimeTurnIdentity,
@@ -69,6 +60,15 @@ import { isCompletedRunResult } from "@/lib/share-snapshot";
 import { trackEvent } from "@/lib/google-analytics";
 
 export type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
+
+const INVALID_OPENROUTER_KEY_MESSAGE = "This API key is invalid. Add a valid OpenRouter key to run debates.";
+const DEFAULT_SHARED_DIRECTIVE = `Character-vs-character debate. Defend your character's instincts, style, and worldview with full conviction — let the character's natural temperament, cadence, verbal habits, and rhetorical flaws drive the delivery. Engage the strongest opposing points; respond to what was actually said, never repeat a stump speech. Hold your position but acknowledge stronger objections when they matter. Stay concrete, argumentative, conversational, and authentic to the assigned voice rather than essayistic or over-polished.`;
+const PIT_RUN_DEFAULTS = {
+  sharedDirective: DEFAULT_SHARED_DIRECTIVE,
+  rounds: 2,
+  temperature: 0.7,
+  maxCompletionTokens: 700,
+} as const;
 
 const TranscriptMarkdownContent = dynamic(() => import("@/components/transcript-markdown"), {
   loading: () => <p className="transcript-markdown-p">Loading transcript...</p>,
@@ -104,6 +104,80 @@ function syncLineupOrder(lineupOrder: string[], roster: ParticipantConfig[]): st
 
 function unresolvedApiKeyStatusMessage(): string {
   return "API key changed. Confirm it to validate before starting.";
+}
+
+function makeId(prefix: string): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function createMember(index: number): ParticipantConfig {
+  return {
+    id: makeId(`member-${index}`),
+    name: `Debater ${index}`,
+    model: OPENROUTER_MODEL_COMBATIVE,
+    characterProfile:
+      index % 2 === 0
+        ? createCharacterProfile({
+            role: "Analytical pragmatist",
+            personality: "Evidence-driven, practical, and focused on tradeoffs",
+            perspective: "Evaluates proposals through tradeoffs, evidence, and practical execution.",
+            debateStyle: "Prioritize concrete tradeoffs, operational constraints, and implementation realism.",
+          })
+        : createCharacterProfile({
+            role: "Skeptical strategist",
+            personality: "Critical, risk-aware, and focused on second-order effects",
+            perspective: "Assumes incentives matter and looks for fragility, hidden costs, and downstream consequences.",
+            debateStyle: "Stress-test assumptions, risks, and second-order effects before accepting a claim.",
+          }),
+  };
+}
+
+function createFallbackCoordinator(): ParticipantConfig {
+  return {
+    id: makeId("coordinator"),
+    name: "Moderator",
+    model: OPENROUTER_MODEL_COMBATIVE,
+    characterProfile: createCharacterProfile({
+      role: "Impartial moderator",
+      personality: "Calm, neutral, and evidence-led",
+      perspective: "Keeps the debate legible and presses participants to answer directly.",
+      debateStyle: "Clarify stakes, surface tradeoffs, and ask concise follow-ups.",
+      language: "English",
+    }),
+  };
+}
+
+function emptyUsage(): RunResult["usage"] {
+  return {
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0,
+    cost: 0,
+  };
+}
+
+function addUsage(target: RunResult["usage"], delta?: Partial<RunResult["usage"]> | null): RunResult["usage"] {
+  if (!delta) {
+    return target;
+  }
+
+  return {
+    promptTokens: target.promptTokens + (delta.promptTokens ?? 0),
+    completionTokens: target.completionTokens + (delta.completionTokens ?? 0),
+    totalTokens: target.totalTokens + (delta.totalTokens ?? 0),
+    cost: target.cost + (delta.cost ?? 0),
+  };
+}
+
+function createRosterSnapshot(input: RunInput): ParticipantConfig[] {
+  return [input.coordinator, ...input.members].map((participant) => ({
+    ...participant,
+    characterProfile: cloneCharacterProfile(participant.characterProfile),
+  }));
 }
 
 function useBodyScrollLock(isLocked: boolean) {
@@ -222,6 +296,7 @@ async function validateApiKey({
   setApiKeyStatusMessage(trimmed ? "Validating API key with OpenRouter..." : "Checking for a server-side OpenRouter key...");
 
   try {
+    const { validateOpenRouterKey } = await import("@/lib/openrouter");
     const validation = await validateOpenRouterKey(nextApiKey, siteUrl);
     if (requestIdRef.current !== requestId) {
       return validation.valid;
@@ -236,7 +311,7 @@ async function validateApiKey({
     }
 
     setApiKeyStatus("invalid");
-    setApiKeyStatusMessage(invalidOpenRouterKeyMessage());
+    setApiKeyStatusMessage(INVALID_OPENROUTER_KEY_MESSAGE);
     return false;
   }
 }
@@ -677,6 +752,7 @@ function ParticipantAvatar({
   fallbackClassName,
   imageClassName,
   decorative = true,
+  priority = false,
   sizes = "64px",
 }: {
   name: string;
@@ -685,6 +761,7 @@ function ParticipantAvatar({
   fallbackClassName?: string;
   imageClassName?: string;
   decorative?: boolean;
+  priority?: boolean;
   sizes?: string;
 }) {
   const normalizedAvatarUrl = avatarUrl?.trim();
@@ -707,6 +784,7 @@ function ParticipantAvatar({
             src={optimizedAvatarUrl}
             alt={decorative ? "" : `${name} avatar`}
             fill
+            priority={priority}
             sizes={sizes}
             onError={() => setFailedAvatarUrl(normalizedAvatarUrl ?? null)}
           />
@@ -716,8 +794,9 @@ function ParticipantAvatar({
             className={imageClassName ?? "avatar-image"}
             src={normalizedAvatarUrl}
             alt={decorative ? "" : `${name} avatar`}
-            loading="lazy"
+            loading={priority ? "eager" : "lazy"}
             decoding="async"
+            fetchPriority={priority ? "high" : undefined}
             onError={() => setFailedAvatarUrl(normalizedAvatarUrl ?? null)}
           />
         )
@@ -927,6 +1006,7 @@ function SetupParticipantCard({
             className="hero-roster-avatar"
             fallbackClassName="hero-roster-avatar-fallback"
             imageClassName="avatar-image"
+            priority
             sizes="54px"
           />
 
@@ -2111,7 +2191,7 @@ function ChamberStage({
 }) {
   const plannedQueueTurns = buildPlannedQueueTurns({
     rounds: plannedRounds,
-    coordinator: roster[0] ?? createDefaultInput().coordinator,
+    coordinator: roster[0] ?? createFallbackCoordinator(),
     members: roster.slice(1),
   });
   const hasPlaybackStarted = hasSessionStarted || isRunning || frames.length > 0;
@@ -2458,10 +2538,7 @@ export function PitStudio({
 }: {
   initialState: InitialStudioState;
 }) {
-  const initialStudioStateRef = useRef<InitialStudioState>({
-    ...initialState,
-    config: hydrateRunInputFromPresets(initialState.config),
-  });
+  const initialStudioStateRef = useRef<InitialStudioState>(initialState);
   const initialStudioState = initialStudioStateRef.current;
   const [config, setConfig] = useState<RunInput>(initialStudioState.config);
   const [audience] = useState<PresetAudience>(initialStudioState.audience);
@@ -2498,6 +2575,8 @@ export function PitStudio({
   const [shareNotice] = useState<string | null>(initialStudioState.shareNotice);
   const [isReplayOnly] = useState(initialStudioState.isReplayOnly);
   const keyValidationRequestIdRef = useRef(0);
+  const configRef = useRef(initialStudioState.config);
+  const hasHydratedPresetConfigRef = useRef(false);
   const runAbortControllerRef = useRef<AbortController | null>(null);
   const activeRunIdRef = useRef(0);
   const generatedTurnCountRef = useRef(0);
@@ -2514,14 +2593,8 @@ export function PitStudio({
   const hasPrompt = config.prompt.trim().length > 0;
   const transcriptTurns = flattenTurns(result);
   const transcriptPrompt = result?.prompt ?? config.prompt;
-  const transcriptMarkdown = useDeferredValue(
-    buildTranscriptMarkdown({
-      prompt: transcriptPrompt,
-      turns: transcriptTurns,
-      isRunning,
-      chapterLabelForTurn,
-    }),
-  );
+  const [transcriptMarkdown, setTranscriptMarkdown] = useState("");
+  const deferredTranscriptMarkdown = useDeferredValue(transcriptMarkdown);
   const timeline = buildPlaybackTimeline(result);
   const frames = timeline.frames;
   const playbackTurnIds = buildPlaybackTurnIds(frames);
@@ -2565,6 +2638,10 @@ export function PitStudio({
     bufferedTurnWaitersRef.current.clear();
     waiters.forEach((resolve) => resolve());
   }, []);
+
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
 
   useEffect(() => {
     const currentRoster = [config.coordinator, ...config.members];
@@ -2652,6 +2729,36 @@ export function PitStudio({
   }, [shareState]);
 
   useEffect(() => {
+    let isMounted = true;
+
+    if (studioView !== "simulation") {
+      setTranscriptMarkdown("");
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    void import("@/lib/transcript-markdown").then(({ buildTranscriptMarkdown }) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setTranscriptMarkdown(
+        buildTranscriptMarkdown({
+          prompt: transcriptPrompt,
+          turns: transcriptTurns,
+          isRunning,
+          chapterLabelForTurn,
+        }),
+      );
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isRunning, studioView, transcriptPrompt, transcriptTurns]);
+
+  useEffect(() => {
     if (!isPlaybackActive || !currentFrame || revealedBubbleId !== currentFrame.id) {
       return;
     }
@@ -2699,6 +2806,7 @@ export function PitStudio({
   }
 
   function addMemberFromPreset(preset: ParticipantCharacterPreset) {
+    hasHydratedPresetConfigRef.current = true;
     setStarterBundleId(undefined);
     setConfig((current) => addParticipantToLineup(current, preset));
   }
@@ -2713,12 +2821,29 @@ export function PitStudio({
     setConfig((current) => removeParticipantFromLineup(current, id));
   }
 
-  function openParticipantEditor(id: string) {
+  async function ensureHydratedConfig(): Promise<RunInput> {
+    if (hasHydratedPresetConfigRef.current) {
+      return configRef.current;
+    }
+
+    const { hydrateRunInputFromPresets } = await import("@/lib/pit");
+    const hydratedConfig = hydrateRunInputFromPresets(configRef.current);
+    hasHydratedPresetConfigRef.current = true;
+    configRef.current = hydratedConfig;
+    setConfig(hydratedConfig);
+    return hydratedConfig;
+  }
+
+  async function openParticipantEditor(id: string) {
+    await ensureHydratedConfig();
     setActiveEditorId(id);
   }
 
-  function rerollStarterBundle() {
+  async function rerollStarterBundle() {
+    const { createRandomStarterInput } = await import("@/lib/pit");
     const nextStarter = createRandomStarterInput(starterBundleId, audience, { ignoreAudience: true });
+    hasHydratedPresetConfigRef.current = true;
+    configRef.current = nextStarter.input;
     setStarterBundleId(nextStarter.bundle.id);
     setConfig(nextStarter.input);
     trackEvent("starter_bundle_reroll", {
@@ -2973,12 +3098,13 @@ export function PitStudio({
     bufferedTurnWaitersRef.current.clear();
     generatedTurnCountRef.current = 0;
     acknowledgedTurnCountRef.current = 0;
+    const hydratedConfig = await ensureHydratedConfig();
     const payload: RunInput = {
       ...PIT_RUN_DEFAULTS,
-      ...config,
+      ...hydratedConfig,
       mode: "debate",
-      coordinator: config.coordinator,
-      members: shuffleParticipants(config.members),
+      coordinator: hydratedConfig.coordinator,
+      members: shuffleParticipants(hydratedConfig.members),
     };
     setSubmittedRunInput(payload);
 
@@ -3001,6 +3127,7 @@ export function PitStudio({
     setIsRunning(true);
 
     try {
+      const { runPitWorkflow } = await import("@/lib/pit-engine");
       const resultPayload = await runPitWorkflow(payload, {
         apiKey,
         siteUrl: window.location.origin,
@@ -3257,7 +3384,7 @@ export function PitStudio({
             hasSessionStarted={studioView === "simulation"}
             panelMode={panelMode}
             transcriptTurnCount={transcriptTurns.length}
-            transcriptMarkdown={transcriptMarkdown}
+            transcriptMarkdown={deferredTranscriptMarkdown}
             isPlaybackPlaying={isPlaybackPlaying}
             isAwaitingTurnResponse={isAwaitingTurnResponse}
             pendingTurn={pendingTurn}
