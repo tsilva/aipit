@@ -1,4 +1,5 @@
-import { PitStudio, type InitialStudioState } from "@/components/pit-studio";
+import { PitStudio } from "@/components/pit-studio";
+import type { InitialStudioState } from "@/lib/pit-studio-state";
 
 export function PitStudioEntry({
   initialState,

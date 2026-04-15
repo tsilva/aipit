@@ -19,7 +19,6 @@ import {
   X as CloseGlyph,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import Image from "next/image";
 import Link from "next/link";
 import {
   useCallback,
@@ -27,16 +26,19 @@ import {
   useEffect,
   useEffectEvent,
   useId,
-  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
-  type ComponentPropsWithoutRef,
 } from "react";
 import {
   getAudienceContextLabel,
   type PresetAudience,
 } from "@/lib/audience";
+import {
+  AutoSizeTextarea,
+  FieldShell,
+  ParticipantAvatar,
+} from "@/components/pit-studio-primitives";
 import {
   type PitTurn,
   type ParticipantConfig,
@@ -51,6 +53,7 @@ import {
 } from "@/lib/character-profile";
 import type { ParticipantCharacterPreset } from "@/lib/character-presets";
 import type { RunProgressEvent } from "@/lib/pit-engine";
+import type { ApiKeyStatus, InitialStudioState } from "@/lib/pit-studio-state";
 import {
   shouldDisplayRuntimeWarning,
   type RuntimeTurnIdentity,
@@ -59,7 +62,7 @@ import {
 import { isCompletedRunResult } from "@/lib/share-snapshot";
 import { trackEvent } from "@/lib/google-analytics";
 
-export type ApiKeyStatus = "empty" | "checking" | "valid" | "invalid" | "unresolved";
+export type { ApiKeyStatus, InitialStudioState } from "@/lib/pit-studio-state";
 
 const INVALID_OPENROUTER_KEY_MESSAGE = "This API key is invalid. Add a valid OpenRouter key to run debates.";
 const DEFAULT_SHARED_DIRECTIVE = `Character-vs-character debate. Defend your character's instincts, style, and worldview with full conviction — let the character's natural temperament, cadence, verbal habits, and rhetorical flaws drive the delivery. Engage the strongest opposing points; respond to what was actually said, never repeat a stump speech. Hold your position but acknowledge stronger objections when they matter. Stay concrete, argumentative, conversational, and authentic to the assigned voice rather than essayistic or over-polished.`;
@@ -258,22 +261,6 @@ function useModalFocusTrap(containerRef: React.RefObject<HTMLElement | null>, is
     };
   }, [containerRef, isActive]);
 }
-
-export type InitialStudioState = {
-  config: RunInput;
-  audience: PresetAudience;
-  lineupOrder: string[];
-  starterBundleId?: string;
-  apiKey: string;
-  apiKeyStatus: ApiKeyStatus;
-  apiKeyStatusMessage: string;
-  draftApiKey: string;
-  initialResult: RunResult | null;
-  initialStudioView: StudioView;
-  isReplayOnly: boolean;
-  shareUrl: string | null;
-  shareNotice: string | null;
-};
 
 async function validateApiKey({
   nextApiKey,
@@ -708,24 +695,6 @@ function queueStateLabel(state: QueueEntry["state"]): string {
   }
 }
 
-function participantInitials(name: string): string {
-  const parts = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2);
-
-  if (parts.length === 0) {
-    return "?";
-  }
-
-  return parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
-}
-
-function isLocalAvatarAsset(url: string): boolean {
-  return url.startsWith("/") && !url.startsWith("//");
-}
-
 function isLocalRuntime(): boolean {
   if (typeof window === "undefined") {
     return false;
@@ -745,68 +714,6 @@ function subscribeToRuntime(): () => void {
   return () => {};
 }
 
-function ParticipantAvatar({
-  name,
-  avatarUrl,
-  className,
-  fallbackClassName,
-  imageClassName,
-  decorative = true,
-  priority = false,
-  sizes = "64px",
-}: {
-  name: string;
-  avatarUrl?: string;
-  className: string;
-  fallbackClassName?: string;
-  imageClassName?: string;
-  decorative?: boolean;
-  priority?: boolean;
-  sizes?: string;
-}) {
-  const normalizedAvatarUrl = avatarUrl?.trim();
-  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
-  const showImage = Boolean(normalizedAvatarUrl) && failedAvatarUrl !== normalizedAvatarUrl;
-  const optimizedAvatarUrl =
-    showImage && normalizedAvatarUrl && isLocalAvatarAsset(normalizedAvatarUrl) ? normalizedAvatarUrl : null;
-  const shouldUseOptimizedImage = optimizedAvatarUrl !== null;
-
-  return (
-    <span
-      className={className}
-      aria-hidden={decorative}
-      style={shouldUseOptimizedImage ? { position: "relative" } : undefined}
-    >
-      {showImage ? (
-        shouldUseOptimizedImage ? (
-          <Image
-            className={imageClassName ?? "avatar-image"}
-            src={optimizedAvatarUrl}
-            alt={decorative ? "" : `${name} avatar`}
-            fill
-            priority={priority}
-            sizes={sizes}
-            onError={() => setFailedAvatarUrl(normalizedAvatarUrl ?? null)}
-          />
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            className={imageClassName ?? "avatar-image"}
-            src={normalizedAvatarUrl}
-            alt={decorative ? "" : `${name} avatar`}
-            loading={priority ? "eager" : "lazy"}
-            decoding="async"
-            fetchPriority={priority ? "high" : undefined}
-            onError={() => setFailedAvatarUrl(normalizedAvatarUrl ?? null)}
-          />
-        )
-      ) : (
-        <span className={fallbackClassName ?? "avatar-fallback"}>{participantInitials(name)}</span>
-      )}
-    </span>
-  );
-}
-
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -816,82 +723,19 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
-function FieldShell({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="label">{label}</span>
-      {children}
-      {hint ? <span className="mt-2 block text-sm text-[color:var(--muted)]">{hint}</span> : null}
-    </label>
-  );
-}
-
-function resizeTextarea(textarea: HTMLTextAreaElement) {
-  textarea.style.height = "auto";
-  textarea.style.overflowY = "hidden";
-  textarea.style.height = `${textarea.scrollHeight}px`;
-}
-
-function AutoSizeTextarea({
-  className,
-  onChange,
-  style,
-  ...props
-}: ComponentPropsWithoutRef<"textarea">) {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const syncTextareaHeight = useEffectEvent(() => {
-    if (textareaRef.current) {
-      resizeTextarea(textareaRef.current);
-    }
-  });
-
-  useLayoutEffect(() => {
-    syncTextareaHeight();
-  }, [props.value]);
-
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    const container = textarea?.parentElement;
-
-    if (!textarea || !container || typeof ResizeObserver === "undefined") {
-      return;
-    }
-
-    const observer = new ResizeObserver(() => {
-      resizeTextarea(textarea);
-    });
-
-    observer.observe(container);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  return (
-    <textarea
-      {...props}
-      ref={textareaRef}
-      className={className ? `${className} auto-size-textarea` : "auto-size-textarea"}
-      style={style}
-      onChange={(event) => {
-        resizeTextarea(event.currentTarget);
-        onChange?.(event);
-      }}
-    />
-  );
-}
-
 function promptPlaceholder(): string {
   return "What should these characters fight out in The AI Pit?";
+}
+
+function isShareResponse(
+  value: unknown,
+): value is { slug: string; url: string; error?: { message?: unknown } } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { slug?: unknown }).slug === "string" &&
+    typeof (value as { url?: unknown }).url === "string"
+  );
 }
 
 function isAbortError(error: unknown): boolean {
@@ -3023,19 +2867,26 @@ export function PitStudio({
           result,
         }),
       });
-      const payload = (await response.json()) as {
-        slug?: unknown;
-        url?: unknown;
-        error?: { message?: unknown };
-      };
+      const payload: unknown = await response.json();
 
       if (!response.ok) {
+        const errorMessage =
+          typeof payload === "object" &&
+          payload !== null &&
+          "error" in payload &&
+          typeof payload.error === "object" &&
+          payload.error !== null &&
+          "message" in payload.error &&
+          typeof payload.error.message === "string"
+            ? payload.error.message
+            : "Failed to create a shared conversation.";
+
         throw new Error(
-          typeof payload.error?.message === "string" ? payload.error.message : "Failed to create a shared conversation.",
+          errorMessage,
         );
       }
 
-      if (typeof payload.url !== "string" || typeof payload.slug !== "string") {
+      if (!isShareResponse(payload)) {
         throw new Error("The server returned an invalid share response.");
       }
 

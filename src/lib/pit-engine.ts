@@ -18,7 +18,6 @@ import {
   buildOpenRouterPromptCacheControl,
   extractOpenRouterErrorMessage,
   postOpenRouterProxyRequest,
-  resolveOpenRouterModel,
 } from "@/lib/openrouter";
 import { buildOpenRouterModelFallbackOrder } from "@/lib/openrouter-models";
 import {
@@ -763,7 +762,7 @@ async function callOpenRouter(
     for (let modelIndex = 0; modelIndex < requestedModels.length; modelIndex += 1) {
       const requestedModel = requestedModels[modelIndex]!;
       const nextRequestedModel = requestedModels[modelIndex + 1];
-      const resolvedModel = resolveOpenRouterModel(requestedModel, apiKey);
+      const resolvedModel = requestedModel;
       const cacheControl = buildOpenRouterPromptCacheControl(resolvedModel);
       let maxCompletionTokens = input.maxCompletionTokens;
       let modelFailureReason: string | null = null;

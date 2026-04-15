@@ -1,57 +1,36 @@
 import * as Sentry from "@sentry/nextjs";
-import { NextResponse } from "next/server";
+import { jsonErrorResponse, parseJsonRequest } from "@/lib/api-route-response";
+import { isJsonObject } from "@/lib/json";
 import { OPENROUTER_CHAT_COMPLETIONS_URL } from "@/lib/openrouter";
 import { isSupportedOpenRouterModel, SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
 import { OpenRouterProxyError, proxyOpenRouterRequest } from "@/lib/openrouter-server";
-import { buildResponseHeaders, resolveRequestId } from "@/lib/request-id";
-
-type ChatProxyRequest = {
-  apiKey?: string;
-  siteUrl?: string;
-  body?: unknown;
-};
-
-function isJsonObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+import { resolveRequestId } from "@/lib/request-id";
 
 export async function POST(request: Request): Promise<Response> {
   const requestId = resolveRequestId(request);
-  let payload: ChatProxyRequest | undefined;
+  const parsed = await parseJsonRequest(request, requestId);
 
-  try {
-    payload = (await request.json()) as ChatProxyRequest;
-  } catch {
-    return NextResponse.json(
-      { error: { message: "Invalid JSON payload." } },
-      { status: 400, headers: buildResponseHeaders(requestId) },
-    );
+  if (!parsed.ok) {
+    return parsed.response;
   }
 
+  const payload = parsed.payload;
+
   if (!isJsonObject(payload) || !isJsonObject(payload.body)) {
-    return NextResponse.json(
-      { error: { message: "Missing chat completion payload." } },
-      { status: 400, headers: buildResponseHeaders(requestId) },
-    );
+    return jsonErrorResponse(requestId, 400, "Missing chat completion payload.");
   }
 
   const requestedModel = payload.body.model;
 
   if (typeof requestedModel !== "string") {
-    return NextResponse.json(
-      { error: { message: "Missing chat completion model." } },
-      { status: 400, headers: buildResponseHeaders(requestId) },
-    );
+    return jsonErrorResponse(requestId, 400, "Missing chat completion model.");
   }
 
   if (!isSupportedOpenRouterModel(requestedModel)) {
-    return NextResponse.json(
-      {
-        error: {
-          message: `Unsupported model. Allowed models: ${SUPPORTED_OPENROUTER_MODELS.join(", ")}`,
-        },
-      },
-      { status: 400, headers: buildResponseHeaders(requestId) },
+    return jsonErrorResponse(
+      requestId,
+      400,
+      `Unsupported model. Allowed models: ${SUPPORTED_OPENROUTER_MODELS.join(", ")}`,
     );
   }
 
@@ -69,10 +48,7 @@ export async function POST(request: Request): Promise<Response> {
     });
   } catch (error) {
     if (error instanceof OpenRouterProxyError) {
-      return NextResponse.json(
-        { error: { message: error.message } },
-        { status: error.status, headers: buildResponseHeaders(requestId) },
-      );
+      return jsonErrorResponse(requestId, error.status, error.message);
     }
 
     Sentry.captureException(error, {
@@ -81,9 +57,6 @@ export async function POST(request: Request): Promise<Response> {
         routeName: "/api/openrouter/chat/completions",
       },
     });
-    return NextResponse.json(
-      { error: { message: "Failed to reach OpenRouter." } },
-      { status: 502, headers: buildResponseHeaders(requestId) },
-    );
+    return jsonErrorResponse(requestId, 502, "Failed to reach OpenRouter.");
   }
 }

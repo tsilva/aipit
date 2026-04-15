@@ -8,6 +8,7 @@ import type {
   TurnBubble,
   UsageSummary,
 } from "@/lib/pit";
+import { isJsonObject } from "@/lib/json";
 
 export const SHARED_CONVERSATION_SNAPSHOT_KIND = "aipit-share";
 export const CURRENT_SHARE_HISTORY_VERSION = 1;
@@ -30,10 +31,6 @@ export class SharedConversationSnapshotError extends Error {
     this.name = "SharedConversationSnapshotError";
     this.reason = reason;
   }
-}
-
-function isJsonObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function isFiniteNumber(value: unknown): value is number {

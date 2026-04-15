@@ -1,4 +1,4 @@
-import type { InitialStudioState } from "@/components/pit-studio";
+import type { InitialStudioState } from "@/lib/pit-studio-state";
 import type { SharedConversationSnapshot } from "@/lib/share-snapshot";
 
 export const SHARE_STATUS_QUERY_KEY = "share";

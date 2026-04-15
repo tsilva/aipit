@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import type { InitialStudioState } from "@/components/pit-studio";
 import { PitStudioEntry } from "@/components/pit-studio-entry";
 import { resolveInitialAudience } from "@/lib/audience";
 import {
@@ -14,6 +13,7 @@ import {
   createRandomStarterInput,
   resolveStarterBundle,
 } from "@/lib/pit";
+import type { InitialStudioState } from "@/lib/pit-studio-state";
 import { readCountryCodeFromHeaders } from "@/lib/region";
 import { resolveShareNotice } from "@/lib/share-replay";
 import {

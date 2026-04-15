@@ -178,19 +178,13 @@ export async function validateOpenRouterKey(
               : "OpenRouter accepted this key on the chat API after a failed key lookup. Their auth lookup may be transiently inconsistent, but debates should run.",
         };
       }
-    } catch {
-      // Fall through to the original validation failure below.
-    }
+    } catch {}
   }
 
   return {
     valid: false,
     message: isHostedKeyValidation ? missingOpenRouterKeyMessage() : invalidOpenRouterKeyMessage(),
   };
-}
-
-export function resolveOpenRouterModel(model: string, apiKey?: string): string {
-  return apiKey?.trim() ? model : model;
 }
 
 export function buildOpenRouterPromptCacheControl(model: string): OpenRouterPromptCacheControl | undefined {

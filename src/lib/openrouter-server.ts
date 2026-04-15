@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { isJsonObject } from "@/lib/json";
 import { SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
 import { buildOpenRouterHeaders, type OpenRouterPromptCacheControl } from "@/lib/openrouter";
 import { buildResponseHeaders, resolveRequestId } from "@/lib/request-id";
@@ -67,10 +68,6 @@ function resolveOpenRouterProxyApiKey(apiKey?: string): string {
   }
 
   return resolvedApiKey;
-}
-
-function isJsonObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 // Access control follows the actual request URL and ignores forwarded origin headers.
