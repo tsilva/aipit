@@ -1,4 +1,4 @@
 interface:
   display_name: "Add Character Preset"
   short_description: "Add sourced debate characters to aipit"
-  default_prompt: "Add a new character preset to aipit, including relationships, search terms, tests, avatar sourcing, image processing, and attribution."
+  default_prompt: "Add a new character preset to aipit, including relationships, search terms, starter-bundle coverage, tests, avatar sourcing, image processing, and attribution."

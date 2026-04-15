@@ -173,6 +173,15 @@ export const STARTER_BUNDLES: StarterBundleDefinition[] = [
     audience: "portugal",
   },
   {
+    id: "founder-free-speech-backlash",
+    name: "Founder Free Speech Backlash",
+    prompt:
+      "Should consumers and sponsors punish company founders for inflammatory political speech, or is that just censorship by market mob?",
+    moderatorPresetId: DEFAULT_COORDINATOR_PRESET_ID,
+    memberPresetIds: ["miguel-milhao", "daniel-oliveira", "joao-miguel-tavares"],
+    audience: "portugal",
+  },
+  {
     id: "social-media-age-ban",
     name: "Social Media Age Ban",
     prompt: "Should governments ban social media for everyone under 16 even if parents strongly object?",
