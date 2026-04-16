@@ -29,6 +29,11 @@ function isLocalAvatarAsset(url: string): boolean {
   return url.startsWith("/") && !url.startsWith("//");
 }
 
+// Generated speaking clips hold briefly near their boundaries, so loop the moving span.
+const SPEAKING_AVATAR_LOOP_START_SECONDS = 0.12;
+const SPEAKING_AVATAR_LOOP_END_MARGIN_SECONDS = 0.55;
+const SPEAKING_AVATAR_MIN_TRIMMED_LOOP_SECONDS = 1.2;
+
 function resizeTextarea(textarea: HTMLTextAreaElement) {
   textarea.style.height = "auto";
   textarea.style.overflowY = "hidden";
@@ -134,6 +139,7 @@ export function SpeakingParticipantAvatar({
 
   useEffect(() => {
     const video = videoRef.current;
+    let animationFrameId: number | null = null;
 
     if (!video || !showVideo) {
       return;
@@ -145,16 +151,57 @@ export function SpeakingParticipantAvatar({
       return;
     }
 
+    const loopWindow = () => {
+      const duration = video.duration;
+
+      if (
+        !Number.isFinite(duration) ||
+        duration < SPEAKING_AVATAR_MIN_TRIMMED_LOOP_SECONDS ||
+        duration <= SPEAKING_AVATAR_LOOP_START_SECONDS + SPEAKING_AVATAR_LOOP_END_MARGIN_SECONDS
+      ) {
+        return null;
+      }
+
+      return {
+        start: SPEAKING_AVATAR_LOOP_START_SECONDS,
+        end: duration - SPEAKING_AVATAR_LOOP_END_MARGIN_SECONDS,
+      };
+    };
+
+    const syncLoopWindow = () => {
+      const bounds = loopWindow();
+
+      if (bounds) {
+        if (video.currentTime < bounds.start || video.currentTime >= bounds.end) {
+          video.currentTime = bounds.start;
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(syncLoopWindow);
+    };
+
+    syncLoopWindow();
+
     const playPromise = video.play();
 
     if (!playPromise) {
-      return;
+      return () => {
+        if (animationFrameId !== null) {
+          cancelAnimationFrame(animationFrameId);
+        }
+      };
     }
 
     void playPromise.catch(() => {
       setFailedSpeakingAvatarUrl(normalizedSpeakingAvatarUrl ?? null);
       setReadySpeakingAvatarUrl(null);
     });
+
+    return () => {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, [isSpeaking, isVideoReady, normalizedSpeakingAvatarUrl, showVideo]);
 
   return (
