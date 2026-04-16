@@ -1,4 +1,0 @@
-interface:
-  display_name: "Generate Speaking Avatar"
-  short_description: "Create and wire talking clips for aipit presets"
-  default_prompt: "Generate a 4-second speaking avatar clip from an existing aipit avatar, compress it for runtime playback, and wire the matching preset's speakingAvatarUrl."

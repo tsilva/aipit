@@ -1,0 +1,4 @@
+interface:
+  display_name: "Avatar Assets"
+  short_description: "Generate, repair, and audit aipit avatar media"
+  default_prompt: "Generate, fix, or audit aipit avatar assets, including sourced still portraits, speaking clips, attribution, validation, and preset avatarUrl/speakingAvatarUrl wiring."

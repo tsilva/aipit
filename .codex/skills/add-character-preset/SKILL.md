@@ -1,6 +1,6 @@
 ---
 name: add-character-preset
-description: Add or update debate character presets for the aipit project. Use when Codex needs to create a new participant character, extend the Portuguese or global roster, add or revise character relationships, source and process a real avatar image, update attribution, add search/test coverage for preset discovery, or wire a new preset into starter bundles.
+description: Add or update debate character presets for the aipit project. Use when Codex needs to create a new participant character, extend the Portuguese or global roster, add or revise character relationships, add search/test coverage for preset discovery, or wire a new preset into starter bundles.
 ---
 
 # Add Character Preset
@@ -33,8 +33,8 @@ Read [references/project-notes.md](references/project-notes.md) before editing i
    - `recommendedModel: OPENROUTER_MODEL_COMBATIVE`
    - `searchTerms` with accented and unaccented variants where relevant
    - `characterProfile` fields filled with a concrete speaking style, perspective, and guardrails
-5. If the user wants avatars or the change would be incomplete without one, source a real image from the internet, process it locally, and set `avatarUrl`.
-6. Update `ATTRIBUTION.md` for every new avatar file.
+5. If the user wants avatars or the change would be incomplete without one, follow `.codex/skills/avatar-assets/SKILL.md` for still or speaking avatar work.
+6. Keep avatar attribution in sync through the avatar-assets workflow.
 7. Make sure the preset appears in at least one relevant entry in `src/lib/starter-bundles.ts`; if no suitable bundle exists, add one instead of leaving the preset unreachable from starter debates.
 8. Add or extend a focused test in `src/lib/pit.test.ts` so the new preset is reachable via search and accent-insensitive matching where relevant.
 9. Run `npm run lint` and `npm test`.
@@ -55,16 +55,6 @@ Read [references/project-notes.md](references/project-notes.md) before editing i
 - Make each relationship directional and character-specific.
 - Write for debate behavior, not biography. The line should tell the model how to treat the other person in argument.
 
-## Avatar Rules
-
-- Prefer Wikimedia Commons or direct official/editorial portrait assets with stable URLs.
-- Use real images, not generated stand-ins, unless the character is fictional or no real image is appropriate.
-- Crop so the face is prominent in the picker.
-- Save as `.webp`.
-- Target `512x512` when possible for new additions.
-- If a source image is weak, iterate the crop instead of shipping a distant or text-heavy thumbnail.
-- Record the source and transformation in `public/avatars/presets/ATTRIBUTION.md`.
-
 ## Validation
 
 Always finish with:
@@ -76,4 +66,4 @@ npm test
 
 If tests fail on starter-bundle coverage, update `src/lib/starter-bundles.ts` instead of treating that as unrelated fallout.
 
-If avatar assets were added, also verify they exist and decode cleanly, for example with `identify public/avatars/presets/<file>.webp`.
+If avatar assets were added, also run the validation from `.codex/skills/avatar-assets/SKILL.md`.

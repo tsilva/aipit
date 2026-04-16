@@ -30,20 +30,10 @@
 - Keep Portuguese presets grouped together before the global roster.
 - Place new entries near adjacent ideological or stylistic peers rather than always appending at the end of the audience block.
 
-## Avatar conventions
+## Avatar references
 
-- Current repo assets live in `public/avatars/presets/`.
-- Existing files are a mix of portrait ratios, but new additions should prefer `512x512` WebP.
-- Face-forward crops work better in the preset picker than podium shots or article thumbnails with large text overlays.
-
-## Attribution conventions
-
-- Add one bullet per new file to `public/avatars/presets/ATTRIBUTION.md`.
-- Mention:
-  - output filename
-  - crop/resize note
-  - original source URL
-  - license or attribution note if the source page specifies one
+- Presets can reference `avatarUrl` for still portraits and `speakingAvatarUrl` for generated speaking clips.
+- Avatar sourcing, processing, attribution, and validation live in `.codex/skills/avatar-assets/SKILL.md`.
 
 ## Practical checklist
 
@@ -52,6 +42,6 @@
 3. Add relationships if the figure is politically meaningful.
 4. Add the preset entry.
 5. Ensure the preset is covered by at least one starter bundle; add a new bundle if none fits.
-6. Add avatar and attribution when requested or clearly valuable.
+6. Use `.codex/skills/avatar-assets/SKILL.md` for avatar media when requested or clearly valuable.
 7. Add a targeted test assertion.
 8. Run lint and tests.

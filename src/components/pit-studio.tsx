@@ -1001,7 +1001,7 @@ function StudioHero({
           <div>
             <p className="hero-kicker">Debate Topic</p>
             <h2 className="hero-panel-title">What is the debate topic about?</h2>
-            <p className="hero-panel-copy">Fresh loads follow detected audience. The wand rerolls from the full starter pool.</p>
+            <p className="hero-panel-copy">Fresh loads and rerolls follow the detected audience.</p>
           </div>
         </div>
 
@@ -2689,7 +2689,7 @@ export function PitStudio({
 
   async function rerollStarterBundle() {
     const { createRandomStarterInput } = await import("@/lib/pit");
-    const nextStarter = createRandomStarterInput(starterBundleId, audience, { ignoreAudience: true });
+    const nextStarter = createRandomStarterInput(starterBundleId, audience);
     hasHydratedPresetConfigRef.current = true;
     configRef.current = nextStarter.input;
     setStarterBundleId(nextStarter.bundle.id);

@@ -227,7 +227,7 @@ test("uses the participant terminology in the settings sheet actions", async ({ 
   await page.goto("/");
   await dismissConsentBannerIfVisible(page);
 
-  await page.getByRole("button", { name: "Edit Anderson Cooper" }).click();
+  await page.getByRole("button", { name: /^Edit / }).first().click();
 
   await expect(page.getByRole("button", { name: "Close participant settings" })).toBeVisible();
 });
