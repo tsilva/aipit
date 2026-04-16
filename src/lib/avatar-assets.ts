@@ -30,7 +30,8 @@ export function withAvatarAssetVersion(url: string | undefined): string | undefi
     return normalizedUrl;
   }
 
-  parsedUrl.searchParams.set("v", version);
+  parsedUrl.searchParams.delete("v");
+  parsedUrl.searchParams.append("v", version);
 
   return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
 }

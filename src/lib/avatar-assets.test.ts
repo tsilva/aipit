@@ -35,6 +35,9 @@ describe("avatar asset cache busting", () => {
     expect(withAvatarAssetVersion(" /avatars/presets/anderson-cooper.webp?size=small#face ")).toMatch(
       /^\/avatars\/presets\/anderson-cooper\.webp\?size=small&v=[a-f0-9]{16}#face$/,
     );
+    expect(withAvatarAssetVersion("/avatars/presets/anderson-cooper.webp?v=stale&size=small")).toMatch(
+      /^\/avatars\/presets\/anderson-cooper\.webp\?size=small&v=[a-f0-9]{16}$/,
+    );
     expect(withAvatarAssetVersion("https://example.com/avatar.webp")).toBe("https://example.com/avatar.webp");
     expect(withAvatarAssetVersion("/uploads/custom-avatar.webp")).toBe("/uploads/custom-avatar.webp");
     expect(withAvatarAssetVersion(undefined)).toBeUndefined();

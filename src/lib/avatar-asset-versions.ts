@@ -69,7 +69,7 @@ export const AVATAR_ASSET_VERSIONS = {
   "/avatars/presets/speaking/gordon-ramsay.mp4": "7039bbe60a0158ea",
   "/avatars/presets/speaking/henrique-gouveia-e-melo.mp4": "6783f3334711ebdc",
   "/avatars/presets/speaking/homer-simpson.mp4": "9cbf7cd7434fddf4",
-  "/avatars/presets/speaking/ines-sousa-real.mp4": "648e03670ddef66f",
+  "/avatars/presets/speaking/ines-sousa-real.mp4": "7dd1120309496b4c",
   "/avatars/presets/speaking/joao-cotrim-de-figueiredo.mp4": "c7b7f24004194cd8",
   "/avatars/presets/speaking/joao-miguel-tavares.mp4": "4549334ed833f0cb",
   "/avatars/presets/speaking/joe-rogan.mp4": "3385cf08e2fa0e47",

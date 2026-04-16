@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { withAvatarAssetVersion } from "@/lib/avatar-assets";
 import {
   useEffect,
@@ -26,10 +25,6 @@ function participantInitials(name: string): string {
   return parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
 }
 
-function isLocalAvatarAsset(url: string): boolean {
-  return url.startsWith("/") && !url.startsWith("//");
-}
-
 // Generated speaking clips hold briefly near their boundaries, so loop the moving span.
 const SPEAKING_AVATAR_LOOP_START_SECONDS = 0.12;
 const SPEAKING_AVATAR_LOOP_END_MARGIN_SECONDS = 0.55;
@@ -50,7 +45,6 @@ export function ParticipantAvatar({
   children,
   decorative = true,
   priority = false,
-  sizes = "64px",
 }: {
   name: string;
   avatarUrl?: string;
@@ -66,39 +60,24 @@ export function ParticipantAvatar({
   const versionedAvatarUrl = withAvatarAssetVersion(normalizedAvatarUrl);
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
   const showImage = Boolean(normalizedAvatarUrl) && failedAvatarUrl !== normalizedAvatarUrl;
-  const optimizedAvatarUrl =
-    showImage && versionedAvatarUrl && isLocalAvatarAsset(versionedAvatarUrl) ? versionedAvatarUrl : null;
-  const shouldUseOptimizedImage = optimizedAvatarUrl !== null;
 
   return (
     <span
       className={className}
       aria-hidden={decorative}
-      style={shouldUseOptimizedImage || children ? { position: "relative" } : undefined}
+      style={children ? { position: "relative" } : undefined}
     >
       {showImage ? (
-        shouldUseOptimizedImage ? (
-          <Image
-            className={imageClassName ?? "avatar-image"}
-            src={optimizedAvatarUrl}
-            alt={decorative ? "" : `${name} avatar`}
-            fill
-            priority={priority}
-            sizes={sizes}
-            onError={() => setFailedAvatarUrl(normalizedAvatarUrl ?? null)}
-          />
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            className={imageClassName ?? "avatar-image"}
-            src={versionedAvatarUrl}
-            alt={decorative ? "" : `${name} avatar`}
-            loading={priority ? "eager" : "lazy"}
-            decoding="async"
-            fetchPriority={priority ? "high" : undefined}
-            onError={() => setFailedAvatarUrl(normalizedAvatarUrl ?? null)}
-          />
-        )
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          className={imageClassName ?? "avatar-image"}
+          src={versionedAvatarUrl}
+          alt={decorative ? "" : `${name} avatar`}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          fetchPriority={priority ? "high" : undefined}
+          onError={() => setFailedAvatarUrl(normalizedAvatarUrl ?? null)}
+        />
       ) : (
         <span className={fallbackClassName ?? "avatar-fallback"}>{participantInitials(name)}</span>
       )}

@@ -60,13 +60,6 @@ const nextConfig: NextConfig = {
   experimental: {
     inlineCss: true,
   },
-  images: {
-    localPatterns: [
-      { pathname: "/avatars/**" },
-      { pathname: "/**", search: "" },
-    ],
-    minimumCacheTTL: 31536000,
-  },
   env: resolveSentryClientBuildEnv({
     NEXT_PUBLIC_SENTRY_DSN: appEnv.publicSentryDsn,
     SENTRY_DSN: appEnv.sentryDsn,
