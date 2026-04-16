@@ -12,6 +12,7 @@
 
 - Rich character profiles with editable debate traits, guardrails, prompt notes, and structured authentic-voice guidance for built-in presets
 - 41 built-in character presets, 7 moderator presets, and 31 starter bundles for quick debate setup
+- Optional preset speaking clips that swap onto the active live speaker once the talking video has loaded
 - Structured flow: opening, rounds, moderator interventions, and closing synthesis
 - Multi-model OpenRouter support with streaming responses and automatic failover
 - Shareable replay links for completed debates, backed by immutable snapshots
@@ -147,6 +148,7 @@ src/
 - OpenRouter requests are proxied through `src/app/api/openrouter`.
 - `OPENROUTER_API_KEY` is server-only and should not use a `NEXT_PUBLIC_` prefix.
 - Starter bundles and personal API keys are not persisted across page reloads.
+- Built-in presets can optionally define `speakingAvatarUrl`; the live stage keeps still images in the queue and transcript, and only swaps the main active-speaker avatar to video after the clip is ready.
 - Shared replay links are public-by-URL, immutable, and reject unsupported history versions.
 - Transcript content is rendered as plain text inside the markdown shell so generated links and images do not become active content.
 

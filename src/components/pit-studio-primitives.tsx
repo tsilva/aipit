@@ -41,6 +41,7 @@ export function ParticipantAvatar({
   className,
   fallbackClassName,
   imageClassName,
+  children,
   decorative = true,
   priority = false,
   sizes = "64px",
@@ -50,6 +51,7 @@ export function ParticipantAvatar({
   className: string;
   fallbackClassName?: string;
   imageClassName?: string;
+  children?: ReactNode;
   decorative?: boolean;
   priority?: boolean;
   sizes?: string;
@@ -65,7 +67,7 @@ export function ParticipantAvatar({
     <span
       className={className}
       aria-hidden={decorative}
-      style={shouldUseOptimizedImage ? { position: "relative" } : undefined}
+      style={shouldUseOptimizedImage || children ? { position: "relative" } : undefined}
     >
       {showImage ? (
         shouldUseOptimizedImage ? (
@@ -93,7 +95,99 @@ export function ParticipantAvatar({
       ) : (
         <span className={fallbackClassName ?? "avatar-fallback"}>{participantInitials(name)}</span>
       )}
+      {children}
     </span>
+  );
+}
+
+export function SpeakingParticipantAvatar({
+  name,
+  avatarUrl,
+  speakingAvatarUrl,
+  isSpeaking,
+  className,
+  fallbackClassName,
+  imageClassName,
+  videoClassName,
+  decorative = true,
+  priority = false,
+  sizes = "64px",
+}: {
+  name: string;
+  avatarUrl?: string;
+  speakingAvatarUrl?: string;
+  isSpeaking: boolean;
+  className: string;
+  fallbackClassName?: string;
+  imageClassName?: string;
+  videoClassName?: string;
+  decorative?: boolean;
+  priority?: boolean;
+  sizes?: string;
+}) {
+  const normalizedSpeakingAvatarUrl = speakingAvatarUrl?.trim();
+  const [failedSpeakingAvatarUrl, setFailedSpeakingAvatarUrl] = useState<string | null>(null);
+  const [readySpeakingAvatarUrl, setReadySpeakingAvatarUrl] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const showVideo = Boolean(normalizedSpeakingAvatarUrl) && failedSpeakingAvatarUrl !== normalizedSpeakingAvatarUrl;
+  const isVideoReady = readySpeakingAvatarUrl === normalizedSpeakingAvatarUrl;
+
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!video || !showVideo) {
+      return;
+    }
+
+    if (!isSpeaking || !isVideoReady) {
+      video.pause();
+      video.currentTime = 0;
+      return;
+    }
+
+    const playPromise = video.play();
+
+    if (!playPromise) {
+      return;
+    }
+
+    void playPromise.catch(() => {
+      setFailedSpeakingAvatarUrl(normalizedSpeakingAvatarUrl ?? null);
+      setReadySpeakingAvatarUrl(null);
+    });
+  }, [isSpeaking, isVideoReady, normalizedSpeakingAvatarUrl, showVideo]);
+
+  return (
+    <ParticipantAvatar
+      name={name}
+      avatarUrl={avatarUrl}
+      className={className}
+      fallbackClassName={fallbackClassName}
+      imageClassName={imageClassName}
+      decorative={decorative}
+      priority={priority}
+      sizes={sizes}
+    >
+      {showVideo ? (
+        <video
+          key={normalizedSpeakingAvatarUrl}
+          ref={videoRef}
+          className={`${videoClassName ?? "avatar-video"} ${isSpeaking && isVideoReady ? "is-visible" : ""}`.trim()}
+          src={normalizedSpeakingAvatarUrl}
+          poster={avatarUrl}
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+          onCanPlay={() => setReadySpeakingAvatarUrl(normalizedSpeakingAvatarUrl ?? null)}
+          onError={() => {
+            setFailedSpeakingAvatarUrl(normalizedSpeakingAvatarUrl ?? null);
+            setReadySpeakingAvatarUrl(null);
+          }}
+        />
+      ) : null}
+    </ParticipantAvatar>
   );
 }
 

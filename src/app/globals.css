@@ -168,6 +168,21 @@ select.field {
   object-fit: cover;
 }
 
+.avatar-video {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.avatar-video.is-visible {
+  opacity: 1;
+}
+
 .avatar-fallback {
   display: grid;
   place-items: center;

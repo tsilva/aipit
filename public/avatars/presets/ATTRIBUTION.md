@@ -37,3 +37,7 @@
 - `saul-goodman.webp`: resized to a 512px max edge and converted to WebP from the Saul Goodman image hosted on Wikipedia at <https://upload.wikimedia.org/wikipedia/en/3/34/Jimmy_McGill_BCS_S3.png>.
 - `t-800.webp`: original 1:1 portrait generated locally for this project, then resized to a 512px max edge and saved as WebP.
 - `tucker-carlson.webp`: cropped tighter around the face, then resized to 512x512 WebP from [File:Tucker Carlson 2025 (cropped).jpg](https://commons.wikimedia.org/wiki/File:Tucker_Carlson_2025_(cropped).jpg) on Wikimedia Commons.
+
+## Speaking avatar videos
+
+- `miguel-milhao.mp4`: 4s muted speaking clip generated with [wan-video/wan-2.7-i2v](https://replicate.com/wan-video/wan-2.7-i2v) from the source avatar `public/avatars/presets/miguel-milhao.webp` as both the first and last frame, then center-cropped and compressed to 256x256 H.264 MP4 for live speaking playback.

@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { filterParticipantCharacterPresets } from "@/lib/character-presets";
 import {
+  compactParticipantForSerialization,
   createRandomStarterInput,
+  hydrateParticipantFromPreset,
   listStarterBundles,
 } from "@/lib/pit";
+import { createCharacterProfile } from "@/lib/character-profile";
 
 describe("audience-aware starter selection", () => {
   it("keeps random global starters inside the global bundle pool", () => {
@@ -61,5 +64,27 @@ describe("audience-aware preset filtering", () => {
     expect(accentedPortugalResults.map((preset) => preset.id)).toEqual(["francisco-louca"]);
     expect(marioResults.map((preset) => preset.id)).toEqual(["mario-amorim-lopes"]);
     expect(miguelResults.map((preset) => preset.id)).toEqual(["miguel-milhao"]);
+  });
+});
+
+describe("participant media metadata", () => {
+  it("preserves speaking avatar URLs through compact and hydrate flows", () => {
+    const participant = {
+      id: "member-1",
+      name: "Demo Speaker",
+      model: "openrouter/demo",
+      presetId: "missing-preset",
+      avatarUrl: "/avatars/presets/demo.webp",
+      speakingAvatarUrl: "/avatars/presets/speaking/demo.mp4",
+      characterProfile: createCharacterProfile({
+        role: "Demo debater",
+        personality: "Focused and sharp",
+        perspective: "Cares about media metadata consistency.",
+        debateStyle: "Stay concrete and concise.",
+      }),
+    };
+
+    expect(compactParticipantForSerialization(participant).speakingAvatarUrl).toBe(participant.speakingAvatarUrl);
+    expect(hydrateParticipantFromPreset(participant).speakingAvatarUrl).toBe(participant.speakingAvatarUrl);
   });
 });

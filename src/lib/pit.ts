@@ -36,6 +36,7 @@ export interface ParticipantConfig {
   presetId?: string;
   characterProfile: ParticipantCharacterProfile;
   avatarUrl?: string;
+  speakingAvatarUrl?: string;
 }
 
 export interface RunInput {
@@ -91,6 +92,7 @@ interface ModeratorCharacterPreset {
   id: string;
   name: string;
   avatarUrl?: string;
+  speakingAvatarUrl?: string;
   characterProfile: ParticipantCharacterProfile;
 }
 
@@ -297,6 +299,7 @@ function createCoordinatorFromPreset(presetId: string): ParticipantConfig {
     presetId: preset.id,
     characterProfile: cloneCharacterProfile(preset.characterProfile),
     avatarUrl: preset.avatarUrl,
+    speakingAvatarUrl: preset.speakingAvatarUrl,
   };
 }
 
@@ -336,6 +339,7 @@ function createMemberFromPresetId(presetId: string, index: number): ParticipantC
     presetId: preset.id,
     characterProfile: cloneCharacterProfile(preset.characterProfile),
     avatarUrl: preset.avatarUrl,
+    speakingAvatarUrl: preset.speakingAvatarUrl,
   };
 }
 

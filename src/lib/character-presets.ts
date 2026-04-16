@@ -19,6 +19,7 @@ export interface ParticipantCharacterPreset {
   recommendedModel: string;
   relationships?: Record<string, string>;
   avatarUrl?: string;
+  speakingAvatarUrl?: string;
   searchText: string;
   characterProfile: ParticipantCharacterProfile;
 }
@@ -1301,6 +1302,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; confident English for business or culture-war topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/miguel-milhao.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/miguel-milhao.mp4",
     searchTerms: [
       "miguel milhao",
       "miguel milhão",

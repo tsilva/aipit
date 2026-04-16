@@ -38,6 +38,7 @@ import {
   AutoSizeTextarea,
   FieldShell,
   ParticipantAvatar,
+  SpeakingParticipantAvatar,
 } from "@/components/pit-studio-primitives";
 import {
   type PitTurn,
@@ -750,6 +751,7 @@ function buildPresetParticipant(preset: ParticipantCharacterPreset, index: numbe
     presetId: preset.id,
     characterProfile: cloneCharacterProfile(preset.characterProfile),
     avatarUrl: preset.avatarUrl,
+    speakingAvatarUrl: preset.speakingAvatarUrl,
   };
 }
 
@@ -1351,7 +1353,7 @@ function ParticipantSettingsSheet({
 
     const nextAvatarUrl = await readFileAsDataUrl(file);
     setDraftAvatarUrl(nextAvatarUrl);
-    onChange({ avatarUrl: nextAvatarUrl });
+    onChange({ avatarUrl: nextAvatarUrl, speakingAvatarUrl: undefined });
     setIsAvatarEditorOpen(false);
     setIsAvatarDropActive(false);
   }
@@ -1477,7 +1479,7 @@ function ParticipantSettingsSheet({
                       className="action-button action-button-primary"
                       onClick={() => {
                         const nextAvatarUrl = draftAvatarUrl.trim();
-                        onChange({ avatarUrl: nextAvatarUrl || undefined });
+                        onChange({ avatarUrl: nextAvatarUrl || undefined, speakingAvatarUrl: undefined });
                         setIsAvatarEditorOpen(false);
                         setIsAvatarDropActive(false);
                       }}
@@ -1491,7 +1493,7 @@ function ParticipantSettingsSheet({
                         className="participant-avatar-clear"
                         onClick={() => {
                           setDraftAvatarUrl("");
-                          onChange({ avatarUrl: undefined });
+                          onChange({ avatarUrl: undefined, speakingAvatarUrl: undefined });
                           setIsAvatarEditorOpen(false);
                           setIsAvatarDropActive(false);
                         }}
@@ -2212,9 +2214,11 @@ function ChamberStage({
                           aria-hidden="true"
                         >
                           <span className="speaker-focus-avatar-ring" />
-                          <ParticipantAvatar
+                          <SpeakingParticipantAvatar
                             name={focusSpeaker?.name ?? "The AI Pit"}
                             avatarUrl={focusSpeaker?.avatarUrl}
+                            speakingAvatarUrl={focusSpeaker?.speakingAvatarUrl}
+                            isSpeaking={Boolean(currentFrame && !isShowingPendingTurn)}
                             className="speaker-focus-avatar-core"
                             fallbackClassName="speaker-focus-avatar-fallback"
                             sizes="(max-width: 768px) 112px, 176px"
