@@ -33,7 +33,7 @@ node .codex/skills/generate-speaking-avatar/scripts/generate-speaking-avatar.mjs
 Options:
   --prompt <text>
   --negative-prompt <text>
-  --duration <seconds>          Default: 4
+  --duration <seconds>          Default: 6
   --resolution <720p|1080p>     Default: 720p
   --output-size <px>            Default: 256
   --seed <number>
@@ -47,7 +47,7 @@ Options:
 
 function parseArgs(argv) {
   const parsed = {
-    duration: 4,
+    duration: 6,
     resolution: "720p",
     outputSize: 256,
     force: false,
@@ -337,10 +337,10 @@ function upsertSpeakingAvatarUrl(sourceText, presetId, publicUrl) {
   return `${head}${objectHeader}${indent}speakingAvatarUrl: "${publicUrl}",\n${tail}`;
 }
 
-function upsertAttributionEntry(sourceText, outputFilename, avatarInput, outputSize) {
+function upsertAttributionEntry(sourceText, outputFilename, avatarInput, outputSize, duration) {
   const sectionHeading = "## Speaking avatar videos";
   const entry =
-    `- \`${outputFilename}\`: 4s muted speaking clip generated with [wan-video/wan-2.7-i2v](https://replicate.com/wan-video/wan-2.7-i2v) ` +
+    `- \`${outputFilename}\`: ${duration}s muted speaking clip generated with [wan-video/wan-2.7-i2v](https://replicate.com/wan-video/wan-2.7-i2v) ` +
     `from the source avatar \`${avatarInput}\` as both the first and last frame, then center-cropped and compressed to ${outputSize}x${outputSize} H.264 MP4 for live speaking playback.\n`;
   const entryPattern = new RegExp(`- \\\`${outputFilename.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\\`:.*\\n`, "g");
 
@@ -442,7 +442,7 @@ async function main() {
       "-t",
       String(args.duration),
       "-vf",
-      `fps=24,scale=${args.outputSize}:${args.outputSize}:force_original_aspect_ratio=increase,crop=${args.outputSize}:${args.outputSize},setsar=1`,
+      `trim=duration=${args.duration},setpts=PTS-STARTPTS,fps=24,scale=${args.outputSize}:${args.outputSize}:force_original_aspect_ratio=increase,crop=${args.outputSize}:${args.outputSize},setsar=1`,
       "-c:v",
       "libx264",
       "-pix_fmt",
@@ -486,6 +486,7 @@ async function main() {
         path.basename(outputPath),
         avatarLabel,
         args.outputSize,
+        args.duration,
       );
       await writeFile(attributionFile, nextAttribution);
       console.log(`Updated ${path.relative(repoRoot, attributionFile)}`);

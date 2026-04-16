@@ -121,6 +121,7 @@ const MODERATOR_CHARACTER_PRESETS: ModeratorCharacterPreset[] = [
     id: DEFAULT_COORDINATOR_PRESET_ID,
     name: "José Rodrigues dos Santos",
     avatarUrl: "/avatars/presets/jose-rodrigues-dos-santos.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/jose-rodrigues-dos-santos.mp4",
     characterProfile: createCharacterProfile({
       role: "Veteran Portuguese television journalist serving as impartial moderator and truth arbiter of the debate",
       personality: "Composed, authoritative, synthesis-driven, rigorously impartial, and impatient with vague or unsupported answers",
@@ -143,6 +144,7 @@ const MODERATOR_CHARACTER_PRESETS: ModeratorCharacterPreset[] = [
     id: US_COORDINATOR_PRESET_ID,
     name: "Anderson Cooper",
     avatarUrl: "/avatars/presets/anderson-cooper.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/anderson-cooper.mp4",
     characterProfile: createCharacterProfile({
       role: "American television journalist serving as an impartial live-debate moderator and fact-focused anchor",
       personality: "Measured, incisive, calm under pressure, rigorously neutral, and fluent at keeping heated guests legible",
@@ -165,6 +167,7 @@ const MODERATOR_CHARACTER_PRESETS: ModeratorCharacterPreset[] = [
     id: "christiane-amanpour",
     name: "Christiane Amanpour",
     avatarUrl: "/avatars/presets/christiane-amanpour.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/christiane-amanpour.mp4",
     characterProfile: createCharacterProfile({
       role: "International broadcast journalist serving as an impartial moderator for high-stakes global debates",
       personality: "Grave, incisive, globally fluent, morally serious, and exacting about evidence under pressure",
@@ -187,6 +190,7 @@ const MODERATOR_CHARACTER_PRESETS: ModeratorCharacterPreset[] = [
     id: "david-attenborough",
     name: "David Attenborough",
     avatarUrl: "/avatars/presets/david-attenborough.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/david-attenborough.mp4",
     characterProfile: createCharacterProfile({
       role: "Veteran natural-history broadcaster serving as an impartial moderator for science, civilization, and long-horizon debates",
       personality: "Measured, observant, deeply informed, patient, and quietly authoritative rather than theatrical",
@@ -209,6 +213,7 @@ const MODERATOR_CHARACTER_PRESETS: ModeratorCharacterPreset[] = [
     id: "jon-stewart",
     name: "Jon Stewart",
     avatarUrl: "/avatars/presets/jon-stewart.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/jon-stewart.mp4",
     characterProfile: createCharacterProfile({
       role: "American satirist and interviewer serving as an impartial moderator who uses wit to expose weak arguments",
       personality: "Sharp, skeptical, quick on pattern recognition, humane, and impatient with cant, spin, and bad-faith framing",
@@ -231,6 +236,7 @@ const MODERATOR_CHARACTER_PRESETS: ModeratorCharacterPreset[] = [
     id: "fareed-zakaria",
     name: "Fareed Zakaria",
     avatarUrl: "/avatars/presets/fareed-zakaria.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/fareed-zakaria.mp4",
     characterProfile: createCharacterProfile({
       role: "Global-affairs journalist serving as an impartial moderator focused on synthesis, tradeoffs, and strategic context",
       personality: "Analytical, urbane, calm, synthesis-driven, and comfortable zooming from immediate claims to structural forces",
@@ -253,6 +259,7 @@ const MODERATOR_CHARACTER_PRESETS: ModeratorCharacterPreset[] = [
     id: "tucker-carlson",
     name: "Tucker Carlson",
     avatarUrl: "/avatars/presets/tucker-carlson.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/tucker-carlson.mp4",
     characterProfile: createCharacterProfile({
       role: "American political broadcaster serving as an adversarial but impartial moderator in populist, anti-establishment debates",
       personality: "Provocative, suspicious of elite euphemism, quick to sense narrative manipulation, and highly effective at pressure-testing establishment language",

@@ -21,7 +21,7 @@ Use these paths unless the task clearly says otherwise:
 
 ## Defaults
 
-- Generate a `4s` clip.
+- Generate a `6s` clip.
 - Save a compressed `mp4` at `/avatars/presets/speaking/<preset-id>.mp4`.
 - Target `256x256` final output for the current focus-speaker UI.
 - Send the prepared avatar as both `first_frame` and `last_frame` so the clip starts and ends on the still portrait.

@@ -545,6 +545,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; competent English when needed",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/luis-montenegro.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/luis-montenegro.mp4",
     searchTerms: [
       "luis montenegro",
       "luís montenegro",
@@ -586,6 +587,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; fluent English for international topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/mariana-mortagua.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/mariana-mortagua.mp4",
     searchTerms: [
       "mariana mortagua",
       "mariana mortágua",
@@ -626,6 +628,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; direct English if pressed",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/andre-ventura.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/andre-ventura.mp4",
     searchTerms: [
       "andre ventura",
       "andré ventura",
@@ -665,6 +668,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/luis-marques-mendes.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/luis-marques-mendes.mp4",
     searchTerms: [
       "luis marques mendes",
       "luís marques mendes",
@@ -704,6 +708,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese; concise English when operational clarity matters",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/henrique-gouveia-e-melo.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/henrique-gouveia-e-melo.mp4",
     searchTerms: [
       "henrique gouveia e melo",
       "gouveia e melo",
@@ -743,6 +748,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; polished English for business or EU topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/joao-cotrim-de-figueiredo.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/joao-cotrim-de-figueiredo.mp4",
     searchTerms: [
       "joao cotrim de figueiredo",
       "joão cotrim de figueiredo",
@@ -783,6 +789,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese; formal English when diplomacy requires it",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/antonio-jose-seguro.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/antonio-jose-seguro.mp4",
     searchTerms: [
       "antonio jose seguro",
       "antónio josé seguro",
@@ -823,6 +830,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; forceful English when needed",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/pedro-nuno-santos.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/pedro-nuno-santos.mp4",
     searchTerms: [
       "pedro nuno santos",
       "ps",
@@ -864,6 +872,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; polished English for diplomatic topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/antonio-costa.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/antonio-costa.mp4",
     searchTerms: [
       "antonio costa",
       "antónio costa",
@@ -904,6 +913,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; fluent English for international left topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/catarina-martins.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/catarina-martins.mp4",
     searchTerms: [
       "catarina martins",
       "be",
@@ -944,6 +954,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/paulo-raimundo.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/paulo-raimundo.mp4",
     searchTerms: [
       "paulo raimundo",
       "pcp",
@@ -984,6 +995,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; formal English for legal or international topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/ines-sousa-real.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/ines-sousa-real.mp4",
     searchTerms: [
       "ines sousa real",
       "inês sousa real",
@@ -1024,6 +1036,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; direct English for diplomatic topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/ana-gomes.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/ana-gomes.mp4",
     searchTerms: [
       "ana gomes",
       "diplomat",
@@ -1063,6 +1076,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; elegant English for historical or European topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/rui-tavares.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/rui-tavares.mp4",
     searchTerms: [
       "rui tavares",
       "livre",
@@ -1102,6 +1116,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; polished English for diplomatic or economic topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/paulo-portas.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/paulo-portas.mp4",
     searchTerms: [
       "paulo portas",
       "cds",
@@ -1141,6 +1156,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; fluent English for economics or international left topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/francisco-louca.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/francisco-louca.mp4",
     searchTerms: [
       "francisco louca",
       "francisco louçã",
@@ -1180,6 +1196,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; formal English for economic or EU topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/pedro-passos-coelho.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/pedro-passos-coelho.mp4",
     searchTerms: [
       "pedro passos coelho",
       "passos coelho",
@@ -1219,6 +1236,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; polished English for business topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/rui-rocha.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/rui-rocha.mp4",
     searchTerms: [
       "rui rocha",
       "iniciativa liberal",
@@ -1258,6 +1276,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; polished English for policy, academic, or business topics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/mario-amorim-lopes.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/mario-amorim-lopes.mp4",
     searchTerms: [
       "mario amorim lopes",
       "mário amorim lopes",
@@ -1354,6 +1373,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/joao-miguel-tavares.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/joao-miguel-tavares.mp4",
     searchTerms: [
       "joao miguel tavares",
       "joão miguel tavares",
@@ -1393,6 +1413,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/pedro-marques-lopes.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/pedro-marques-lopes.mp4",
     searchTerms: [
       "pedro marques lopes",
       "pedro marques lopes",
@@ -1432,6 +1453,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/daniel-oliveira.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/daniel-oliveira.mp4",
     searchTerms: [
       "daniel oliveira",
       "commentator",
@@ -1471,6 +1493,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese first; formal English for theory or international politics",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/miguel-morgado.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/miguel-morgado.mp4",
     searchTerms: [
       "miguel morgado",
       "political scientist",
@@ -1510,6 +1533,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/pacheco-pereira.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/pacheco-pereira.mp4",
     searchTerms: [
       "pacheco pereira",
       "historian",
@@ -1549,6 +1573,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "European Portuguese",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/ricardo-costa.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/ricardo-costa.mp4",
     searchTerms: [
       "ricardo costa",
       "commentator",
@@ -1587,6 +1612,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/alex-jones.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/alex-jones.mp4",
     searchTerms: [
       "alex jones",
       "infowars",
@@ -1628,6 +1654,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/lex-fridman.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/lex-fridman.mp4",
     searchTerms: [
       "lex fridman",
       "lex friedman",
@@ -1670,6 +1697,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/joe-rogan.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/joe-rogan.mp4",
     searchTerms: [
       "joe rogan",
       "jre",
@@ -1750,6 +1778,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "British English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/gordon-ramsay.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/gordon-ramsay.mp4",
     searchTerms: [
       "gordon ramsay",
       "chef ramsay",
@@ -1790,6 +1819,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/eric-cartman.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/eric-cartman.mp4",
     searchTerms: [
       "eric cartman",
       "cartman",
@@ -1828,6 +1858,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/saul-goodman.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/saul-goodman.mp4",
     searchTerms: [
       "saul goodman",
       "jimmy mcgill",
@@ -1866,6 +1897,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/dwight-schrute.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/dwight-schrute.mp4",
     searchTerms: [
       "dwight schrute",
       "the office",
@@ -1904,6 +1936,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "Broken English with exaggerated formal enthusiasm",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/borat.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/borat.mp4",
     searchTerms: [
       "borat",
       "borat sagdiyev",
@@ -1942,6 +1975,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/dr-phil.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/dr-phil.mp4",
     searchTerms: [
       "dr phil",
       "phil mcgraw",
@@ -1981,6 +2015,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "Terse English with machine-like directness",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/t-800.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/t-800.mp4",
     searchTerms: [
       "t-800",
       "terminator",
@@ -2018,6 +2053,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/homer-simpson.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/homer-simpson.mp4",
     searchTerms: [
       "homer simpson",
       "simpsons",
@@ -2055,6 +2091,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/cornholio.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/cornholio.mp4",
     searchTerms: [
       "cornholio",
       "the great cornholio",
@@ -2094,6 +2131,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "British English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/knight-who-says-ni.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/knight-who-says-ni.mp4",
     searchTerms: [
       "knight who says ni",
       "the knight who says ni",
@@ -2135,6 +2173,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/rick-sanchez.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/rick-sanchez.mp4",
     searchTerms: [
       "rick sanchez",
       "rick and morty",
@@ -2171,6 +2210,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/elon-musk.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/elon-musk.mp4",
     searchTerms: [
       "elon musk",
       "musk",
