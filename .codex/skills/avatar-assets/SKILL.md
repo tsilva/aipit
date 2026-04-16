@@ -27,6 +27,11 @@ Use these paths unless the task clearly says otherwise:
 - Crop or regenerate so the person's face is fully visible, prominent, and centered in the square frame. Avoid chopped foreheads/chins, distant podium shots, text overlays, and weak crops.
 - Wire the public path as `avatarUrl: "/avatars/presets/<preset-id>.webp"` on the matching preset.
 - Add one attribution bullet per new still image with filename, source URL, license/attribution note, and crop/resize note.
+- After adding, replacing, or removing still avatar media, regenerate the cache-busting manifest:
+
+```bash
+node scripts/generate-avatar-asset-versions.mjs
+```
 
 ### Squaring Or Repairing Still Avatars
 
@@ -58,6 +63,11 @@ Defaults:
 - Send the prepared avatar as both `first_frame` and `last_frame` so the clip starts and ends on the still portrait.
 - Keep motion subtle: direct-to-camera talking, natural mouth movement, small blinks, minimal head motion, no camera moves, no scene changes.
 - The app only swaps to video on the large active-speaker avatar. Queue and transcript avatars stay static images.
+- After adding, replacing, or removing speaking avatar media, regenerate the cache-busting manifest:
+
+```bash
+node scripts/generate-avatar-asset-versions.mjs
+```
 
 Run the bundled generator:
 
@@ -82,6 +92,7 @@ For avatar audits or repairs, check:
 - every built-in `avatarUrl` and `speakingAvatarUrl` points to an existing file under `public/`
 - still images decode cleanly, are exactly `1024x1024`, and have usable centered portrait crops
 - speaking videos decode cleanly, are muted, square, and runtime-sized
+- `src/lib/avatar-asset-versions.ts` includes a current content hash for every `.webp` and `.mp4` file under `public/avatars`
 - `ATTRIBUTION.md` has one accurate bullet for every added or regenerated avatar asset
 - preset metadata points at the intended public paths and does not keep stale generated-video links after a still avatar is replaced
 
@@ -97,6 +108,8 @@ ffprobe public/avatars/presets/speaking/<preset-id>.mp4
 If preset source files were rewired, also run:
 
 ```bash
+node scripts/generate-avatar-asset-versions.mjs
+npm run test -- src/lib/avatar-assets.test.ts
 npm run lint
 npm run typecheck
 npm run test

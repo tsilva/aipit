@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { withAvatarAssetVersion } from "@/lib/avatar-assets";
 import {
   useEffect,
   useEffectEvent,
@@ -62,10 +63,11 @@ export function ParticipantAvatar({
   sizes?: string;
 }) {
   const normalizedAvatarUrl = avatarUrl?.trim();
+  const versionedAvatarUrl = withAvatarAssetVersion(normalizedAvatarUrl);
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
   const showImage = Boolean(normalizedAvatarUrl) && failedAvatarUrl !== normalizedAvatarUrl;
   const optimizedAvatarUrl =
-    showImage && normalizedAvatarUrl && isLocalAvatarAsset(normalizedAvatarUrl) ? normalizedAvatarUrl : null;
+    showImage && versionedAvatarUrl && isLocalAvatarAsset(versionedAvatarUrl) ? versionedAvatarUrl : null;
   const shouldUseOptimizedImage = optimizedAvatarUrl !== null;
 
   return (
@@ -89,7 +91,7 @@ export function ParticipantAvatar({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             className={imageClassName ?? "avatar-image"}
-            src={normalizedAvatarUrl}
+            src={versionedAvatarUrl}
             alt={decorative ? "" : `${name} avatar`}
             loading={priority ? "eager" : "lazy"}
             decoding="async"
@@ -131,11 +133,13 @@ export function SpeakingParticipantAvatar({
   sizes?: string;
 }) {
   const normalizedSpeakingAvatarUrl = speakingAvatarUrl?.trim();
+  const versionedSpeakingAvatarUrl = withAvatarAssetVersion(normalizedSpeakingAvatarUrl);
+  const versionedPosterUrl = withAvatarAssetVersion(avatarUrl);
   const [failedSpeakingAvatarUrl, setFailedSpeakingAvatarUrl] = useState<string | null>(null);
   const [readySpeakingAvatarUrl, setReadySpeakingAvatarUrl] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const showVideo = Boolean(normalizedSpeakingAvatarUrl) && failedSpeakingAvatarUrl !== normalizedSpeakingAvatarUrl;
-  const isVideoReady = readySpeakingAvatarUrl === normalizedSpeakingAvatarUrl;
+  const isVideoReady = readySpeakingAvatarUrl === versionedSpeakingAvatarUrl;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -202,7 +206,7 @@ export function SpeakingParticipantAvatar({
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isSpeaking, isVideoReady, normalizedSpeakingAvatarUrl, showVideo]);
+  }, [isSpeaking, isVideoReady, normalizedSpeakingAvatarUrl, showVideo, versionedSpeakingAvatarUrl]);
 
   return (
     <ParticipantAvatar
@@ -217,17 +221,17 @@ export function SpeakingParticipantAvatar({
     >
       {showVideo ? (
         <video
-          key={normalizedSpeakingAvatarUrl}
+          key={versionedSpeakingAvatarUrl}
           ref={videoRef}
           className={`${videoClassName ?? "avatar-video"} ${isSpeaking && isVideoReady ? "is-visible" : ""}`.trim()}
-          src={normalizedSpeakingAvatarUrl}
-          poster={avatarUrl}
+          src={versionedSpeakingAvatarUrl}
+          poster={versionedPosterUrl}
           muted
           loop
           playsInline
           preload="auto"
           aria-hidden="true"
-          onCanPlay={() => setReadySpeakingAvatarUrl(normalizedSpeakingAvatarUrl ?? null)}
+          onCanPlay={() => setReadySpeakingAvatarUrl(versionedSpeakingAvatarUrl ?? null)}
           onError={() => {
             setFailedSpeakingAvatarUrl(normalizedSpeakingAvatarUrl ?? null);
             setReadySpeakingAvatarUrl(null);

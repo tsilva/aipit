@@ -60,6 +60,13 @@ const nextConfig: NextConfig = {
   experimental: {
     inlineCss: true,
   },
+  images: {
+    localPatterns: [
+      { pathname: "/avatars/**" },
+      { pathname: "/**", search: "" },
+    ],
+    minimumCacheTTL: 31536000,
+  },
   env: resolveSentryClientBuildEnv({
     NEXT_PUBLIC_SENTRY_DSN: appEnv.publicSentryDsn,
     SENTRY_DSN: appEnv.sentryDsn,
@@ -69,6 +76,10 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/avatars/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
       {
         source: "/(.*)",
         headers: [
