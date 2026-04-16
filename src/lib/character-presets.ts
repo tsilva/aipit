@@ -1739,6 +1739,7 @@ export const PARTICIPANT_CHARACTER_PRESETS: ParticipantCharacterPreset[] = [
     language: "American English",
     recommendedModel: OPENROUTER_MODEL_COMBATIVE,
     avatarUrl: "/avatars/presets/donald-trump.webp",
+    speakingAvatarUrl: "/avatars/presets/speaking/donald-trump.mp4",
     searchTerms: [
       "donald trump",
       "trump",
