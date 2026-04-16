@@ -23,10 +23,30 @@ Use these paths unless the task clearly says otherwise:
 
 - Prefer Wikimedia Commons or direct official/editorial portrait assets with stable source URLs.
 - Use real images, not generated stand-ins, unless the character is fictional or no real image is appropriate.
-- Crop so the face is prominent in the picker; avoid distant podium shots, text overlays, and weak crops.
-- Save new built-in still avatars as `.webp`, targeting `512x512` when possible.
+- Save all built-in still avatars as retina `.webp` files at exactly `1024x1024`. This is the required standard, giving 2x pixel density for the app's 512px avatar target.
+- Crop or regenerate so the person's face is fully visible, prominent, and centered in the square frame. Avoid chopped foreheads/chins, distant podium shots, text overlays, and weak crops.
 - Wire the public path as `avatarUrl: "/avatars/presets/<preset-id>.webp"` on the matching preset.
 - Add one attribution bullet per new still image with filename, source URL, license/attribution note, and crop/resize note.
+
+### Squaring Or Repairing Still Avatars
+
+The preferred repair path for non-square, low-resolution, or weakly framed still avatars is `wan-video/wan-2.7-image`, not manual padding or lossy stretching. Feed the existing/source image to the model, ask it to return the same portrait unchanged, and require a `1024x1024` square output with the face fully centered.
+
+Run the bundled fixer:
+
+```bash
+node .codex/skills/avatar-assets/scripts/square-avatar-image.mjs \
+  --preset-id <preset-id> \
+  --avatar <avatar-path>
+```
+
+The script calls `wan-video/wan-2.7-image`, downloads the result, and writes `public/avatars/presets/<preset-id>.webp` at `1024x1024`. Use `--output <path>` for a test file, and only overwrite the repo asset after visually checking the result. The default prompt preserves identity, pose, expression, clothing, lighting, colors, and background while requiring the full face to be centered in the square frame.
+
+Requirements:
+
+- `REPLICATE_API_TOKEN` must be set.
+- Local tool required by the script: `magick`.
+- Prefer repo-local avatar paths. Remote image URLs are supported, but local assets are the stable path for built-in presets.
 
 ## Speaking Videos
 
@@ -60,7 +80,7 @@ Requirements:
 For avatar audits or repairs, check:
 
 - every built-in `avatarUrl` and `speakingAvatarUrl` points to an existing file under `public/`
-- still images decode cleanly and have usable portrait crops
+- still images decode cleanly, are exactly `1024x1024`, and have usable centered portrait crops
 - speaking videos decode cleanly, are muted, square, and runtime-sized
 - `ATTRIBUTION.md` has one accurate bullet for every added or regenerated avatar asset
 - preset metadata points at the intended public paths and does not keep stale generated-video links after a still avatar is replaced
