@@ -6,7 +6,7 @@ import { buildStaticPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildStaticPageMetadata({
   title: "Terms | The AI Pit",
-  description: "Terms for using The AI Pit, including optional hosted OpenRouter access.",
+  description: "Terms for using The AI Pit, including the AI simulation acknowledgement and optional hosted OpenRouter access.",
   path: "/terms",
   index: false,
   follow: true,
@@ -30,6 +30,11 @@ export default function TermsPage() {
             outputs. They are presented for roleplay and entertainment purposes only and are not intended to be real
             statements, beliefs, opinions, positions, endorsements, or factual representations of any actual person,
             fictional character, brand, organization, rights holder, or estate.
+          </p>
+          <p>
+            You must acknowledge this simulation notice before using the site. If you do not accept that condition, use
+            the leave option in the notice instead of accessing the debate studio, shared replays, or other app
+            surfaces.
           </p>
           <p>
             You are responsible for the prompts, character configurations, and outputs you choose to generate, review,
