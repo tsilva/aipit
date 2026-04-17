@@ -43,8 +43,8 @@ export default function TermsPage() {
           </p>
           <p>
             Public replay links are created from user-requested AI generations and are public to anyone with the URL.
-            Shared replays may contain fictionalized AI-generated speech and should not be treated as real quotes,
-            official statements, endorsements, beliefs, or positions.
+            Shared replays contain fictionalized AI-generated speech and must only be shared as AI parody simulations,
+            not as real quotes, official statements, endorsements, beliefs, or positions.
           </p>
           <p>
             If you use the hosted OpenRouter path instead of your own API key, you understand that debate content is

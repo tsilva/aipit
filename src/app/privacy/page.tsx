@@ -43,7 +43,7 @@ export default function PrivacyPage() {
           <p>
             If you create a public replay link, the app stores the debate prompt, character configuration, generated
             output, and related replay data needed to display that replay. Public replay links are accessible to anyone
-            with the URL and may contain user-requested, fictionalized AI-generated speech.
+            with the URL and contain user-requested, fictionalized AI-generated speech.
           </p>
           <p>
             Before using the site, visitors must acknowledge that portrayed characters are AI simulations and do not

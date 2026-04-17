@@ -2029,10 +2029,14 @@ function ShareConfirmationModal({
         <div className="share-confirmation-body">
           <SimulationNotice />
           <p>
-            Anyone with the link can view this replay. It may contain AI-generated fictionalized speech and should not
-            be treated as real quotes, official statements, endorsements, beliefs, or positions.
+            Anyone with the link can view this replay. It contains AI-generated fictionalized speech and must only be
+            shared as an AI parody simulation, not as real quotes, official statements, endorsements, beliefs, or
+            positions.
           </p>
-          <p>Do not share unlawful, infringing, defamatory, private, confidential, or sensitive content.</p>
+          <p>
+            By creating the link, you agree that you are not using this replay for unlawful, infringing, defamatory,
+            deceptive, harassing, private, confidential, sensitive, or otherwise unethical purposes.
+          </p>
         </div>
 
         <div className="share-confirmation-actions">
