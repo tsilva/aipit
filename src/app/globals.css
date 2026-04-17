@@ -1052,26 +1052,15 @@ select.field {
 }
 
 .simulation-notice {
-  display: grid;
-  gap: 0.35rem;
-  border: 1px solid rgba(245, 194, 78, 0.2);
-  border-radius: 0.8rem;
-  background: rgba(98, 66, 7, 0.18);
-  padding: 0.7rem 0.75rem;
-  color: #ffe8a5;
-  font-size: 0.78rem;
-  line-height: 1.5;
-}
-
-.simulation-notice strong {
-  color: #fff4c7;
-  font-size: 0.66rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
 }
 
 .simulation-notice a {
-  color: #fff4c7;
+  margin-left: 0.4rem;
+  color: var(--ink-soft);
   text-decoration: underline;
   text-underline-offset: 0.2rem;
 }

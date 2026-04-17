@@ -40,7 +40,7 @@ import {
   ParticipantAvatar,
   SpeakingParticipantAvatar,
 } from "@/components/pit-studio-primitives";
-import { SimulationNotice, TAKEDOWN_LINK_TEXT } from "@/components/simulation-notice";
+import { SimulationNotice } from "@/components/simulation-notice";
 import {
   type PitTurn,
   type ParticipantConfig,
@@ -63,7 +63,6 @@ import {
 } from "@/lib/runtime-warning";
 import { isCompletedRunResult } from "@/lib/share-snapshot";
 import { trackEvent } from "@/lib/google-analytics";
-import { SITE_CONTACT_MAILTO } from "@/lib/contact";
 
 export type { ApiKeyStatus, InitialStudioState } from "@/lib/pit-studio-state";
 
@@ -1140,7 +1139,6 @@ function StudioHero({
       <div className="hero-meta-links">
         <Link href="/privacy">Privacy</Link>
         <Link href="/terms">Terms</Link>
-        <a href={SITE_CONTACT_MAILTO}>{TAKEDOWN_LINK_TEXT}</a>
       </div>
     </section>
   );

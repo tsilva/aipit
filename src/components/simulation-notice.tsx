@@ -14,7 +14,6 @@ export function SimulationNotice({
 }) {
   return (
     <aside className={`simulation-notice ${className ?? ""}`.trim()} aria-label="AI simulation notice">
-      <strong>AI simulation</strong>
       <span>{SIMULATION_NOTICE_TEXT}</span>
       {showReportLink ? (
         <a href={SITE_CONTACT_MAILTO}>{TAKEDOWN_LINK_TEXT}</a>
