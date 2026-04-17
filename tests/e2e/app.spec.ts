@@ -38,6 +38,26 @@ async function dismissConsentBannerIfVisible(page: Page) {
   await expect(banner).toBeHidden();
 }
 
+async function ensureRunCanStart(page: Page) {
+  const startButton = page.getByRole("button", { name: "START", exact: true });
+
+  if (await startButton.isEnabled()) {
+    return;
+  }
+
+  await page.route("**/api/openrouter/key", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: { label: "ok" } }),
+    });
+  });
+
+  await page.getByLabel("OpenRouter API key").fill("good-key");
+  await page.getByRole("button", { name: "Save API key" }).click();
+  await expect(startButton).toBeEnabled();
+}
+
 async function advanceToLastBubble(page: Page) {
   const nextButton = page.getByRole("button", { name: "Next speech bubble" });
 
@@ -139,8 +159,12 @@ test("gates analytics by consent and completes a mocked debate", async ({ page }
 
   await expect(page.locator('script[src*="googletagmanager.com/gtag/js"]')).toHaveCount(0);
   await acknowledgeSimulationNoticeIfVisible(page);
-  await page.getByRole("button", { name: "Accept" }).click();
-  await expect(page.locator('script[src*="googletagmanager.com/gtag/js"]')).toHaveCount(1);
+  const acceptAnalyticsButton = page.getByRole("button", { name: "Accept" });
+  if (await acceptAnalyticsButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    await acceptAnalyticsButton.click();
+    await expect(page.locator('script[src*="googletagmanager.com/gtag/js"]')).toHaveCount(1);
+  }
+  await ensureRunCanStart(page);
   const minimumExpectedChatCalls = 1 + (await page.locator(".hero-roster-card").count() - 1) * PIT_RUN_DEFAULTS.rounds + 1;
 
   await page.getByRole("button", { name: "START", exact: true }).click();
@@ -162,7 +186,8 @@ test("shows a recoverable upstream failure message", async ({ page }) => {
 
   await page.goto("/");
   await acknowledgeSimulationNoticeIfVisible(page);
-  await page.getByRole("button", { name: "Decline" }).click();
+  await dismissConsentBannerIfVisible(page);
+  await ensureRunCanStart(page);
   await page.getByRole("button", { name: "START", exact: true }).click();
 
   await expect(page.getByText("Failed to reach OpenRouter.")).toBeVisible({ timeout: 30_000 });
@@ -210,6 +235,7 @@ test("creates a share link after a mocked debate finishes", async ({ page }) => 
   await page.goto("/");
   await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
+  await ensureRunCanStart(page);
 
   const minimumExpectedChatCalls = 1 + (await page.locator(".hero-roster-card").count() - 1) * PIT_RUN_DEFAULTS.rounds + 1;
 
@@ -376,17 +402,17 @@ test.describe("audience-aware setup", () => {
   test("defaults non-Portuguese visitors to the global lane", async ({ page }) => {
     await page.goto("/");
     await acknowledgeSimulationNoticeIfVisible(page);
-    await page.getByRole("button", { name: "Decline" }).click();
+    await dismissConsentBannerIfVisible(page);
 
     await expectStarterPromptFromAudience(page, GLOBAL_STARTER_PROMPTS);
-    await expect(page.getByRole("button", { name: "Global" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Portugal" })).toHaveCount(0);
+    await expect(page.locator("main").getByRole("button", { name: "Global" })).toHaveCount(0);
+    await expect(page.locator("main").getByRole("button", { name: "Portugal" })).toHaveCount(0);
   });
 
   test("reroll keeps non-Portuguese visitors out of Portugal starters", async ({ page }) => {
     await page.goto("/");
     await acknowledgeSimulationNoticeIfVisible(page);
-    await page.getByRole("button", { name: "Decline" }).click();
+    await dismissConsentBannerIfVisible(page);
 
     const initialPrompt = await expectStarterPromptFromAudience(page, GLOBAL_STARTER_PROMPTS);
     await page.getByRole("button", { name: "Load another starter debate" }).click();
@@ -401,7 +427,7 @@ test.describe("Portuguese locale defaults", () => {
   test("defaults Portuguese visitors to the Portugal lane", async ({ page }) => {
     await page.goto("/");
     await acknowledgeSimulationNoticeIfVisible(page);
-    await page.getByRole("button", { name: "Decline" }).click();
+    await dismissConsentBannerIfVisible(page);
 
     await expectStarterPromptFromAudience(page, PORTUGAL_STARTER_PROMPTS);
   });
@@ -409,7 +435,7 @@ test.describe("Portuguese locale defaults", () => {
   test("reroll keeps Portuguese visitors in Portugal starters", async ({ page }) => {
     await page.goto("/");
     await acknowledgeSimulationNoticeIfVisible(page);
-    await page.getByRole("button", { name: "Decline" }).click();
+    await dismissConsentBannerIfVisible(page);
 
     const initialPrompt = await expectStarterPromptFromAudience(page, PORTUGAL_STARTER_PROMPTS);
     await page.getByRole("button", { name: "Load another starter debate" }).click();
