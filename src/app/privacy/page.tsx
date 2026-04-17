@@ -7,7 +7,7 @@ import { buildStaticPageMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildStaticPageMetadata({
   title: "Privacy | The AI Pit",
   description:
-    "Privacy details for The AI Pit, including hosted OpenRouter processing, region-aware analytics consent, and service providers.",
+    "Privacy details for The AI Pit, including hosted OpenRouter processing, simulation acknowledgement storage, region-aware analytics consent, and service providers.",
   path: "/privacy",
   index: false,
   follow: true,
@@ -39,6 +39,13 @@ export default function PrivacyPage() {
             account-backed transcript storage, and personal OpenRouter API keys are not intentionally persisted across
             reloads. Do not submit secrets, credentials, payment data, health data, or other sensitive personal data
             through the hosted-key path.
+          </p>
+          <p>
+            Before using the site, visitors must acknowledge that portrayed characters are AI simulations and do not
+            represent real opinions, beliefs, endorsements, positions, or statements of the people or entities they may
+            resemble. That acknowledgement is stored only in this browser&apos;s localStorage under{" "}
+            <code>aipit.simulation-acknowledgement</code> so the notice is not shown on every visit. If you choose to
+            leave instead, the app redirects you away and does not store that acknowledgement.
           </p>
           <p>
             Server logs and abuse-prevention systems may temporarily process operational metadata such as request ID,
