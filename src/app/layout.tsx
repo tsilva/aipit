@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import { Suspense } from "react";
 import { AnalyticsConsentBanner } from "@/components/analytics-consent-banner";
 import { GoogleAnalytics } from "@/components/google-analytics";
+import { SimulationAcknowledgementGate } from "@/components/simulation-acknowledgement-gate";
 import {
   SITE_BACKGROUND_COLOR,
   SITE_THEME_COLOR,
@@ -51,6 +52,7 @@ export default function RootLayout({
             <AnalyticsConsentBanner />
           </>
         ) : null}
+        <SimulationAcknowledgementGate />
         {children}
       </body>
     </html>

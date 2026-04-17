@@ -1910,15 +1910,15 @@ select.field {
 .speaker-queue-avatar {
   display: grid;
   place-items: center;
-  width: 2.88rem;
-  height: 2.88rem;
+  width: 2.64rem;
+  height: 2.64rem;
   overflow: hidden;
   border-radius: 999px;
   background:
     radial-gradient(circle at 30% 30%, rgba(255, 243, 227, 0.85), rgba(216, 122, 59, 0.9)),
     #d87a3b;
   color: #fff8ef;
-  font-size: 1.032rem;
+  font-size: 0.946rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   box-shadow:
@@ -1932,7 +1932,7 @@ select.field {
   width: 100%;
   height: 100%;
   color: #fff8ef;
-  font-size: 1.032rem;
+  font-size: 0.946rem;
   font-weight: 800;
   letter-spacing: 0.08em;
 }
@@ -2062,7 +2062,7 @@ select.field {
 
 .speaker-focus-stack {
   display: grid;
-  grid-template-columns: minmax(0, 13.2rem) minmax(0, 26rem);
+  grid-template-columns: minmax(0, 12.1rem) minmax(0, 26rem);
   align-items: start;
   gap: 1.4rem;
   width: 100%;
@@ -2107,10 +2107,10 @@ select.field {
   position: relative;
   display: grid;
   place-items: center;
-  width: 12.384rem;
+  width: 11.352rem;
   aspect-ratio: 1;
   border-radius: 999px;
-  padding: 1.008rem;
+  padding: 0.924rem;
   background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.02));
   box-shadow: 0 1.4rem 2.8rem rgba(2, 5, 8, 0.28);
 }
@@ -2143,7 +2143,7 @@ select.field {
     radial-gradient(circle at 30% 25%, rgba(255, 242, 224, 0.96), rgba(216, 122, 59, 0.92)),
     #d87a3b;
   color: #fff8ef;
-  font-size: 2.88rem;
+  font-size: 2.64rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   box-shadow:
@@ -2157,7 +2157,7 @@ select.field {
   width: 100%;
   height: 100%;
   color: #fff8ef;
-  font-size: 2.88rem;
+  font-size: 2.64rem;
   font-weight: 800;
   letter-spacing: 0.08em;
 }
@@ -3084,6 +3084,20 @@ select.field {
   backdrop-filter: blur(8px);
 }
 
+.simulation-acknowledgement-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at top left, rgba(240, 171, 105, 0.12), transparent 28%),
+    rgba(6, 9, 12, 0.76);
+  padding: 1rem;
+  backdrop-filter: blur(12px);
+}
+
 .settings-modal-dismiss {
   position: absolute;
   inset: 0;
@@ -3098,6 +3112,46 @@ select.field {
   max-height: min(100%, 46rem);
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+.simulation-acknowledgement-panel {
+  position: relative;
+  display: grid;
+  gap: 1.35rem;
+  width: min(100%, 38rem);
+  max-height: min(100%, 42rem);
+  overflow-y: auto;
+  padding: 1.45rem;
+  outline: none;
+}
+
+.simulation-acknowledgement-copy {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.simulation-acknowledgement-copy h2 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: clamp(1.8rem, 4vw, 2.65rem);
+  line-height: 1;
+}
+
+.simulation-acknowledgement-text {
+  display: grid;
+  gap: 0.85rem;
+  color: var(--ink-soft);
+  line-height: 1.68;
+}
+
+.simulation-acknowledgement-text p {
+  margin: 0;
+}
+
+.simulation-acknowledgement-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
 }
 
 .character-selector-modal-panel {
@@ -3629,9 +3683,9 @@ select.field {
   }
 
   .speaker-queue-avatar {
-    width: 2.592rem;
-    height: 2.592rem;
-    font-size: 0.948rem;
+    width: 2.376rem;
+    height: 2.376rem;
+    font-size: 0.869rem;
   }
 
   .speaker-focus-shell {
@@ -3665,15 +3719,15 @@ select.field {
   }
 
   .speaker-focus-avatar {
-    width: 10.08rem;
+    width: 9.24rem;
   }
 
   .speaker-focus-avatar-core {
-    font-size: 2.304rem;
+    font-size: 2.112rem;
   }
 
   .speaker-focus-avatar-fallback {
-    font-size: 2.304rem;
+    font-size: 2.112rem;
   }
 
   .participant-identity-row {
@@ -3752,7 +3806,8 @@ select.field {
   }
 
   .settings-modal-backdrop,
-  .participant-modal-backdrop {
+  .participant-modal-backdrop,
+  .simulation-acknowledgement-backdrop {
     align-items: flex-start;
     overflow-y: auto;
     padding-top: 0.75rem;
@@ -3762,7 +3817,8 @@ select.field {
   .settings-modal-panel,
   .character-selector-modal-panel,
   .participant-modal-panel,
-  .raw-prompt-modal-panel {
+  .raw-prompt-modal-panel,
+  .simulation-acknowledgement-panel {
     max-height: calc(100dvh - 1.5rem);
     margin-top: 0;
     margin-bottom: 0;
@@ -3868,8 +3924,8 @@ select.field {
   }
 
   .speaker-focus-avatar {
-    width: 8.352rem;
-    padding: 0.72rem;
+    width: 7.656rem;
+    padding: 0.66rem;
   }
 
   .speaker-focus-bubble-card {
@@ -3952,7 +4008,8 @@ select.field {
   }
 
   .settings-modal-backdrop,
-  .participant-modal-backdrop {
+  .participant-modal-backdrop,
+  .simulation-acknowledgement-backdrop {
     align-items: flex-start;
     overflow-y: auto;
   }
@@ -3960,8 +4017,18 @@ select.field {
   .settings-modal-panel,
   .character-selector-modal-panel,
   .participant-modal-panel,
-  .raw-prompt-modal-panel {
+  .raw-prompt-modal-panel,
+  .simulation-acknowledgement-panel {
     max-height: calc(100dvh - 2rem);
+  }
+
+  .simulation-acknowledgement-panel {
+    padding: 1.1rem;
+  }
+
+  .simulation-acknowledgement-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
   }
 }
 

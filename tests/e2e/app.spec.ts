@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { SIMULATION_ACKNOWLEDGEMENT_KEY } from "../../src/lib/simulation-acknowledgement";
 import { PIT_RUN_DEFAULTS } from "../../src/lib/pit";
 import { STARTER_BUNDLES } from "../../src/lib/starter-bundles";
 
@@ -9,6 +10,19 @@ async function expectStarterPromptFromAudience(page: Page, prompts: string[]) {
   const prompt = await page.locator("#hero-pit-prompt").inputValue();
   expect(prompts).toContain(prompt);
   return prompt;
+}
+
+async function acknowledgeSimulationNoticeIfVisible(page: Page) {
+  const gate = page.getByRole("dialog", { name: "AI simulation disclaimer" });
+
+  try {
+    await gate.waitFor({ state: "visible", timeout: 2_000 });
+  } catch {
+    return;
+  }
+
+  await page.getByRole("button", { name: "I understand" }).click();
+  await expect(gate).toBeHidden();
 }
 
 async function dismissConsentBannerIfVisible(page: Page) {
@@ -45,6 +59,55 @@ async function advanceToLastBubble(page: Page) {
   }
 }
 
+test("requires simulation acknowledgement before using the site", async ({ page }) => {
+  await page.goto("/");
+
+  const gate = page.getByRole("dialog", { name: "AI simulation disclaimer" });
+  await expect(gate).toBeVisible();
+  await expect(page.getByRole("button", { name: "I understand" })).toBeFocused();
+  await expect(page.getByText("They do not reflect the real opinions, beliefs")).toBeVisible();
+
+  let blockedStartClick = false;
+  try {
+    await page.getByRole("button", { name: "START", exact: true }).click({ timeout: 1_000 });
+  } catch {
+    blockedStartClick = true;
+  }
+  expect(blockedStartClick).toBe(true);
+
+  await page.getByRole("button", { name: "I understand" }).click();
+  await expect(gate).toBeHidden();
+  expect(await page.evaluate((key) => window.localStorage.getItem(key), SIMULATION_ACKNOWLEDGEMENT_KEY)).toBe(
+    "acknowledged",
+  );
+
+  await page.reload();
+  await expect(gate).toBeHidden();
+});
+
+test("sends users to Google when the simulation notice is rejected", async ({ page }) => {
+  await page.route("https://www.google.com/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<html><title>Google</title><body>Google</body></html>",
+    });
+  });
+
+  await page.goto("/");
+
+  const gate = page.getByRole("dialog", { name: "AI simulation disclaimer" });
+  await expect(gate).toBeVisible();
+  expect(await page.evaluate((key) => window.localStorage.getItem(key), SIMULATION_ACKNOWLEDGEMENT_KEY)).toBeNull();
+
+  await page.getByRole("button", { name: "Leave site" }).click();
+  await page.waitForURL("https://www.google.com/");
+
+  await page.goto("/");
+  await expect(gate).toBeVisible();
+  expect(await page.evaluate((key) => window.localStorage.getItem(key), SIMULATION_ACKNOWLEDGEMENT_KEY)).toBeNull();
+});
+
 test("gates analytics by consent and completes a mocked debate", async ({ page }) => {
   let chatCalls = 0;
 
@@ -75,6 +138,7 @@ test("gates analytics by consent and completes a mocked debate", async ({ page }
   await page.goto("/");
 
   await expect(page.locator('script[src*="googletagmanager.com/gtag/js"]')).toHaveCount(0);
+  await acknowledgeSimulationNoticeIfVisible(page);
   await page.getByRole("button", { name: "Accept" }).click();
   await expect(page.locator('script[src*="googletagmanager.com/gtag/js"]')).toHaveCount(1);
   const minimumExpectedChatCalls = 1 + (await page.locator(".hero-roster-card").count() - 1) * PIT_RUN_DEFAULTS.rounds + 1;
@@ -97,6 +161,7 @@ test("shows a recoverable upstream failure message", async ({ page }) => {
   });
 
   await page.goto("/");
+  await acknowledgeSimulationNoticeIfVisible(page);
   await page.getByRole("button", { name: "Decline" }).click();
   await page.getByRole("button", { name: "START", exact: true }).click();
 
@@ -143,6 +208,7 @@ test("creates a share link after a mocked debate finishes", async ({ page }) => 
   });
 
   await page.goto("/");
+  await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
   const minimumExpectedChatCalls = 1 + (await page.locator(".hero-roster-card").count() - 1) * PIT_RUN_DEFAULTS.rounds + 1;
@@ -170,6 +236,7 @@ test("keeps an invalid API key editable after failed validation", async ({ page 
   });
 
   await page.goto("/");
+  await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
   await page.getByLabel("OpenRouter API key").fill("bad-key");
@@ -191,6 +258,7 @@ test("allows clearing a saved personal API key", async ({ page }) => {
   });
 
   await page.goto("/");
+  await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
   await page.getByLabel("OpenRouter API key").fill("good-key");
@@ -210,6 +278,7 @@ test("allows clearing a saved personal API key", async ({ page }) => {
 test("locks background scrolling while the character selector is open", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
+  await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
   await page.evaluate(() => window.scrollTo(0, 500));
@@ -225,6 +294,7 @@ test("locks background scrolling while the character selector is open", async ({
 test("uses the participant terminology in the settings sheet actions", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
+  await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
   await page.getByRole("button", { name: /^Edit / }).first().click();
@@ -235,6 +305,7 @@ test("uses the participant terminology in the settings sheet actions", async ({ 
 test("keeps keyboard focus inside the character selector", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
+  await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
   await page.getByRole("button", { name: "Add debater" }).click();
@@ -278,6 +349,7 @@ test("resets the scroll position when entering simulation on short screens", asy
 
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/");
+  await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
   await page.getByLabel("OpenRouter API key").fill("good-key");
@@ -292,6 +364,7 @@ test("resets the scroll position when entering simulation on short screens", asy
 
 test("shows a notice when an old shared replay link is unsupported", async ({ page }) => {
   await page.goto("/?share=unsupported");
+  await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
   await expect(page.getByText("This shared conversation is no longer supported by the current version of aipit.")).toBeVisible();
@@ -302,6 +375,7 @@ test.describe("audience-aware setup", () => {
 
   test("defaults non-Portuguese visitors to the global lane", async ({ page }) => {
     await page.goto("/");
+    await acknowledgeSimulationNoticeIfVisible(page);
     await page.getByRole("button", { name: "Decline" }).click();
 
     await expectStarterPromptFromAudience(page, GLOBAL_STARTER_PROMPTS);
@@ -311,6 +385,7 @@ test.describe("audience-aware setup", () => {
 
   test("reroll keeps non-Portuguese visitors out of Portugal starters", async ({ page }) => {
     await page.goto("/");
+    await acknowledgeSimulationNoticeIfVisible(page);
     await page.getByRole("button", { name: "Decline" }).click();
 
     const initialPrompt = await expectStarterPromptFromAudience(page, GLOBAL_STARTER_PROMPTS);
@@ -325,6 +400,7 @@ test.describe("Portuguese locale defaults", () => {
 
   test("defaults Portuguese visitors to the Portugal lane", async ({ page }) => {
     await page.goto("/");
+    await acknowledgeSimulationNoticeIfVisible(page);
     await page.getByRole("button", { name: "Decline" }).click();
 
     await expectStarterPromptFromAudience(page, PORTUGAL_STARTER_PROMPTS);
@@ -332,6 +408,7 @@ test.describe("Portuguese locale defaults", () => {
 
   test("reroll keeps Portuguese visitors in Portugal starters", async ({ page }) => {
     await page.goto("/");
+    await acknowledgeSimulationNoticeIfVisible(page);
     await page.getByRole("button", { name: "Decline" }).click();
 
     const initialPrompt = await expectStarterPromptFromAudience(page, PORTUGAL_STARTER_PROMPTS);

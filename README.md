@@ -19,6 +19,7 @@
 - Token and cost tracking, plus a raw prompt debug view
 - Server-rendered setup state to reduce first-load flicker
 - Server-side OpenRouter proxy with optional hosted key support
+- First-launch acknowledgement gate for the AI simulation disclaimer
 - Hosted-key guardrails: same-origin checks, rate limiting, model allowlisting, and payload caps
 - SEO, analytics consent handling, optional Sentry reporting, and optional Sentry source map upload
 - CI coverage for lint, typecheck, tests, build, and Playwright smoke checks
@@ -146,6 +147,7 @@ src/
 ## 📝 Notes
 
 - OpenRouter requests are proxied through `src/app/api/openrouter`.
+- First-time visitors must acknowledge that portrayed characters are AI simulations before using the app; the acknowledgement is stored in browser localStorage.
 - `OPENROUTER_API_KEY` is server-only and should not use a `NEXT_PUBLIC_` prefix.
 - Starter bundles and personal API keys are not persisted across page reloads.
 - Built-in presets can optionally define `speakingAvatarUrl`; the live stage keeps still images in the queue and transcript, and only swaps the main active-speaker avatar to video after the clip is ready.
