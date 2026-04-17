@@ -41,6 +41,11 @@ export default function PrivacyPage() {
             through the hosted-key path.
           </p>
           <p>
+            If you create a public replay link, the app stores the debate prompt, character configuration, generated
+            output, and related replay data needed to display that replay. Public replay links are accessible to anyone
+            with the URL and may contain user-requested, fictionalized AI-generated speech.
+          </p>
+          <p>
             Before using the site, visitors must acknowledge that portrayed characters are AI simulations and do not
             represent real opinions, beliefs, endorsements, positions, or statements of the people or entities they may
             resemble. That acknowledgement is stored only in this browser&apos;s localStorage under{" "}
@@ -67,6 +72,14 @@ export default function PrivacyPage() {
           <p>
             This app is intended for interactive experimentation, not regulated or high-sensitivity processing. If you
             need stronger confidentiality guarantees, use your own API key or do not submit the content.
+          </p>
+          <p>
+            To request removal of a public replay, email{" "}
+            <a href={SITE_CONTACT_MAILTO} className="underline decoration-white/30 underline-offset-4">
+              {SITE_CONTACT_EMAIL}
+            </a>{" "}
+            with the replay URL and the basis for removal, including any copyright, image-rights, privacy, defamation,
+            or other legal concern.
           </p>
           <p>
             Privacy requests or questions about this policy can be sent to{" "}

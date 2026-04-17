@@ -40,6 +40,7 @@ import {
   ParticipantAvatar,
   SpeakingParticipantAvatar,
 } from "@/components/pit-studio-primitives";
+import { SimulationNotice, TAKEDOWN_LINK_TEXT } from "@/components/simulation-notice";
 import {
   type PitTurn,
   type ParticipantConfig,
@@ -62,6 +63,7 @@ import {
 } from "@/lib/runtime-warning";
 import { isCompletedRunResult } from "@/lib/share-snapshot";
 import { trackEvent } from "@/lib/google-analytics";
+import { SITE_CONTACT_MAILTO } from "@/lib/contact";
 
 export type { ApiKeyStatus, InitialStudioState } from "@/lib/pit-studio-state";
 
@@ -983,6 +985,7 @@ function StudioHero({
         <div className="hero-copy-stack">
           <h1 className="hero-title">The AI Pit</h1>
           <p className="hero-body">Choose a topic, select debaters, hit start, get some popcorn 🍿.</p>
+          <SimulationNotice className="simulation-notice-hero" />
         </div>
       </section>
 
@@ -1137,6 +1140,7 @@ function StudioHero({
       <div className="hero-meta-links">
         <Link href="/privacy">Privacy</Link>
         <Link href="/terms">Terms</Link>
+        <a href={SITE_CONTACT_MAILTO}>{TAKEDOWN_LINK_TEXT}</a>
       </div>
     </section>
   );
@@ -1770,12 +1774,14 @@ function TranscriptPanel({
   markdown,
   thinkingSpeakerName,
   thinkingParticipant,
+  showReportLink,
 }: {
   turnCount: number;
   isRunning: boolean;
   markdown: string;
   thinkingSpeakerName?: string | null;
   thinkingParticipant?: ParticipantConfig | null;
+  showReportLink: boolean;
 }) {
   const transcriptBodyRef = useRef<HTMLDivElement | null>(null);
   const shouldStickToBottomRef = useRef(true);
@@ -1870,6 +1876,7 @@ function TranscriptPanel({
         onScroll={updateTranscriptScrollLock}
       >
         <div aria-hidden="true" className="transcript-sheet-copy-clearance" />
+        <SimulationNotice className="simulation-notice-transcript" showReportLink={showReportLink} />
         <TranscriptMarkdownContent markdown={markdown} />
 
         <div className="transcript-sheet-footer">
@@ -1960,6 +1967,87 @@ function RawPromptModal({
   );
 }
 
+function ShareConfirmationModal({
+  onClose,
+  onConfirm,
+  isConfirming,
+}: {
+  onClose: () => void;
+  onConfirm: () => void;
+  isConfirming: boolean;
+}) {
+  const modalRef = useRef<HTMLElement | null>(null);
+  useBodyScrollLock(true);
+  useModalFocusTrap(modalRef, true);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isConfirming) {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isConfirming, onClose]);
+
+  return (
+    <div className="settings-modal-backdrop">
+      <button
+        type="button"
+        className="settings-modal-dismiss"
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={isConfirming ? undefined : onClose}
+      />
+      <section
+        ref={modalRef}
+        className="settings-sheet settings-modal-panel share-confirmation-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="share-confirmation-title"
+        tabIndex={-1}
+      >
+        <div className="settings-modal-header">
+          <div className="share-confirmation-copy">
+            <p className="hero-kicker">Public Replay</p>
+            <h2 id="share-confirmation-title" className="hero-panel-title">
+              Create a public replay link?
+            </h2>
+          </div>
+          <button
+            type="button"
+            className="icon-circle-button character-selector-modal-close"
+            aria-label="Close share confirmation"
+            onClick={onClose}
+            disabled={isConfirming}
+          >
+            <CloseGlyph />
+          </button>
+        </div>
+
+        <div className="share-confirmation-body">
+          <SimulationNotice />
+          <p>
+            Anyone with the link can view this replay. It may contain AI-generated fictionalized speech and should not
+            be treated as real quotes, official statements, endorsements, beliefs, or positions.
+          </p>
+          <p>Do not share unlawful, infringing, defamatory, private, confidential, or sensitive content.</p>
+        </div>
+
+        <div className="share-confirmation-actions">
+          <button type="button" className="action-button" onClick={onClose} disabled={isConfirming}>
+            Cancel
+          </button>
+          <button type="button" className="action-button action-button-primary" onClick={onConfirm} disabled={isConfirming}>
+            {isConfirming ? "Creating..." : "Create public replay link"}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function ChamberStage({
   roster,
   plannedRounds,
@@ -1988,6 +2076,7 @@ function ChamberStage({
   shareActionCopied,
   shareActionDisabled,
   allowRawPromptDebug,
+  isReplayOnly,
   onPanelModeChange,
   onOpenParticipant,
   onExit,
@@ -2025,6 +2114,7 @@ function ChamberStage({
   shareActionCopied: boolean;
   shareActionDisabled: boolean;
   allowRawPromptDebug: boolean;
+  isReplayOnly: boolean;
   onPanelModeChange: (mode: StagePanelMode) => void;
   onOpenParticipant: (id: string) => void;
   onExit: () => void;
@@ -2131,6 +2221,7 @@ function ChamberStage({
             ) : null}
           </div>
         </div>
+        <SimulationNotice className="simulation-notice-stage" showReportLink={isReplayOnly} />
 
         {hasPlaybackStarted ? (
           <div className={`stage-frame ${panelMode === "transcript" ? "stage-frame-transcript" : ""}`}>
@@ -2192,6 +2283,7 @@ function ChamberStage({
                   markdown={transcriptMarkdown}
                   thinkingSpeakerName={thinkingEntry?.speakerName ?? null}
                   thinkingParticipant={thinkingEntry?.participant ?? null}
+                  showReportLink={isReplayOnly}
                 />
               ) : (
                 <div className="speaker-focus-shell">
@@ -2421,6 +2513,7 @@ export function PitStudio({
   const [shareState, setShareState] = useState<"idle" | "uploading" | "copied">("idle");
   const [shareError, setShareError] = useState<string | null>(null);
   const [shareNotice] = useState<string | null>(initialStudioState.shareNotice);
+  const [isShareConfirmationOpen, setIsShareConfirmationOpen] = useState(false);
   const [isReplayOnly] = useState(initialStudioState.isReplayOnly);
   const keyValidationRequestIdRef = useRef(0);
   const configRef = useRef(initialStudioState.config);
@@ -2812,6 +2905,7 @@ export function PitStudio({
     setShareUrl(null);
     setShareState("idle");
     setShareError(null);
+    setIsShareConfirmationOpen(false);
   }, []);
 
   const exitSimulation = useCallback(() => {
@@ -2836,7 +2930,7 @@ export function PitStudio({
     resetSimulationState();
   }, [config, isReplayOnly, isRunning, resetSimulationState, result]);
 
-  async function handleShareAction() {
+  async function createPublicReplayLink() {
     if (shareState === "uploading") {
       return;
     }
@@ -2859,6 +2953,7 @@ export function PitStudio({
 
     setShareState("uploading");
     setShareError(null);
+    setIsShareConfirmationOpen(false);
 
     try {
       const response = await fetch("/api/share", {
@@ -2911,6 +3006,24 @@ export function PitStudio({
     }
   }
 
+  async function handleShareAction() {
+    if (shareState === "uploading") {
+      return;
+    }
+
+    if (shareUrl) {
+      await createPublicReplayLink();
+      return;
+    }
+
+    if (!submittedRunInput || !result || isReplayOnly) {
+      return;
+    }
+
+    setShareError(null);
+    setIsShareConfirmationOpen(true);
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isReplayOnly) {
@@ -2950,6 +3063,7 @@ export function PitStudio({
     setShareUrl(null);
     setShareState("idle");
     setShareError(null);
+    setIsShareConfirmationOpen(false);
     bufferedTurnWaitersRef.current.clear();
     generatedTurnCountRef.current = 0;
     acknowledgedTurnCountRef.current = 0;
@@ -3249,6 +3363,7 @@ export function PitStudio({
             shareActionCopied={shareState === "copied"}
             shareActionDisabled={shareState === "uploading"}
             allowRawPromptDebug={!isReplayOnly}
+            isReplayOnly={isReplayOnly}
             onPanelModeChange={setPanelMode}
             onOpenParticipant={openParticipantEditor}
             onExit={exitSimulation}
@@ -3303,6 +3418,16 @@ export function PitStudio({
                   setActiveEditorId(null);
                 }
           }
+        />
+      ) : null}
+
+      {isShareConfirmationOpen ? (
+        <ShareConfirmationModal
+          isConfirming={shareState === "uploading"}
+          onClose={() => setIsShareConfirmationOpen(false)}
+          onConfirm={() => {
+            void createPublicReplayLink();
+          }}
         />
       ) : null}
     </main>

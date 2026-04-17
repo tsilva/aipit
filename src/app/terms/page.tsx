@@ -20,10 +20,10 @@ export default function TermsPage() {
         <h1 className="legal-title">Terms of use</h1>
         <div className="legal-copy">
           <p>
-            The AI Pit is provided as-is for entertainment, creative experimentation, and interactive debate
-            generation. It is not a factual authority, advice service, or official communications channel. Hosted
-            OpenRouter access is optional, may be limited, changed, suspended, or removed at any time, and may be
-            subject to usage, safety, or abuse controls.
+            The AI Pit is provided as-is as a non-commercial experimental parody and AI simulation project for
+            entertainment, creative experimentation, and interactive debate generation. It is not a factual authority,
+            advice service, or official communications channel. Hosted OpenRouter access is optional, may be limited,
+            changed, suspended, or removed at any time, and may be subject to usage, safety, or abuse controls.
           </p>
           <p>
             Characters, personas, voices, and debate participants generated or configured in The AI Pit are simulated
@@ -42,6 +42,11 @@ export default function TermsPage() {
             sensitive personal data, or anything that would abuse upstream providers or violate third-party rights.
           </p>
           <p>
+            Public replay links are created from user-requested AI generations and are public to anyone with the URL.
+            Shared replays may contain fictionalized AI-generated speech and should not be treated as real quotes,
+            official statements, endorsements, beliefs, or positions.
+          </p>
+          <p>
             If you use the hosted OpenRouter path instead of your own API key, you understand that debate content is
             processed through The AI Pit&apos;s server-side proxy and The AI Pit&apos;s OpenRouter account to complete
             your request. You should use your own key instead if you do not want your prompts and outputs processed in
@@ -56,6 +61,14 @@ export default function TermsPage() {
           <p>
             The AI Pit may block or restrict hosted access for excessive usage, attempts to evade limits, policy
             violations, or conduct that threatens service stability, cost control, or safety.
+          </p>
+          <p>
+            To report copyright, image-rights, privacy, defamation, or other legal concerns, or to request removal of a
+            public replay, email{" "}
+            <a href={SITE_CONTACT_MAILTO} className="underline decoration-white/30 underline-offset-4">
+              {SITE_CONTACT_EMAIL}
+            </a>{" "}
+            with the replay URL and the reason for the request.
           </p>
           <p>
             Questions about these terms can be sent to{" "}
