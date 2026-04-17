@@ -2166,7 +2166,7 @@ function ChamberStage({
                               avatarUrl={participant?.avatarUrl}
                               className="speaker-queue-avatar"
                               fallbackClassName="speaker-queue-avatar-fallback"
-                              sizes="32px"
+                              sizes="38px"
                             />
                             <span className="speaker-queue-copy">
                               <span className="speaker-queue-name">{speakerName}</span>
@@ -2221,7 +2221,7 @@ function ChamberStage({
                             isSpeaking={Boolean(currentFrame && !isShowingPendingTurn)}
                             className="speaker-focus-avatar-core"
                             fallbackClassName="speaker-focus-avatar-fallback"
-                            sizes="(max-width: 768px) 112px, 176px"
+                            sizes="(max-width: 768px) 134px, 211px"
                           />
                         </div>
 
