@@ -58,6 +58,7 @@ logs/
 !.yarn/versions
 /coverage
 /playwright-report
+.playwright-mcp/
 /test-results
 /.next/
 /out/

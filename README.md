@@ -12,6 +12,7 @@
 
 - Rich character profiles with editable debate traits, guardrails, prompt notes, and structured authentic-voice guidance for built-in presets
 - 41 built-in character presets, 7 moderator presets, and 31 starter bundles for quick debate setup
+- Cinematic landing setup with suggested topics, persona cards, and OpenRouter key management
 - Optional preset speaking clips that swap onto the active live speaker once the talking video has loaded
 - Structured flow: opening, rounds, moderator interventions, and closing synthesis
 - Multi-model OpenRouter support with streaming responses and automatic failover
@@ -32,7 +33,7 @@
 4. **Consensus**: The moderator closes with a synthesis of the strongest points.
 5. **Sharing**: Completed debates can be published to `/s/<slug>` and replayed without new model calls.
 
-Each fresh load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`. First-load starter bundles are chosen from Portugal-focused or global pools using browser locale or geolocation headers when available, and the initial setup is resolved on the server so the first HTML already matches the selected bundle. Every built-in participant preset appears in at least one curated starter bundle, and after first load the landing-page wand rerolls from the full starter bundle pool without audience restrictions.
+Each fresh load starts from a random starter bundle unless you deep-link one with `?id=<bundle-id>`. First-load starter bundles are chosen from Portugal-focused or global pools using browser locale or geolocation headers when available, and the initial setup is resolved on the server so the first HTML already matches the selected bundle. Every built-in participant preset appears in at least one curated starter bundle, and after first load the landing-page shuffle control rerolls from the full starter bundle pool without audience restrictions.
 
 Built-in debaters now carry a structured voice profile in addition to worldview and guardrails. The engine injects cadence, syntax, rhetorical habits, disfluency tolerance, segue style, lexical habits, cleanup bans, and a relevance floor directly into member prompts so distinctive characters sound less like polished archetypes and more like how they actually talk, while moderators remain evidence-focused and coherent.
 

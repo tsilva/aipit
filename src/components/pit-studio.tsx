@@ -2,20 +2,26 @@
 
 import {
   ArrowLeft as BackGlyph,
+  BarChart3 as OutcomesGlyph,
   CircleCheck as CheckGlyph,
   Copy as CopyGlyph,
+  ExternalLink as ExternalLinkGlyph,
   FileText as PromptGlyph,
+  Flame as FlameGlyph,
+  LockKeyhole as LockGlyph,
   Pause as PauseGlyph,
   Pencil as PencilGlyph,
   Play as PlayGlyph,
   Plus as PlusGlyph,
   Save as SaveGlyph,
   Settings as SettingsGlyph,
+  Shield as ShieldGlyph,
   SkipBack as PreviousGlyph,
   SkipForward as NextGlyph,
+  Shuffle as ShuffleGlyph,
   Trash2 as TrashGlyph,
   TriangleAlert as WarningGlyph,
-  WandSparkles as WandGlyph,
+  Zap as RealtimeGlyph,
   X as CloseGlyph,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -726,7 +732,36 @@ function readFileAsDataUrl(file: File): Promise<string> {
 }
 
 function promptPlaceholder(): string {
-  return "What should these characters fight out in The AI Pit?";
+  return "e.g., Should AI companies be liable for harm caused by their models?";
+}
+
+const SUGGESTED_TOPICS = [
+  "Will AI replace more jobs than it creates?",
+  "Should social media platforms censor content?",
+  "Is AGI a threat to humanity?",
+  "Should AI be used in healthcare decision-making?",
+] as const;
+
+const SUGGESTED_TOPIC_ICONS = ["🌍", "⚖️", "🤖", "💊"] as const;
+
+function compactCharacterLabel(participant: ParticipantConfig): string {
+  const source = participant.characterProfile.role || participant.characterProfile.personality || "AI Persona";
+  const label = source
+    .replace(/\s+/g, " ")
+    .split(/[.;,:-]/)[0]
+    .trim();
+
+  return label.length > 34 ? `${label.slice(0, 31).trim()}...` : label;
+}
+
+function compactCharacterSummary(participant: ParticipantConfig): string {
+  const preview = buildCharacterProfilePreview(participant.characterProfile).trim().replace(/\s+/g, " ");
+
+  if (!preview) {
+    return "Configured persona ready to argue from a distinct point of view.";
+  }
+
+  return preview.length > 126 ? `${preview.slice(0, 123).trim()}...` : preview;
 }
 
 function isShareResponse(
@@ -834,7 +869,8 @@ function SetupParticipantCard({
   onEdit: () => void;
 }) {
   const moderatorActionId = useId();
-  const characterPreview = buildCharacterProfilePreview(participant.characterProfile).trim().replace(/\s+/g, " ");
+  const characterLabel = compactCharacterLabel(participant);
+  const characterSummary = compactCharacterSummary(participant);
 
   return (
     <div className={`hero-roster-card ${isModerator ? "hero-roster-card-active" : ""}`}>
@@ -846,6 +882,9 @@ function SetupParticipantCard({
         aria-describedby={moderatorActionId}
         title={isModerator ? `${participant.name} is the moderator` : `Make ${participant.name} the moderator`}
       >
+        <span className="hero-roster-check" aria-hidden="true">
+          <CheckGlyph />
+        </span>
         <div className="hero-roster-card-top">
           <ParticipantAvatar
             name={participant.name}
@@ -858,17 +897,13 @@ function SetupParticipantCard({
           />
 
           <div className="hero-roster-copy">
-            <span className="hero-roster-role">{roleLabel}</span>
             <span className="hero-roster-name">{participant.name}</span>
-            <span className="hero-roster-model mono">{participant.model}</span>
+            <span className="hero-roster-role">{roleLabel}</span>
           </div>
         </div>
 
-        <p className="hero-roster-character">
-          {characterPreview
-            ? `${characterPreview.slice(0, 180)}${characterPreview.length > 180 ? "..." : ""}`
-            : "Add a character to shape this voice in the room."}
-        </p>
+        <p className="hero-roster-character">{characterSummary}</p>
+        <span className="hero-roster-chip">{characterLabel}</span>
         <span id={moderatorActionId} className="sr-only">
           {isModerator ? `${participant.name} is currently the moderator.` : `Select ${participant.name} as the moderator.`}
         </span>
@@ -919,13 +954,12 @@ function StudioHero({
   onOpenParticipant: (id: string) => void;
 }) {
   const apiKeyLabel = hasApiKey ? maskApiKey(apiKey) : "No personal key";
-  const [isEditingApiKey, setIsEditingApiKey] = useState(() => !apiKey.trim());
+  const [isEditingApiKey, setIsEditingApiKey] = useState(false);
   const apiKeyInputRef = useRef<HTMLInputElement | null>(null);
   const hasMountedApiKeyEditorRef = useRef(false);
   const isApiKeyEditorVisible = isEditingApiKey;
   const previousApiKeyEditorVisibilityRef = useRef(isApiKeyEditorVisible);
-  const canConfirmApiKey = draftApiKey.trim().length > 0 || apiKey.trim().length > 0;
-  const apiKeyFieldValue = isApiKeyEditorVisible ? draftApiKey : apiKeyLabel;
+  const apiKeyFieldValue = isApiKeyEditorVisible ? draftApiKey : hasApiKey ? apiKeyLabel : "";
   const displayedApiKeyStatus = hasPendingApiKeyChanges ? "unresolved" : apiKeyStatus;
   const displayedApiKeyStatusMessage = hasPendingApiKeyChanges ? unresolvedApiKeyStatusMessage() : apiKeyStatusMessage;
   const showHostedUsageWarning = !apiKey.trim() && !hasPendingApiKeyChanges && apiKeyStatus === "valid";
@@ -980,95 +1014,163 @@ function StudioHero({
 
   return (
     <section className="hero-shell">
-      <section className="hero-panel hero-copy-panel">
-        <div className="hero-copy-stack">
+      <section className="hero-intro-grid" aria-label="The AI Pit setup">
+        <div className="hero-copy-panel">
+          <div className="hero-welcome-pill">
+            <FlameGlyph />
+            <span>Welcome to</span>
+          </div>
           <h1 className="hero-title">The AI Pit</h1>
-          <p className="hero-body">Choose a topic, select debaters, hit start, get some popcorn 🍿.</p>
-          <SimulationNotice className="simulation-notice-hero" />
-        </div>
-      </section>
+          <p className="hero-subtitle">Where AI Minds Clash</p>
+          <p className="hero-body">
+            Watch the world&apos;s top AI personas debate your toughest questions. Choose a topic, select debaters,
+            and see brilliant arguments unfold in real time.
+          </p>
 
-      <section className="hero-panel hero-prompt-shell">
-        <button
-          type="button"
-          onClick={onRerollStarterBundle}
-          className="icon-circle-button hero-prompt-wand-button"
-          aria-label="Load another starter debate"
-          title="Load another starter debate"
-        >
-          <WandGlyph />
-        </button>
-
-        <div className="hero-prompt-header">
-          <div>
-            <p className="hero-kicker">Debate Topic</p>
-            <h2 className="hero-panel-title">What is the debate topic about?</h2>
-            <p className="hero-panel-copy">Fresh loads and rerolls follow the detected audience.</p>
+          <div className="hero-feature-row" aria-label="Product highlights">
+            <div className="hero-feature">
+              <span className="hero-feature-icon">
+                <RealtimeGlyph />
+              </span>
+              <span>
+                <strong>Real-time Debates</strong>
+                <small>Live back-and-forth arguments</small>
+              </span>
+            </div>
+            <div className="hero-feature">
+              <span className="hero-feature-icon">
+                <ShieldGlyph />
+              </span>
+              <span>
+                <strong>Expert AI Personas</strong>
+                <small>Curated voices with distinct viewpoints</small>
+              </span>
+            </div>
+            <div className="hero-feature">
+              <span className="hero-feature-icon">
+                <OutcomesGlyph />
+              </span>
+              <span>
+                <strong>Insightful Outcomes</strong>
+                <small>Synthesize key takeaways from the discussion</small>
+              </span>
+            </div>
           </div>
         </div>
 
-        <label className="hero-prompt-panel" htmlFor="hero-pit-prompt">
-          <div className="hero-prompt-input-shell">
+        <figure className="hero-arena-card" aria-label="Two AI personas in a debate arena">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/landing/ai-pit-arena.png" alt="" aria-hidden="true" />
+        </figure>
+      </section>
+
+      <section className="hero-setup-grid">
+        <div className="hero-panel hero-prompt-shell">
+          <div className="hero-section-heading">
+            <span className="hero-step-badge">1</span>
+            <div>
+              <h2 className="hero-panel-title">Choose a debate topic</h2>
+              <p className="hero-panel-copy">Enter a question or topic to get the debate started</p>
+            </div>
+          </div>
+
+          <label className="hero-prompt-panel" htmlFor="hero-pit-prompt">
             <AutoSizeTextarea
               id="hero-pit-prompt"
               className="field hero-prompt-input"
               value={config.prompt}
               onChange={(event) => onPromptChange(event.target.value)}
               placeholder={promptPlaceholder()}
-              rows={1}
+              rows={2}
             />
-          </div>
-        </label>
-      </section>
+          </label>
 
-      <section className="hero-panel hero-roster-shell">
-        <div className="hero-roster-header">
-          <div>
-            <p className="hero-kicker">Pit Lineup</p>
-            <h2 className="hero-panel-title">Select the moderator and debaters</h2>
+          <div className="hero-suggestion-stack">
+            <p className="hero-suggestion-title">Suggested topics</p>
+            <div className="hero-suggestion-list">
+              {SUGGESTED_TOPICS.map((topic, index) => (
+                <button
+                  key={topic}
+                  type="button"
+                  className="hero-suggestion-button"
+                  onClick={() => onPromptChange(topic)}
+                >
+                  <span aria-hidden="true">{SUGGESTED_TOPIC_ICONS[index] ?? "*"}</span>
+                  <span>{topic}</span>
+                </button>
+              ))}
+            </div>
           </div>
-
-          <button
-            type="button"
-            onClick={onAddMember}
-            className="chamber-add-button"
-            aria-label="Add debater"
-            title="Add debater"
-          >
-            <PlusGlyph />
-          </button>
         </div>
 
-        <div className="hero-roster-grid">
-          {roster.map((participant) => (
-            <SetupParticipantCard
-              key={participant.id}
-              participant={participant}
-              isModerator={participant.id === config.coordinator.id}
-              roleLabel={participant.id === config.coordinator.id ? "Moderator" : "Debater"}
-              onSelectModerator={() => onSelectModerator(participant.id)}
-              onEdit={() => onOpenParticipant(participant.id)}
-            />
-          ))}
+        <div className="hero-panel hero-roster-shell">
+          <div className="hero-roster-header">
+            <div className="hero-section-heading">
+              <span className="hero-step-badge">2</span>
+              <div>
+                <div className="hero-heading-row">
+                  <h2 className="hero-panel-title">Select debaters</h2>
+                  <span className="hero-selected-pill">{roster.length} selected</span>
+                </div>
+                <p className="hero-panel-copy">Choose AI personas with diverse perspectives</p>
+              </div>
+            </div>
+
+            <div className="hero-roster-actions">
+              <button
+                type="button"
+                onClick={onRerollStarterBundle}
+                className="hero-secondary-button"
+                aria-label="Shuffle starter debate"
+                title="Shuffle starter debate"
+              >
+                <ShuffleGlyph />
+                <span>Shuffle</span>
+              </button>
+              <button
+                type="button"
+                onClick={onAddMember}
+                className="hero-icon-add-button"
+                aria-label="Add debater"
+                title="Add debater"
+              >
+                <PlusGlyph />
+              </button>
+            </div>
+          </div>
+
+          <div className="hero-roster-grid">
+            {roster.map((participant) => (
+              <SetupParticipantCard
+                key={participant.id}
+                participant={participant}
+                isModerator={participant.id === config.coordinator.id}
+                roleLabel={participant.id === config.coordinator.id ? "Moderator" : "Debater"}
+                onSelectModerator={() => onSelectModerator(participant.id)}
+                onEdit={() => onOpenParticipant(participant.id)}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
       <section className="hero-panel hero-api-shell">
-        <div className="hero-api-header">
-          <div>
-            <p className="hero-kicker">OpenRouter Access</p>
-            <p className="hero-panel-copy">
-              Use your OpenRouter key here, or leave it blank to use a configured server key. Get one from{" "}
-              <a href="https://openrouter.ai/" target="_blank" rel="noreferrer" className="hero-api-link">
-                OpenRouter
-              </a>{" "}
-              or manage it in{" "}
-              <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer" className="hero-api-link">
-                key settings
-              </a>
-              .
-            </p>
+        <div className="hero-api-topline">
+          <div className="hero-section-heading">
+            <span className="hero-step-badge">3</span>
+            <div>
+              <h2 className="hero-panel-title">OpenRouter access {hasApiKey ? "" : "(required)"}</h2>
+              <p className="hero-panel-copy">Use your OpenRouter key or leave blank to use our configured server.</p>
+            </div>
           </div>
+
+          <p className="hero-api-link-row">
+            Get your key at{" "}
+            <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer" className="hero-api-link">
+              OpenRouter.ai
+              <ExternalLinkGlyph />
+            </a>
+          </p>
         </div>
 
         <div className="hero-api-block">
@@ -1086,42 +1188,39 @@ function StudioHero({
               readOnly={!isApiKeyEditorVisible}
               aria-label="OpenRouter API key"
             />
-            <div className="hero-api-input-actions">
-              {(!isApiKeyEditorVisible || canConfirmApiKey) && (
-                <button
-                  type="button"
-                  disabled={displayedApiKeyStatus === "checking"}
-                  onClick={
-                    isApiKeyEditorVisible
-                      ? () => {
-                          void handleApiKeyConfirm();
-                        }
-                      : () => {
-                          onDraftApiKeyChange(apiKey);
-                          setIsEditingApiKey(true);
-                        }
+          </div>
+
+          <button
+            type="button"
+            disabled={displayedApiKeyStatus === "checking"}
+            onClick={
+              isApiKeyEditorVisible
+                ? () => {
+                    void handleApiKeyConfirm();
                   }
-                  className={`hero-api-edit-button ${isApiKeyEditorVisible ? "is-confirm" : ""}`}
-                  aria-label={isApiKeyEditorVisible ? "Save API key" : "Edit API key"}
-                  title={isApiKeyEditorVisible ? "Save API key" : "Edit API key"}
-                >
-                  {isApiKeyEditorVisible ? <SaveGlyph /> : <PencilGlyph />}
-                </button>
-              )}
-            </div>
-          </div>
-          <div className={`hero-api-status hero-api-status-${statusTone}`} role="status" aria-live="polite">
-            {displayedApiKeyStatus === "valid" ? (
-              <span className="hero-api-status-icon" aria-hidden="true">
-                <CheckGlyph />
-              </span>
-            ) : showWarningStatusIcon ? (
-              <span className="hero-api-status-icon" aria-hidden="true">
-                <WarningGlyph />
-              </span>
-            ) : null}
-            <span>{displayedApiKeyStatusMessage}</span>
-          </div>
+                : () => {
+                    onDraftApiKeyChange(apiKey);
+                    setIsEditingApiKey(true);
+                  }
+            }
+            className="hero-manage-button"
+          >
+            {isApiKeyEditorVisible ? <SaveGlyph /> : <SettingsGlyph />}
+            <span>{isApiKeyEditorVisible ? "Save key" : "Manage in settings"}</span>
+          </button>
+        </div>
+
+        <div className={`hero-api-status hero-api-status-${statusTone}`} role="status" aria-live="polite">
+          {displayedApiKeyStatus === "valid" ? (
+            <span className="hero-api-status-icon" aria-hidden="true">
+              <CheckGlyph />
+            </span>
+          ) : showWarningStatusIcon ? (
+            <span className="hero-api-status-icon" aria-hidden="true">
+              <WarningGlyph />
+            </span>
+          ) : null}
+          <span>{displayedApiKeyStatusMessage}</span>
         </div>
       </section>
 
@@ -1133,13 +1232,23 @@ function StudioHero({
         <span className="action-button-icon">
           <PlayGlyph />
         </span>
-        {isRunning ? "STARTING..." : "START"}
+        <span className="hero-start-copy">
+          <strong>{isRunning ? "Starting debate arena" : "Start debate arena"}</strong>
+          <small>Let the AI minds battle it out</small>
+        </span>
       </button>
 
-      <div className="hero-meta-links">
-        <Link href="/privacy">Privacy</Link>
-        <Link href="/terms">Terms</Link>
-      </div>
+      <footer className="hero-footer">
+        <span className="hero-secure-note">
+          <LockGlyph />
+          Your key stays in this browser
+        </span>
+        <span className="hero-footer-links">
+          <SimulationNotice className="simulation-notice-hero" />
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
+        </span>
+      </footer>
     </section>
   );
 }
