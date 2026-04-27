@@ -3,6 +3,9 @@ import { headers } from "next/headers";
 import { PitStudioEntry } from "@/components/pit-studio-entry";
 import { resolveInitialAudience } from "@/lib/audience";
 import {
+  serverOpenRouterKeyMessage,
+} from "@/lib/openrouter";
+import {
   compactRunInputForSerialization,
   createInputFromStarterBundle,
   createRandomStarterInput,
@@ -60,8 +63,8 @@ async function buildInitialStudioState(bundleId: string | undefined): Promise<In
     lineupOrder,
     starterBundleId: starter.bundle.id,
     apiKey: "",
-    apiKeyStatus: "empty",
-    apiKeyStatusMessage: "Enter a valid OpenRouter API key to start a debate.",
+    apiKeyStatus: "valid",
+    apiKeyStatusMessage: serverOpenRouterKeyMessage(),
     draftApiKey: "",
     initialResult: null,
     initialStudioView: "setup",

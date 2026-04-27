@@ -1219,6 +1219,13 @@ select.field {
   gap: 1.05rem;
 }
 
+.hero-topic-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
 .hero-roster-header {
   display: flex;
   align-items: flex-start;
@@ -1234,6 +1241,7 @@ select.field {
 }
 
 .hero-secondary-button,
+.hero-icon-control-button,
 .hero-icon-add-button {
   display: inline-flex;
   align-items: center;
@@ -1266,6 +1274,7 @@ select.field {
 }
 
 .hero-secondary-button,
+.hero-icon-control-button,
 .hero-icon-add-button {
   gap: 0.55rem;
   min-height: 2.65rem;
@@ -1275,6 +1284,7 @@ select.field {
   font-weight: 800;
 }
 
+.hero-icon-control-button,
 .hero-icon-add-button {
   width: 2.65rem;
   height: 2.65rem;
@@ -1283,14 +1293,17 @@ select.field {
 }
 
 .hero-secondary-button svg,
+.hero-icon-control-button svg,
 .hero-icon-add-button svg {
   width: 0.95rem;
   height: 0.95rem;
 }
 
 .hero-secondary-button:hover,
+.hero-icon-control-button:hover,
 .hero-icon-add-button:hover,
 .hero-secondary-button:focus-visible,
+.hero-icon-control-button:focus-visible,
 .hero-icon-add-button:focus-visible {
   transform: translateY(-1px);
   border-color: rgba(255, 122, 26, 0.38);
@@ -4443,6 +4456,7 @@ select.field {
   }
 
   .hero-api-topline,
+  .hero-topic-header,
   .hero-roster-header {
     align-items: stretch;
     flex-direction: column;
@@ -4461,6 +4475,8 @@ select.field {
     width: 100%;
   }
 
+  .hero-topic-header .hero-icon-control-button,
+  .hero-roster-actions .hero-icon-control-button,
   .hero-icon-add-button {
     flex: 0 0 2.65rem;
   }

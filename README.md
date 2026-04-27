@@ -68,7 +68,7 @@ npm run build
 npm run test:e2e
 ```
 
-OpenRouter traffic goes through internal Next.js route handlers under `src/app/api/openrouter`. Visitors enter an OpenRouter key in the browser; the app validates the key live, stores it in browser `localStorage`, and only enables debate startup after OpenRouter accepts it. Shared replays are immutable snapshots stored separately from live debate execution.
+OpenRouter traffic goes through internal Next.js route handlers under `src/app/api/openrouter`. Visitors can enter an OpenRouter key in the browser; the app validates typed keys live, stores them in browser `localStorage`, and only enables personal-key debate startup after OpenRouter accepts the key. If `OPENROUTER_API_KEY` is configured on the server, visitors can also start with a blank key and use the hosted key. Shared replays are immutable snapshots stored separately from live debate execution.
 
 ## ⚙️ Environment Variables
 
@@ -79,7 +79,7 @@ OpenRouter traffic goes through internal Next.js route handlers under `src/app/a
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | Google Analytics 4 measurement ID |
 | `NEXT_PUBLIC_SENTRY_DSN` | No | Browser Sentry DSN. If omitted, the app falls back to `SENTRY_DSN` |
 | `NEXT_PUBLIC_SENTRY_ENABLED` | No | Force-enable Sentry outside production for local or preview validation |
-| `OPENROUTER_API_KEY` | No | Optional server-side OpenRouter fallback for direct proxy route requests |
+| `OPENROUTER_API_KEY` | No | Optional server-side OpenRouter key for blank-key hosted debates |
 | `R2_ACCOUNT_ID` | Required for share links | Cloudflare account ID |
 | `R2_BUCKET_NAME` | Required for share links | Private R2 bucket name |
 | `R2_ACCESS_KEY_ID` | Required for share links | R2 access key ID |
@@ -105,7 +105,7 @@ npm run sentry:issues -- --help
 
 This is a standard Next.js App Router project and deploys directly on Vercel.
 
-In production, set `NEXT_PUBLIC_SITE_URL`. If you want share links, add the R2 variables. If you want runtime error reporting, set either `SENTRY_DSN` or `NEXT_PUBLIC_SENTRY_DSN`; if both are set, each runtime uses its matching key, and if only one is set, the app reuses it for both. If you want build-time source map upload, set `SENTRY_AUTH_TOKEN`; `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_BASE_URL` only need to be set when you want to override the repo defaults.
+In production, set `NEXT_PUBLIC_SITE_URL`. If you want hosted blank-key debates, set `OPENROUTER_API_KEY`. If you want share links, add the R2 variables. If you want runtime error reporting, set either `SENTRY_DSN` or `NEXT_PUBLIC_SENTRY_DSN`; if both are set, each runtime uses its matching key, and if only one is set, the app reuses it for both. If you want build-time source map upload, set `SENTRY_AUTH_TOKEN`; `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_BASE_URL` only need to be set when you want to override the repo defaults.
 
 ```bash
 # Preview deployment

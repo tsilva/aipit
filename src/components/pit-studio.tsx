@@ -73,7 +73,7 @@ import { trackEvent } from "@/lib/google-analytics";
 export type { ApiKeyStatus, InitialStudioState } from "@/lib/pit-studio-state";
 
 const INVALID_OPENROUTER_KEY_MESSAGE = "This API key is invalid. Add a valid OpenRouter key to run debates.";
-const EMPTY_OPENROUTER_KEY_MESSAGE = "Enter a valid OpenRouter API key to start a debate.";
+const HOSTED_OPENROUTER_KEY_MESSAGE = "Using this app's configured OpenRouter key. Usage may be limited.";
 const INVALID_OPENROUTER_KEY_FORMAT_MESSAGE = "This API key is invalid. OpenRouter keys should start with sk-or-v1-.";
 const OPENROUTER_API_KEY_STORAGE_KEY = "aipit.openrouter-api-key";
 const OPENROUTER_API_KEY_PATTERN = /^sk-or-v1-[A-Za-z0-9_-]{32,}$/;
@@ -289,7 +289,7 @@ async function validateApiKey({
   const requestId = requestIdRef.current + 1;
   requestIdRef.current = requestId;
   setApiKeyStatus(trimmed ? "checking" : "empty");
-  setApiKeyStatusMessage(trimmed ? "Validating API key with OpenRouter..." : EMPTY_OPENROUTER_KEY_MESSAGE);
+  setApiKeyStatusMessage(trimmed ? "Validating API key with OpenRouter..." : HOSTED_OPENROUTER_KEY_MESSAGE);
 
   try {
     const { validateOpenRouterKey } = await import("@/lib/openrouter");
@@ -956,7 +956,8 @@ function StudioHero({
   isRunning,
   onDraftApiKeyChange,
   onPromptChange,
-  onRerollStarterBundle,
+  onRerollDebaters,
+  onRerollTopic,
   onAddMember,
   onSelectModerator,
   onOpenParticipant,
@@ -971,7 +972,8 @@ function StudioHero({
   isRunning: boolean;
   onDraftApiKeyChange: (value: string) => void;
   onPromptChange: (value: string) => void;
-  onRerollStarterBundle: () => void;
+  onRerollDebaters: () => void;
+  onRerollTopic: () => void;
   onAddMember: () => void;
   onSelectModerator: (id: string) => void;
   onOpenParticipant: (id: string) => void;
@@ -1055,12 +1057,24 @@ function StudioHero({
 
       <section className="hero-setup-grid">
         <div className="hero-panel hero-prompt-shell">
-          <div className="hero-section-heading">
-            <span className="hero-step-badge">1</span>
-            <div>
-              <h2 className="hero-panel-title">Choose a debate topic</h2>
-              <p className="hero-panel-copy">Enter a question or topic to get the debate started</p>
+          <div className="hero-topic-header">
+            <div className="hero-section-heading">
+              <span className="hero-step-badge">1</span>
+              <div>
+                <h2 className="hero-panel-title">Choose a debate topic</h2>
+                <p className="hero-panel-copy">Enter a question or topic to get the debate started</p>
+              </div>
             </div>
+
+            <button
+              type="button"
+              onClick={onRerollTopic}
+              className="hero-icon-control-button"
+              aria-label="Random topic"
+              title="Random topic"
+            >
+              <ShuffleGlyph />
+            </button>
           </div>
 
           <label className="hero-prompt-panel" htmlFor="hero-pit-prompt">
@@ -1108,13 +1122,12 @@ function StudioHero({
             <div className="hero-roster-actions">
               <button
                 type="button"
-                onClick={onRerollStarterBundle}
-                className="hero-secondary-button"
-                aria-label="Shuffle starter debate"
-                title="Shuffle starter debate"
+                onClick={onRerollDebaters}
+                className="hero-icon-control-button"
+                aria-label="Random debaters"
+                title="Random debaters"
               >
                 <ShuffleGlyph />
-                <span>Shuffle</span>
               </button>
               <button
                 type="button"
@@ -1149,7 +1162,7 @@ function StudioHero({
             <span className="hero-step-badge">3</span>
             <div>
               <h2 className="hero-panel-title">OpenRouter access {hasApiKey ? "" : "(required)"}</h2>
-              <p className="hero-panel-copy">Paste your OpenRouter key. It is validated automatically.</p>
+              <p className="hero-panel-copy">Paste your OpenRouter key or leave blank to use this app&apos;s configured key.</p>
             </div>
           </div>
 
@@ -2610,7 +2623,8 @@ export function PitStudio({
     roster.flatMap((participant) => (participant.presetId ? [participant.presetId] : [])),
   );
   const hasApiKey = apiKey.trim().length > 0;
-  const hasValidatedApiKey = hasApiKey && apiKeyStatus === "valid" && draftApiKey.trim() === apiKey.trim();
+  const hasValidatedApiKey =
+    apiKeyStatus === "valid" && (!draftApiKey.trim() || draftApiKey.trim() === apiKey.trim());
   const hasPrompt = config.prompt.trim().length > 0;
   const transcriptTurns = flattenTurns(result);
   const transcriptPrompt = result?.prompt ?? config.prompt;
@@ -2689,8 +2703,8 @@ export function PitStudio({
 
     if (!trimmed) {
       keyValidationRequestIdRef.current += 1;
-      setApiKeyStatus("empty");
-      setApiKeyStatusMessage(EMPTY_OPENROUTER_KEY_MESSAGE);
+      setApiKeyStatus("valid");
+      setApiKeyStatusMessage(HOSTED_OPENROUTER_KEY_MESSAGE);
       return;
     }
 
@@ -2925,14 +2939,40 @@ export function PitStudio({
     setActiveEditorId(id);
   }
 
-  async function rerollStarterBundle() {
+  async function rerollTopic() {
+    const { listStarterBundles } = await import("@/lib/pit");
+    const bundles = listStarterBundles(audience);
+    const currentPrompt = configRef.current.prompt.trim();
+    const eligibleBundles = bundles.filter((bundle) => bundle.prompt !== currentPrompt);
+    const bundlePool = eligibleBundles.length > 0 ? eligibleBundles : bundles;
+    const nextBundle = bundlePool[Math.floor(Math.random() * bundlePool.length)];
+
+    if (!nextBundle) {
+      return;
+    }
+
+    setStarterBundleId(undefined);
+    setConfig((current) => ({ ...current, prompt: nextBundle.prompt }));
+    trackEvent("starter_topic_reroll", {
+      starter_bundle_id: nextBundle.id,
+      starter_bundle_audience: nextBundle.audience,
+    });
+  }
+
+  async function rerollDebaters() {
     const { createRandomStarterInput } = await import("@/lib/pit");
     const nextStarter = createRandomStarterInput(starterBundleId, audience);
+    const nextConfig = {
+      ...configRef.current,
+      coordinator: nextStarter.input.coordinator,
+      members: nextStarter.input.members,
+    };
+
     hasHydratedPresetConfigRef.current = true;
-    configRef.current = nextStarter.input;
-    setStarterBundleId(nextStarter.bundle.id);
-    setConfig(nextStarter.input);
-    trackEvent("starter_bundle_reroll", {
+    configRef.current = nextConfig;
+    setStarterBundleId(undefined);
+    setConfig(nextConfig);
+    trackEvent("starter_debaters_reroll", {
       starter_bundle_id: nextStarter.bundle.id,
       starter_bundle_audience: nextStarter.bundle.audience,
     });
@@ -3434,12 +3474,13 @@ export function PitStudio({
             apiKeyStatus={apiKeyStatus}
             apiKeyStatusMessage={apiKeyStatusMessage}
             draftApiKey={draftApiKey}
-            hasApiKey={hasApiKey}
+            hasApiKey={hasApiKey || apiKeyStatus === "valid"}
             canSubmit={!isReplayOnly && hasValidatedApiKey && hasPrompt && config.members.length >= 2}
             isRunning={isRunning}
             onDraftApiKeyChange={handleDraftApiKeyChange}
             onPromptChange={(prompt) => setConfig((current) => ({ ...current, prompt }))}
-            onRerollStarterBundle={rerollStarterBundle}
+            onRerollDebaters={rerollDebaters}
+            onRerollTopic={rerollTopic}
             onAddMember={() => setShowCharacterSelectorModal(true)}
             onSelectModerator={selectModerator}
             onOpenParticipant={openParticipantEditor}
