@@ -744,24 +744,59 @@ const SUGGESTED_TOPICS = [
 
 const SUGGESTED_TOPIC_ICONS = ["🌍", "⚖️", "🤖", "💊"] as const;
 
-function compactCharacterLabel(participant: ParticipantConfig): string {
-  const source = participant.characterProfile.role || participant.characterProfile.personality || "AI Persona";
-  const label = source
+function normalizeCardCopy(value: string): string {
+  return value
     .replace(/\s+/g, " ")
-    .split(/[.;,:-]/)[0]
+    .replace(/\s+•\s+/g, " • ")
     .trim();
+}
 
-  return label.length > 34 ? `${label.slice(0, 31).trim()}...` : label;
+function clipAtWord(value: string, maxLength: number): string {
+  const normalizedValue = normalizeCardCopy(value);
+  const cleanedValue = normalizedValue.replace(/[,\s;:.-]+$/g, "").trim();
+
+  if (cleanedValue.length <= maxLength) {
+    return cleanedValue;
+  }
+
+  const clipped = cleanedValue.slice(0, maxLength + 1);
+  const wordBoundary = clipped.search(/\s+\S*$/);
+  const candidate = wordBoundary > maxLength * 0.58 ? clipped.slice(0, wordBoundary) : cleanedValue.slice(0, maxLength);
+
+  return `${candidate.replace(/[,\s;:.-]+$/g, "").trim()}...`;
+}
+
+function compactCharacterLabel(participant: ParticipantConfig): string {
+  const source = normalizeCardCopy(participant.characterProfile.role || participant.characterProfile.personality || "AI Persona")
+    .replace(/\btelevision\b/gi, "TV")
+    .replace(/\bpublic-service\b/gi, "public service")
+    .replace(/\bright-populist\b/gi, "right populist")
+    .replace(/\bcentre-left\b/gi, "center left")
+    .replace(/\bcentre-right\b/gi, "center right");
+  const firstUsefulPhrase =
+    source
+      .split(/\s+(?:serving as|focused on|who|with|for|from|and)\s+/i)[0]
+      ?.split(/[.,;:]/)[0]
+      ?.trim() || source;
+
+  return clipAtWord(firstUsefulPhrase, 24);
 }
 
 function compactCharacterSummary(participant: ParticipantConfig): string {
-  const preview = buildCharacterProfilePreview(participant.characterProfile).trim().replace(/\s+/g, " ");
+  const profile = participant.characterProfile;
+  const source = normalizeCardCopy(
+    profile.personality ||
+      profile.perspective ||
+      profile.debateStyle ||
+      buildCharacterProfilePreview(profile) ||
+      "Configured persona ready to argue from a distinct point of view.",
+  );
 
-  if (!preview) {
+  if (!source) {
     return "Configured persona ready to argue from a distinct point of view.";
   }
 
-  return preview.length > 126 ? `${preview.slice(0, 123).trim()}...` : preview;
+  return clipAtWord(source, 92);
 }
 
 function isShareResponse(
@@ -897,13 +932,13 @@ function SetupParticipantCard({
           />
 
           <div className="hero-roster-copy">
-            <span className="hero-roster-name">{participant.name}</span>
+            <span className="hero-roster-name" title={participant.name}>{participant.name}</span>
             <span className="hero-roster-role">{roleLabel}</span>
           </div>
         </div>
 
-        <p className="hero-roster-character">{characterSummary}</p>
-        <span className="hero-roster-chip">{characterLabel}</span>
+        <p className="hero-roster-character" title={characterSummary}>{characterSummary}</p>
+        <span className="hero-roster-chip" title={characterLabel}>{characterLabel}</span>
         <span id={moderatorActionId} className="sr-only">
           {isModerator ? `${participant.name} is currently the moderator.` : `Select ${participant.name} as the moderator.`}
         </span>

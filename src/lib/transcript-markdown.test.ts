@@ -22,6 +22,20 @@ function createTurn(overrides: Partial<PitTurn> = {}): PitTurn {
 }
 
 describe("transcript markdown safety", () => {
+  it("renders turn model as low-emphasis heading metadata", () => {
+    const markdown = buildTranscriptMarkdown({
+      prompt: "Prompt",
+      turns: [createTurn()],
+      isRunning: false,
+      chapterLabelForTurn: () => "Round 1",
+    });
+
+    const html = renderToStaticMarkup(createElement(TranscriptMarkdown, { markdown }));
+
+    expect(html).toContain('<span class="transcript-markdown-heading-title">Round 1 · Speaker</span>');
+    expect(html).toContain('<span class="transcript-markdown-heading-model">· model-name</span>');
+  });
+
   it("renders model-authored markdown as literal text", () => {
     const markdown = buildTranscriptMarkdown({
       prompt: "[x](https://example.com)\n# heading",
