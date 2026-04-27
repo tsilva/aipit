@@ -14,12 +14,12 @@ import {
 
 const PREFERENCE_COPY: Record<TelemetryPurpose, { title: string; description: string }> = {
   analytics: {
-    title: "Google Analytics",
-    description: "Usage events that help understand which parts of the experiment are working.",
+    title: "Help improve aipit",
+    description: "Share basic usage signals so we can see what is helpful and what needs work.",
   },
   errorReporting: {
-    title: "Sentry error reporting",
-    description: "Runtime errors and debugging metadata that help fix broken app behavior.",
+    title: "Share crash reports",
+    description: "Send details when something breaks so we can find and fix problems faster.",
   },
 };
 
@@ -118,8 +118,8 @@ export function TelemetryPreferencesButton({
             </div>
             <div className="telemetry-preferences-body">
               <p>
-                These controls disable Google Analytics and app-level Sentry reporting in this browser. Hosting,
-                security, and abuse-prevention logs may still be processed by service providers.
+                Choose what aipit can use from this browser. Turning these off will not affect your debates, saved
+                settings, or access to the app.
               </p>
               <TelemetryToggle purpose="analytics" />
               <TelemetryToggle purpose="errorReporting" />
@@ -130,7 +130,7 @@ export function TelemetryPreferencesButton({
                 className="action-button"
                 onClick={() => writeTelemetryConsentForPurposes(["analytics", "errorReporting"], "denied")}
               >
-                Disable both
+                Turn both off
               </button>
               <button
                 type="button"

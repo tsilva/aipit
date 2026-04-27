@@ -1009,6 +1009,7 @@ function StudioHero({
           </div>
           <h1 className="hero-title">The AI Pit</h1>
           <p className="hero-subtitle">Where AI Minds Clash</p>
+          <p className="hero-hook">Choose a topic, pick the personas, and watch live arguments unfold.</p>
         </div>
 
         <figure className="hero-arena-card" aria-label="Two AI personas in a debate arena">
@@ -1177,18 +1178,17 @@ function StudioHero({
           <PlayGlyph />
         </span>
         <span className="hero-start-copy">
-          <strong>{isRunning ? "Starting debate arena" : "Start debate arena"}</strong>
-          <small>Let the AI minds battle it out</small>
+          <strong>{isRunning ? "Starting Debate" : "Start Debate"}</strong>
         </span>
       </button>
 
       <footer className="hero-footer">
         <span className="hero-footer-links">
-          <SimulationNotice className="simulation-notice-hero" />
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
           <TelemetryPreferencesButton className="footer-link-button" />
         </span>
+        <SimulationNotice className="simulation-notice-hero" />
       </footer>
     </section>
   );

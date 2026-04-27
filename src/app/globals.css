@@ -727,6 +727,14 @@ select.field {
   line-height: 1.1;
 }
 
+.hero-hook {
+  max-width: 27rem;
+  margin: 0.75rem 0 0;
+  color: rgba(235, 226, 215, 0.78);
+  font-size: clamp(0.95rem, 1.15vw, 1.08rem);
+  line-height: 1.42;
+}
+
 .hero-panel-copy {
   margin: 0;
   color: var(--ink-soft);
@@ -1072,7 +1080,7 @@ select.field {
   font-weight: 900;
   letter-spacing: 0.12em;
   line-height: 1.15;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .hero-start-copy small {
@@ -1085,13 +1093,12 @@ select.field {
 }
 
 .hero-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 0.8rem 1.1rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.42rem;
   color: var(--ink-soft);
   font-size: 0.76rem;
+  text-align: center;
 }
 
 .hero-footer-links {
@@ -1402,7 +1409,7 @@ select.field {
 .hero-roster-edit {
   position: absolute;
   top: 0.5rem;
-  left: 0.5rem;
+  right: 0.5rem;
   z-index: 1;
   display: inline-flex;
   align-items: center;
