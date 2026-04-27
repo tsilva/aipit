@@ -2,7 +2,6 @@
 
 import {
   ArrowLeft as BackGlyph,
-  BarChart3 as OutcomesGlyph,
   CircleCheck as CheckGlyph,
   Copy as CopyGlyph,
   ExternalLink as ExternalLinkGlyph,
@@ -13,13 +12,11 @@ import {
   Play as PlayGlyph,
   Plus as PlusGlyph,
   Settings as SettingsGlyph,
-  Shield as ShieldGlyph,
   SkipBack as PreviousGlyph,
   SkipForward as NextGlyph,
   Shuffle as ShuffleGlyph,
   Trash2 as TrashGlyph,
   TriangleAlert as WarningGlyph,
-  Zap as RealtimeGlyph,
   X as CloseGlyph,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -1012,40 +1009,6 @@ function StudioHero({
           </div>
           <h1 className="hero-title">The AI Pit</h1>
           <p className="hero-subtitle">Where AI Minds Clash</p>
-          <p className="hero-body">
-            Watch the world&apos;s top AI personas debate your toughest questions. Choose a topic, configure debaters,
-            and see brilliant arguments unfold in real time.
-          </p>
-
-          <div className="hero-feature-row" aria-label="Product highlights">
-            <div className="hero-feature">
-              <span className="hero-feature-icon">
-                <RealtimeGlyph />
-              </span>
-              <span>
-                <strong>Real-time Debates</strong>
-                <small>Live back-and-forth arguments</small>
-              </span>
-            </div>
-            <div className="hero-feature">
-              <span className="hero-feature-icon">
-                <ShieldGlyph />
-              </span>
-              <span>
-                <strong>Expert AI Personas</strong>
-                <small>Curated voices with distinct viewpoints</small>
-              </span>
-            </div>
-            <div className="hero-feature">
-              <span className="hero-feature-icon">
-                <OutcomesGlyph />
-              </span>
-              <span>
-                <strong>Insightful Outcomes</strong>
-                <small>Synthesize key takeaways from the discussion</small>
-              </span>
-            </div>
-          </div>
         </div>
 
         <figure className="hero-arena-card" aria-label="Two AI personas in a debate arena">
@@ -3458,7 +3421,7 @@ export function PitStudio({
       {shareNotice ? <div className="notice-row notice-row-warning">{shareNotice}</div> : null}
       <form
         onSubmit={handleSubmit}
-        className={`studio-form flex w-full flex-col gap-5 px-2 py-2 sm:px-5 lg:px-6 lg:py-5 ${
+        className={`studio-form flex w-full flex-col gap-5 px-2 py-2 sm:px-5 lg:px-6 lg:py-3 ${
           studioView === "simulation" ? "studio-form-simulation" : "mx-auto max-w-[90rem]"
         }`}
       >
