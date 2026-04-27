@@ -8,7 +8,6 @@ import {
   ExternalLink as ExternalLinkGlyph,
   FileText as PromptGlyph,
   Flame as FlameGlyph,
-  LockKeyhole as LockGlyph,
   Pause as PauseGlyph,
   Pencil as PencilGlyph,
   Play as PlayGlyph,
@@ -1221,10 +1220,6 @@ function StudioHero({
       </button>
 
       <footer className="hero-footer">
-        <span className="hero-secure-note">
-          <LockGlyph />
-          Your key is saved in this browser&apos;s localStorage; requests are routed through this app&apos;s proxy to OpenRouter.
-        </span>
         <span className="hero-footer-links">
           <SimulationNotice className="simulation-notice-hero" />
           <Link href="/privacy">Privacy</Link>

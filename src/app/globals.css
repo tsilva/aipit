@@ -1150,23 +1150,12 @@ select.field {
   font-size: 0.76rem;
 }
 
-.hero-secure-note,
 .hero-footer-links {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-}
-
-.hero-secure-note {
-  max-width: min(100%, 36rem);
-  line-height: 1.45;
-}
-
-.hero-secure-note svg {
-  width: 0.86rem;
-  height: 0.86rem;
 }
 
 .hero-footer a {
