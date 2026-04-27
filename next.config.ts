@@ -7,7 +7,7 @@ import {
   resolveSentryBuildConfig,
   resolveSentryClientBuildEnv,
   validateSentryProductionConfig,
-} from "./src/lib/sentry";
+} from "./src/lib/sentry-build";
 
 const isProduction = process.env.NODE_ENV === "production";
 const appEnv = resolveAppEnv();

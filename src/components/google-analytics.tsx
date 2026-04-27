@@ -1,14 +1,14 @@
 "use client";
 
 import Script from "next/script";
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import {
-  type AnalyticsConsentState,
-  hasAnalyticsPermission,
-  readAnalyticsConsent,
-  readAnalyticsConsentRequirement,
-  subscribeToAnalyticsConsent,
-} from "@/lib/analytics-consent";
+  type TelemetryConsentState,
+  hasTelemetryPermission,
+  readTelemetryConsent,
+  readTelemetryConsentRequirement,
+  subscribeToTelemetryConsent,
+} from "@/lib/telemetry-consent";
 import { GA_MEASUREMENT_ID } from "@/lib/google-analytics";
 
 function subscribeToHydration() {
@@ -17,16 +17,28 @@ function subscribeToHydration() {
 
 export function GoogleAnalytics() {
   const hasMounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
-  const consent: AnalyticsConsentState = useSyncExternalStore(
-    subscribeToAnalyticsConsent,
-    readAnalyticsConsent,
-    (): AnalyticsConsentState => "unset",
+  const consent: TelemetryConsentState = useSyncExternalStore(
+    subscribeToTelemetryConsent,
+    () => readTelemetryConsent("analytics"),
+    (): TelemetryConsentState => "unset",
   );
+  const hasPermission = hasTelemetryPermission({
+    consent,
+    requireConsent: readTelemetryConsentRequirement(),
+  });
+
+  useEffect(() => {
+    if (!GA_MEASUREMENT_ID || typeof window === "undefined") {
+      return;
+    }
+
+    window[`ga-disable-${GA_MEASUREMENT_ID}`] = !hasPermission;
+  }, [hasPermission]);
 
   if (
     !hasMounted ||
     !GA_MEASUREMENT_ID ||
-    !hasAnalyticsPermission({ consent, requireConsent: readAnalyticsConsentRequirement() })
+    !hasPermission
   ) {
     return null;
   }

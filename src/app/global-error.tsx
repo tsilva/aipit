@@ -23,7 +23,8 @@ export default function GlobalError({
             <p className="legal-eyebrow">Fatal error</p>
             <h1 className="legal-title">The app hit a fatal error.</h1>
             <p className="hero-panel-copy">
-              Reload the page or return home. The failure was captured for debugging when Sentry is configured.
+              Reload the page or return home. The failure was captured for debugging when app-level error reporting is
+              enabled.
             </p>
             <div className="legal-actions">
               <button type="button" className="action-button action-button-primary" onClick={() => reset()}>

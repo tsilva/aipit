@@ -1,8 +1,8 @@
-import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { jsonErrorResponse, parseJsonRequest } from "@/lib/api-route-response";
 import { isJsonObject } from "@/lib/json";
 import { buildResponseHeaders, resolveRequestId } from "@/lib/request-id";
+import { captureRequestException } from "@/lib/sentry-capture";
 import { ShareStorageError, writeSharedConversationSnapshot } from "@/lib/share-storage";
 
 export async function POST(request: Request): Promise<Response> {
@@ -35,7 +35,7 @@ export async function POST(request: Request): Promise<Response> {
       return jsonErrorResponse(requestId, error.status, error.message);
     }
 
-    Sentry.captureException(error, {
+    captureRequestException(request, error, {
       extra: {
         requestId,
         routeName: "/api/share",

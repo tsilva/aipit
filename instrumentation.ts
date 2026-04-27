@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { shouldCaptureSentryForRequestHeaders } from "./src/lib/sentry";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
@@ -10,4 +11,10 @@ export async function register() {
   }
 }
 
-export const onRequestError = Sentry.captureRequestError;
+export const onRequestError: typeof Sentry.captureRequestError = (error, request, context) => {
+  if (!shouldCaptureSentryForRequestHeaders(request.headers)) {
+    return;
+  }
+
+  Sentry.captureRequestError(error, request, context);
+};

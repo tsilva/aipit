@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  sanitizeSentryEvent,
   getSentryConnectOrigins,
   hasSentryBuildUploadConfig,
   isSentryRuntimeEnabled,
@@ -7,6 +8,7 @@ import {
   resolveSentryClientBuildEnv,
   resolveSentryDsn,
   resolveSentryRuntimeConfig,
+  shouldCaptureSentryForRequestHeaders,
   validateSentryProductionConfig,
 } from "@/lib/sentry";
 
@@ -205,5 +207,55 @@ describe("validateSentryProductionConfig", () => {
     ).toEqual([
       "Production source map upload is configured, but no runtime Sentry DSN is available. Set NEXT_PUBLIC_SENTRY_DSN or SENTRY_DSN.",
     ]);
+  });
+});
+
+describe("Sentry privacy controls", () => {
+  it("suppresses request-scoped captures when error reporting is denied", () => {
+    expect(
+      shouldCaptureSentryForRequestHeaders({
+        cookie: "aipit-error-reporting-consent=denied; aipit-country=US",
+      }),
+    ).toBe(false);
+  });
+
+  it("allows request-scoped captures by default outside the EU", () => {
+    expect(shouldCaptureSentryForRequestHeaders({ "x-vercel-ip-country": "US" })).toBe(true);
+  });
+
+  it("requires request-scoped consent in EU or unknown regions", () => {
+    expect(shouldCaptureSentryForRequestHeaders({ "x-vercel-ip-country": "PT" })).toBe(false);
+    expect(shouldCaptureSentryForRequestHeaders({})).toBe(false);
+  });
+
+  it("filters sensitive request and extra fields before sending", () => {
+    const sanitized = sanitizeSentryEvent({
+      type: undefined,
+      request: {
+        cookies: { session: "secret" },
+        headers: {
+          authorization: "Bearer token",
+          cookie: "session=secret",
+          "user-agent": "test",
+        },
+      },
+      extra: {
+        apiKey: "sk-or-v1-secret",
+        safeField: "ok",
+        nested: {
+          secretToken: "secret",
+        },
+      },
+    });
+
+    expect(sanitized.request?.cookies).toBeUndefined();
+    expect(sanitized.request?.headers).toEqual({ "user-agent": "test" });
+    expect(sanitized.extra).toEqual({
+      apiKey: "[Filtered]",
+      safeField: "ok",
+      nested: {
+        secretToken: "[Filtered]",
+      },
+    });
   });
 });

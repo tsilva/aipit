@@ -47,6 +47,7 @@ import {
   SpeakingParticipantAvatar,
 } from "@/components/pit-studio-primitives";
 import { SimulationNotice } from "@/components/simulation-notice";
+import { TelemetryPreferencesButton } from "@/components/telemetry-preferences";
 import {
   type PitTurn,
   type ParticipantConfig,
@@ -1276,12 +1277,13 @@ function StudioHero({
       <footer className="hero-footer">
         <span className="hero-secure-note">
           <LockGlyph />
-          Your key stays in this browser
+          Your key is not saved after this browser session; requests are routed through this app&apos;s proxy to OpenRouter.
         </span>
         <span className="hero-footer-links">
           <SimulationNotice className="simulation-notice-hero" />
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
+          <TelemetryPreferencesButton className="footer-link-button" />
         </span>
       </footer>
     </section>

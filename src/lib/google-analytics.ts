@@ -1,6 +1,10 @@
 "use client";
 
-import { hasAnalyticsPermission, readAnalyticsConsent, readAnalyticsConsentRequirement } from "@/lib/analytics-consent";
+import {
+  hasTelemetryPermission,
+  readTelemetryConsent,
+  readTelemetryConsentRequirement,
+} from "@/lib/telemetry-consent";
 
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? "";
 
@@ -11,16 +15,17 @@ declare global {
   interface Window {
     dataLayer: unknown[];
     gtag?: (...args: unknown[]) => void;
+    [key: `ga-disable-${string}`]: boolean | undefined;
   }
 }
 
-function analyticsEnabled(): boolean {
+export function analyticsEnabled(): boolean {
   return (
     typeof window !== "undefined" &&
     GA_MEASUREMENT_ID.length > 0 &&
-    hasAnalyticsPermission({
-      consent: readAnalyticsConsent(),
-      requireConsent: readAnalyticsConsentRequirement(),
+    hasTelemetryPermission({
+      consent: readTelemetryConsent("analytics"),
+      requireConsent: readTelemetryConsentRequirement(),
     }) &&
     typeof window.gtag === "function"
   );

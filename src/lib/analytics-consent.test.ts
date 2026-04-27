@@ -3,6 +3,11 @@ import {
   hasAnalyticsPermission,
   requiresAnalyticsConsent,
 } from "@/lib/analytics-consent";
+import {
+  hasTelemetryPermissionForHeaders,
+  readTelemetryConsentFromHeaders,
+  readTelemetryConsentRequirementFromHeaders,
+} from "@/lib/telemetry-consent";
 
 describe("analytics consent helpers", () => {
   it("requires analytics consent for EU country codes", () => {
@@ -34,5 +39,23 @@ describe("analytics consent helpers", () => {
   it("treats unset consent as allowed only when consent is not required", () => {
     expect(hasAnalyticsPermission({ consent: "unset", requireConsent: true })).toBe(false);
     expect(hasAnalyticsPermission({ consent: "unset", requireConsent: false })).toBe(true);
+  });
+
+  it("reads explicit telemetry choices from request cookies", () => {
+    const headers = {
+      cookie: "aipit-analytics-consent=denied; aipit-error-reporting-consent=granted; aipit-country=PT",
+    };
+
+    expect(readTelemetryConsentFromHeaders("analytics", headers)).toBe("denied");
+    expect(readTelemetryConsentFromHeaders("errorReporting", headers)).toBe("granted");
+    expect(hasTelemetryPermissionForHeaders("analytics", headers)).toBe(false);
+    expect(hasTelemetryPermissionForHeaders("errorReporting", headers)).toBe(true);
+  });
+
+  it("uses request country headers for server-side telemetry defaults", () => {
+    expect(readTelemetryConsentRequirementFromHeaders({ "x-vercel-ip-country": "US" })).toBe(false);
+    expect(hasTelemetryPermissionForHeaders("errorReporting", { "x-vercel-ip-country": "US" })).toBe(true);
+    expect(readTelemetryConsentRequirementFromHeaders({ "x-vercel-ip-country": "PT" })).toBe(true);
+    expect(hasTelemetryPermissionForHeaders("errorReporting", { "x-vercel-ip-country": "PT" })).toBe(false);
   });
 });

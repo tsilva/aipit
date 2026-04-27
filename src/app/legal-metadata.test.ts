@@ -33,7 +33,11 @@ describe("legal page metadata", () => {
 
     expect(privacyMarkup).toContain("request removal of a public replay");
     expect(privacyMarkup).toContain("copyright, image-rights, privacy, defamation");
+    expect(privacyMarkup).toContain("your OpenRouter account");
+    expect(privacyMarkup).toContain("Privacy preferences");
     expect(termsMarkup).toContain("non-commercial experimental parody");
+    expect(termsMarkup).toContain("not directed to children under 13");
+    expect(termsMarkup).toContain("transits the proxy");
     expect(termsMarkup).toContain("Shared replays contain fictionalized AI-generated speech");
     expect(termsMarkup).toContain("request removal of a public replay");
   });

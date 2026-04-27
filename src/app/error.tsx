@@ -20,7 +20,8 @@ export default function Error({
         <p className="legal-eyebrow">Runtime error</p>
         <h1 className="legal-title">Something broke in The AI Pit.</h1>
         <p className="hero-panel-copy">
-          The error was captured for debugging. Try the action again, or reload if the app still feels stuck.
+          The error was captured for debugging when app-level error reporting is enabled. Try the action again, or reload
+          if the app still feels stuck.
         </p>
         <div className="legal-actions">
           <button type="button" className="action-button action-button-primary" onClick={() => reset()}>

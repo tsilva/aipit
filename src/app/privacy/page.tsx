@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { TelemetryPreferencesButton } from "@/components/telemetry-preferences";
 import { SITE_CONTACT_EMAIL, SITE_CONTACT_MAILTO } from "@/lib/site";
 import { buildStaticPageMetadata } from "@/lib/seo";
 
@@ -29,16 +30,17 @@ export default function PrivacyPage() {
             .
           </p>
           <p>
-            The AI Pit supports two OpenRouter usage modes. If you provide your own OpenRouter API key, requests are
-            proxied through the app only to complete the request you initiated. If you do not provide your own key and
-            the app offers a hosted key, your prompts, character settings, and model outputs are processed through The
-            AI Pit&apos;s server-side proxy and then through The AI Pit&apos;s OpenRouter account.
+            The AI Pit supports two OpenRouter usage modes. If you provide your own OpenRouter API key, your key,
+            prompts, character settings, and model outputs are routed through The AI Pit&apos;s server-side proxy to
+            OpenRouter using your OpenRouter account. If you do not provide your own key and the app offers a hosted
+            key, that same debate content is processed through The AI Pit&apos;s server-side proxy and then through The AI
+            Pit&apos;s OpenRouter account.
           </p>
           <p>
             Debate content is processed to generate the requested debate session. The AI Pit does not provide
             account-backed transcript storage, and personal OpenRouter API keys are not intentionally persisted across
             reloads. Do not submit secrets, credentials, payment data, health data, or other sensitive personal data
-            through the hosted-key path.
+            through either OpenRouter path.
           </p>
           <p>
             If you create a public replay link, the app stores the debate prompt, character configuration, generated
@@ -58,16 +60,16 @@ export default function PrivacyPage() {
             for debugging, abuse prevention, reliability, and incident response.
           </p>
           <p>
-            If analytics is configured for the deployment, visitors in European Union countries are asked for explicit
-            consent before Google Analytics loads. Outside the European Union, analytics may load by default unless
-            you have already declined analytics in this browser. Declining analytics keeps the app functional and
-            prevents analytics scripts from loading. If Sentry is configured, runtime errors may also be sent to
-            Sentry for debugging.
+            If telemetry is configured for the deployment, visitors in European Union countries are asked for explicit
+            consent before Google Analytics or client-side Sentry reporting loads. Outside the European Union, telemetry
+            may load by default unless you have already declined it in this browser. Declining telemetry keeps the app
+            functional and disables Google Analytics and app-level Sentry reporting where the app can read your
+            preference. Hosting, security, and abuse-prevention logs may still be processed by service providers.
           </p>
           <p>
             Service providers may include OpenRouter for model access, Vercel or another hosting provider for serving
             the application and route handlers, Google Analytics when analytics is enabled for your browser under the
-            rules above, and Sentry if error reporting is enabled for the deployment.
+            rules above, and Sentry when app-level error reporting is enabled under your privacy preferences.
           </p>
           <p>
             This app is intended for interactive experimentation, not regulated or high-sensitivity processing. If you
@@ -91,6 +93,7 @@ export default function PrivacyPage() {
         </div>
         <div className="legal-actions">
           <Link href="/">Back to The AI Pit</Link>
+          <TelemetryPreferencesButton />
         </div>
       </div>
     </main>

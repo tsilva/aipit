@@ -1,10 +1,10 @@
-import * as Sentry from "@sentry/nextjs";
 import { jsonErrorResponse, parseJsonRequest } from "@/lib/api-route-response";
 import { isJsonObject } from "@/lib/json";
 import { OPENROUTER_CHAT_COMPLETIONS_URL } from "@/lib/openrouter";
 import { isSupportedOpenRouterModel, SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
 import { OpenRouterProxyError, proxyOpenRouterRequest } from "@/lib/openrouter-server";
 import { resolveRequestId } from "@/lib/request-id";
+import { captureRequestException } from "@/lib/sentry-capture";
 
 export async function POST(request: Request): Promise<Response> {
   const requestId = resolveRequestId(request);
@@ -51,7 +51,7 @@ export async function POST(request: Request): Promise<Response> {
       return jsonErrorResponse(requestId, error.status, error.message);
     }
 
-    Sentry.captureException(error, {
+    captureRequestException(request, error, {
       extra: {
         requestId,
         routeName: "/api/openrouter/chat/completions",

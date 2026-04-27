@@ -1,89 +1,50 @@
-export type SentryRuntime = "client" | "server" | "edge";
+import type { ErrorEvent, EventHint } from "@sentry/nextjs";
+import {
+  hasTelemetryPermission,
+  hasTelemetryPermissionForHeaders,
+  readTelemetryConsent,
+  readTelemetryConsentRequirement,
+} from "@/lib/telemetry-consent";
+import type { SentryRuntime } from "./sentry-build";
+import { isSentryRuntimeEnabled, resolveSentryDsn, resolveSentryEnvironment } from "./sentry-build";
+
+export type { SentryRuntime } from "./sentry-build";
+export {
+  getSentryConnectOrigins,
+  hasSentryBuildUploadConfig,
+  isSentryRuntimeEnabled,
+  resolveSentryBuildConfig,
+  resolveSentryClientBuildEnv,
+  resolveSentryDsn,
+  resolveSentryEnvironment,
+  validateSentryProductionConfig,
+} from "./sentry-build";
 
 type SentryRuntimeConfig = {
   dsn?: string;
   enabled: boolean;
   environment: string;
+  beforeSend: (event: ErrorEvent, hint: EventHint) => ErrorEvent | null;
   tracesSampleRate: number;
 };
 
-type SentryBuildConfig = {
-  authToken?: string;
-  org?: string;
-  project?: string;
-  sentryUrl?: string;
-};
-
-type SentryConfigValidation = {
-  errors: string[];
-};
-
-const SENTRY_ENABLE_VALUES = new Set(["1", "true", "yes", "on"]);
 const SENTRY_TRACES_SAMPLE_RATE = 0.1;
-const SENTRY_AUTH_TOKEN_PLACEHOLDER = "sntrys_your_token_here";
-const DEFAULT_SENTRY_ORG = "tsilva";
-const DEFAULT_SENTRY_PROJECT = "aipit";
-const DEFAULT_SENTRY_BASE_URL = "https://sentry.io";
+const SENSITIVE_FIELD_PATTERN = /(api[-_ ]?key|authorization|bearer|cookie|token|secret|password|credential)/i;
 
-function normalizeOptional(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
-}
+type SentryEvent = ErrorEvent & {
+  request?: ErrorEvent["request"] & {
+    cookies?: Record<string, string>;
+    headers?: Record<string, string>;
+  };
+  extra?: Record<string, unknown>;
+};
 
-function normalizeSentryAuthToken(value: string | undefined): string | undefined {
-  const normalized = normalizeOptional(value);
-
-  if (!normalized || normalized === SENTRY_AUTH_TOKEN_PLACEHOLDER) {
-    return undefined;
-  }
-
-  return normalized;
-}
-
-function isSentryDevOverrideEnabled(source: Record<string, string | undefined>): boolean {
-  const rawValue = normalizeOptional(source.NEXT_PUBLIC_SENTRY_ENABLED);
-
-  if (!rawValue) {
-    return false;
-  }
-
-  return SENTRY_ENABLE_VALUES.has(rawValue.toLowerCase());
-}
-
-export function resolveSentryEnvironment(source: Record<string, string | undefined> = process.env): string {
-  return (
-    normalizeOptional(source.SENTRY_ENVIRONMENT) ??
-    normalizeOptional(source.VERCEL_ENV) ??
-    normalizeOptional(source.NODE_ENV) ??
-    "development"
-  );
-}
-
-export function isSentryRuntimeEnabled(source: Record<string, string | undefined> = process.env): boolean {
-  const vercelEnv = normalizeOptional(source.VERCEL_ENV);
-  const nodeEnv = normalizeOptional(source.NODE_ENV) ?? "development";
-  const isProductionRuntime = vercelEnv ? vercelEnv === "production" : nodeEnv === "production";
-
-  return isProductionRuntime || isSentryDevOverrideEnabled(source);
-}
-
-export function resolveSentryDsn(
-  runtime: SentryRuntime,
-  source: Record<string, string | undefined> = process.env,
-): string | undefined {
-  const publicDsn = normalizeOptional(source.NEXT_PUBLIC_SENTRY_DSN);
-  const serverDsn = normalizeOptional(source.SENTRY_DSN);
-  const sharedDsn = publicDsn ?? serverDsn;
-
-  switch (runtime) {
-    case "client":
-      return sharedDsn;
-    case "server":
-      return serverDsn ?? publicDsn;
-    case "edge":
-      return serverDsn ?? sharedDsn;
-  }
-}
+type SentryHeaderSource =
+  | {
+      get(name: string): string | null;
+    }
+  | Record<string, string | string[] | undefined>
+  | undefined;
 
 export function resolveSentryRuntimeConfig(
   runtime: SentryRuntime,
@@ -95,82 +56,59 @@ export function resolveSentryRuntimeConfig(
     dsn,
     enabled: Boolean(dsn) && isSentryRuntimeEnabled(source),
     environment: resolveSentryEnvironment(source),
+    beforeSend: (event) => beforeSendSentryEvent(runtime, event),
     tracesSampleRate: SENTRY_TRACES_SAMPLE_RATE,
   };
 }
 
-export function getSentryConnectOrigins(source: Record<string, string | undefined> = process.env): string[] {
-  const origins = new Set<string>();
+function sanitizeUnknown(value: unknown, depth = 0): unknown {
+  if (depth > 5 || value === null || typeof value !== "object") {
+    return value;
+  }
 
-  for (const dsn of [
-    resolveSentryDsn("client", source),
-    resolveSentryDsn("server", source),
-    resolveSentryDsn("edge", source),
-  ]) {
-    if (!dsn) {
-      continue;
+  if (Array.isArray(value)) {
+    return value.map((entry) => sanitizeUnknown(entry, depth + 1));
+  }
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+      key,
+      SENSITIVE_FIELD_PATTERN.test(key) ? "[Filtered]" : sanitizeUnknown(entry, depth + 1),
+    ]),
+  );
+}
+
+export function sanitizeSentryEvent(event: SentryEvent): SentryEvent {
+  const sanitized = sanitizeUnknown(event) as SentryEvent;
+
+  if (sanitized.request) {
+    delete sanitized.request.cookies;
+
+    if (sanitized.request.headers) {
+      sanitized.request.headers = Object.fromEntries(
+        Object.entries(sanitized.request.headers).filter(([key]) => !SENSITIVE_FIELD_PATTERN.test(key)),
+      );
     }
-
-    try {
-      origins.add(new URL(dsn).origin);
-    } catch {
-      // Ignore malformed DSNs and keep the rest of the policy intact.
-    }
   }
 
-  return Array.from(origins);
+  return sanitized;
 }
 
-export function resolveSentryBuildConfig(
-  source: Record<string, string | undefined> = process.env,
-): SentryBuildConfig {
-  return {
-    authToken: normalizeSentryAuthToken(source.SENTRY_AUTH_TOKEN),
-    org: normalizeOptional(source.SENTRY_ORG) ?? DEFAULT_SENTRY_ORG,
-    project: normalizeOptional(source.SENTRY_PROJECT) ?? DEFAULT_SENTRY_PROJECT,
-    sentryUrl: normalizeOptional(source.SENTRY_BASE_URL) ?? normalizeOptional(source.SENTRY_URL) ?? DEFAULT_SENTRY_BASE_URL,
-  };
+export function shouldCaptureSentryClientEvent(): boolean {
+  return hasTelemetryPermission({
+    consent: readTelemetryConsent("errorReporting"),
+    requireConsent: readTelemetryConsentRequirement(),
+  });
 }
 
-export function resolveSentryClientBuildEnv(
-  source: Record<string, string | undefined> = process.env,
-): Record<string, string> {
-  const dsn = resolveSentryDsn("client", source);
-  const environment = resolveSentryEnvironment(source);
-  const buildEnv: Record<string, string> = {
-    NEXT_PUBLIC_SENTRY_ENVIRONMENT: environment,
-  };
+export function shouldCaptureSentryForRequestHeaders(headers: SentryHeaderSource): boolean {
+  return hasTelemetryPermissionForHeaders("errorReporting", headers);
+}
 
-  if (dsn) {
-    buildEnv.NEXT_PUBLIC_SENTRY_DSN = dsn;
+export function beforeSendSentryEvent(runtime: SentryRuntime, event: ErrorEvent): ErrorEvent | null {
+  if (runtime === "client" && !shouldCaptureSentryClientEvent()) {
+    return null;
   }
 
-  return buildEnv;
-}
-
-export function hasSentryBuildUploadConfig(source: Record<string, string | undefined> = process.env): boolean {
-  const buildConfig = resolveSentryBuildConfig(source);
-
-  return Boolean(buildConfig.authToken && buildConfig.org && buildConfig.project);
-}
-
-export function validateSentryProductionConfig(
-  source: Record<string, string | undefined> = process.env,
-): SentryConfigValidation {
-  const errors: string[] = [];
-  const isProductionRuntime = resolveSentryEnvironment(source) === "production";
-  const hasRuntimeDsn = Boolean(resolveSentryDsn("client", source) || resolveSentryDsn("server", source));
-  const hasBuildUpload = hasSentryBuildUploadConfig(source);
-
-  if (!isProductionRuntime) {
-    return { errors };
-  }
-
-  if (hasBuildUpload && !hasRuntimeDsn) {
-    errors.push(
-      "Production source map upload is configured, but no runtime Sentry DSN is available. Set NEXT_PUBLIC_SENTRY_DSN or SENTRY_DSN.",
-    );
-  }
-
-  return { errors };
+  return sanitizeSentryEvent(event);
 }

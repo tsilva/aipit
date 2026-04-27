@@ -3,6 +3,7 @@ import { isJsonObject } from "@/lib/json";
 import { SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
 import { buildOpenRouterHeaders, type OpenRouterPromptCacheControl } from "@/lib/openrouter";
 import { buildResponseHeaders, resolveRequestId } from "@/lib/request-id";
+import { shouldCaptureSentryForRequestHeaders } from "@/lib/sentry";
 
 const HOSTED_KEY_RATE_LIMIT_WINDOW_MS = 60_000;
 const HOSTED_KEY_ROUTE_LIMIT = 10;
@@ -272,17 +273,19 @@ export async function proxyOpenRouterRequest({
       signal,
     });
   } catch (error) {
-    Sentry.captureException(error, {
-      extra: {
-        durationMs: Date.now() - startedAt,
-        method,
-        requestId: resolvedRequestId,
-        routeName,
-        siteUrl: resolvedSiteUrl,
-        upstreamUrl,
-        usingServerKey,
-      },
-    });
+    if (shouldCaptureSentryForRequestHeaders(request.headers)) {
+      Sentry.captureException(error, {
+        extra: {
+          durationMs: Date.now() - startedAt,
+          method,
+          requestId: resolvedRequestId,
+          routeName,
+          siteUrl: resolvedSiteUrl,
+          upstreamUrl,
+          usingServerKey,
+        },
+      });
+    }
     console.error("OpenRouter proxy request failed", {
       durationMs: Date.now() - startedAt,
       method,

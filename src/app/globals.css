@@ -1165,6 +1165,11 @@ select.field {
   gap: 0.55rem;
 }
 
+.hero-secure-note {
+  max-width: min(100%, 36rem);
+  line-height: 1.45;
+}
+
 .hero-secure-note svg {
   width: 0.86rem;
   height: 0.86rem;
@@ -1174,8 +1179,18 @@ select.field {
   text-decoration: none;
 }
 
+.footer-link-button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-decoration: none;
+}
+
 .hero-footer a:hover,
-.hero-footer a:focus-visible {
+.hero-footer a:focus-visible,
+.footer-link-button:hover,
+.footer-link-button:focus-visible {
   color: var(--foreground);
 }
 
@@ -3174,6 +3189,25 @@ select.field {
   gap: 0.7rem;
 }
 
+.privacy-preferences-button {
+  border: 1px solid rgba(255, 231, 198, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 248, 237, 0.06);
+  color: var(--ink-soft);
+  padding: 0.65rem 0.9rem;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease;
+}
+
+.privacy-preferences-button:hover,
+.privacy-preferences-button:focus-visible {
+  border-color: rgba(240, 171, 105, 0.42);
+  background: rgba(255, 248, 237, 0.1);
+  color: var(--foreground);
+}
+
 .legal-page,
 .error-shell {
   min-height: 100vh;
@@ -3391,6 +3425,63 @@ select.field {
   max-height: min(100%, 46rem);
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+.telemetry-preferences-panel {
+  display: grid;
+  gap: 1rem;
+  width: min(100%, 36rem);
+  padding: 1.35rem;
+  outline: none;
+}
+
+.telemetry-preferences-body {
+  display: grid;
+  gap: 0.85rem;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.telemetry-preferences-body p {
+  margin: 0;
+}
+
+.telemetry-preference-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid rgba(255, 231, 198, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 248, 237, 0.05);
+  padding: 0.85rem 0.95rem;
+}
+
+.telemetry-preference-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.telemetry-preference-copy strong {
+  color: var(--foreground);
+}
+
+.telemetry-preference-copy span {
+  font-size: 0.88rem;
+}
+
+.telemetry-preference-row input {
+  width: 2.8rem;
+  height: 1.45rem;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+}
+
+.telemetry-preferences-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.7rem;
 }
 
 .simulation-acknowledgement-panel {

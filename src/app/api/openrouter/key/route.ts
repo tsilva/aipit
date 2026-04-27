@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/nextjs";
 import { jsonErrorResponse, parseJsonRequest } from "@/lib/api-route-response";
 import { isJsonObject } from "@/lib/json";
 import { OPENROUTER_KEY_URL } from "@/lib/openrouter";
@@ -8,6 +7,7 @@ import {
   proxyOpenRouterRequest,
 } from "@/lib/openrouter-server";
 import { buildResponseHeaders, resolveRequestId } from "@/lib/request-id";
+import { captureRequestException } from "@/lib/sentry-capture";
 
 export async function POST(request: Request): Promise<Response> {
   const requestId = resolveRequestId(request);
@@ -49,7 +49,7 @@ export async function POST(request: Request): Promise<Response> {
       return jsonErrorResponse(requestId, error.status, error.message);
     }
 
-    Sentry.captureException(error, {
+    captureRequestException(request, error, {
       extra: {
         requestId,
         routeName: "/api/openrouter/key",
