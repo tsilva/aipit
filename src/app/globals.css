@@ -763,6 +763,12 @@ select.field {
   object-fit: cover;
 }
 
+@media (min-width: 1600px) {
+  .hero-arena-card {
+    aspect-ratio: 16 / 4.8;
+  }
+}
+
 .hero-panel {
   position: relative;
   overflow: hidden;
