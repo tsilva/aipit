@@ -8,7 +8,7 @@ import { buildStaticPageMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildStaticPageMetadata({
   title: "Privacy | The AI Pit",
   description:
-    "Privacy details for The AI Pit, including hosted OpenRouter processing, simulation acknowledgement storage, region-aware analytics consent, and service providers.",
+    "Privacy details for The AI Pit, including OpenRouter key storage, simulation acknowledgement storage, region-aware analytics consent, and service providers.",
   path: "/privacy",
   index: false,
   follow: true,
@@ -30,17 +30,16 @@ export default function PrivacyPage() {
             .
           </p>
           <p>
-            The AI Pit supports two OpenRouter usage modes. If you provide your own OpenRouter API key, your key,
-            prompts, character settings, and model outputs are routed through The AI Pit&apos;s server-side proxy to
-            OpenRouter using your OpenRouter account. If you do not provide your own key and the app offers a hosted
-            key, that same debate content is processed through The AI Pit&apos;s server-side proxy and then through The AI
-            Pit&apos;s OpenRouter account.
+            The AI Pit uses your OpenRouter API key for live debate generation. Your key, prompts, character settings,
+            and model outputs are routed through The AI Pit&apos;s server-side proxy to OpenRouter using your OpenRouter
+            account.
           </p>
           <p>
             Debate content is processed to generate the requested debate session. The AI Pit does not provide
-            account-backed transcript storage, and personal OpenRouter API keys are not intentionally persisted across
-            reloads. Do not submit secrets, credentials, payment data, health data, or other sensitive personal data
-            through either OpenRouter path.
+            account-backed transcript storage. Personal OpenRouter API keys are stored in this browser&apos;s
+            localStorage under <code>aipit.openrouter-api-key</code> so the key is available after reloads. Do not
+            submit other secrets, credentials, payment data, health data, or sensitive personal data through the
+            OpenRouter path.
           </p>
           <p>
             If you create a public replay link, the app stores the debate prompt, character configuration, generated

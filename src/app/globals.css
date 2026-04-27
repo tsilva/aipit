@@ -906,23 +906,21 @@ select.field {
   font-size: 0.84rem;
 }
 
-.hero-selected-pill {
+.hero-roster-count-pill {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: rgba(39, 165, 91, 0.34);
+  border: 1px solid rgba(255, 248, 237, 0.14);
+  background: rgba(255, 248, 237, 0.06);
   padding: 0.23rem 0.55rem;
-  color: #91f5b7;
+  color: rgba(235, 226, 215, 0.82);
   font-size: 0.68rem;
   font-weight: 800;
   line-height: 1;
 }
 
 .hero-api-block {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.8rem;
-  align-items: center;
+  display: block;
   margin-top: 0.75rem;
 }
 
@@ -980,10 +978,6 @@ select.field {
   padding: 0.78rem 0.95rem;
   color: #f8f0e7;
   font-size: 0.86rem;
-}
-
-.hero-api-input[readonly] {
-  color: var(--foreground);
 }
 
 .hero-api-topline {
@@ -1240,7 +1234,6 @@ select.field {
 }
 
 .hero-secondary-button,
-.hero-manage-button,
 .hero-icon-add-button {
   display: inline-flex;
   align-items: center;
@@ -1273,7 +1266,7 @@ select.field {
 }
 
 .hero-secondary-button,
-.hero-manage-button {
+.hero-icon-add-button {
   gap: 0.55rem;
   min-height: 2.65rem;
   border-radius: 0.55rem;
@@ -1290,28 +1283,19 @@ select.field {
 }
 
 .hero-secondary-button svg,
-.hero-manage-button svg,
 .hero-icon-add-button svg {
   width: 0.95rem;
   height: 0.95rem;
 }
 
 .hero-secondary-button:hover,
-.hero-manage-button:hover,
 .hero-icon-add-button:hover,
 .hero-secondary-button:focus-visible,
-.hero-manage-button:focus-visible,
 .hero-icon-add-button:focus-visible {
   transform: translateY(-1px);
   border-color: rgba(255, 122, 26, 0.38);
   background: rgba(255, 122, 26, 0.13);
   color: #ffb270;
-}
-
-.hero-manage-button:disabled {
-  cursor: wait;
-  opacity: 0.64;
-  transform: none;
 }
 
 .hero-roster-grid {
@@ -1531,27 +1515,6 @@ select.field {
   color: rgba(226, 217, 207, 0.82);
   font-size: 0.76rem;
   line-height: 1.32;
-}
-
-.hero-roster-check {
-  position: absolute;
-  top: 0.65rem;
-  right: 0.65rem;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 1.55rem;
-  height: 1.55rem;
-  border-radius: 999px;
-  background: #ff7a1a;
-  color: #111821;
-  box-shadow: 0 0.55rem 1rem rgba(255, 91, 18, 0.28);
-}
-
-.hero-roster-check svg {
-  width: 1rem;
-  height: 1rem;
-  stroke-width: 3;
 }
 
 .chamber-shell,
@@ -4494,8 +4457,7 @@ select.field {
   }
 
   .hero-roster-actions,
-  .hero-secondary-button,
-  .hero-manage-button {
+  .hero-secondary-button {
     width: 100%;
   }
 

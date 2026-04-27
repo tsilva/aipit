@@ -13,7 +13,6 @@ import {
   Pencil as PencilGlyph,
   Play as PlayGlyph,
   Plus as PlusGlyph,
-  Save as SaveGlyph,
   Settings as SettingsGlyph,
   Shield as ShieldGlyph,
   SkipBack as PreviousGlyph,
@@ -74,6 +73,11 @@ import { trackEvent } from "@/lib/google-analytics";
 export type { ApiKeyStatus, InitialStudioState } from "@/lib/pit-studio-state";
 
 const INVALID_OPENROUTER_KEY_MESSAGE = "This API key is invalid. Add a valid OpenRouter key to run debates.";
+const EMPTY_OPENROUTER_KEY_MESSAGE = "Enter a valid OpenRouter API key to start a debate.";
+const INVALID_OPENROUTER_KEY_FORMAT_MESSAGE = "This API key is invalid. OpenRouter keys should start with sk-or-v1-.";
+const OPENROUTER_API_KEY_STORAGE_KEY = "aipit.openrouter-api-key";
+const OPENROUTER_API_KEY_PATTERN = /^sk-or-v1-[A-Za-z0-9_-]{32,}$/;
+const OPENROUTER_API_KEY_VALIDATION_DEBOUNCE_MS = 450;
 const DEFAULT_SHARED_DIRECTIVE = `Character-vs-character debate. Defend your character's instincts, style, and worldview with full conviction — let the character's natural temperament, cadence, verbal habits, and rhetorical flaws drive the delivery. Engage the strongest opposing points; respond to what was actually said, never repeat a stump speech. Hold your position but acknowledge stronger objections when they matter. Stay concrete, argumentative, conversational, and authentic to the assigned voice rather than essayistic or over-polished.`;
 const PIT_RUN_DEFAULTS = {
   sharedDirective: DEFAULT_SHARED_DIRECTIVE,
@@ -112,10 +116,6 @@ function syncLineupOrder(lineupOrder: string[], roster: ParticipantConfig[]): st
   }
 
   return arraysEqual(lineupOrder, nextOrder) ? lineupOrder : nextOrder;
-}
-
-function unresolvedApiKeyStatusMessage(): string {
-  return "API key changed. Confirm it to validate before starting.";
 }
 
 function makeId(prefix: string): string {
@@ -289,13 +289,13 @@ async function validateApiKey({
   const requestId = requestIdRef.current + 1;
   requestIdRef.current = requestId;
   setApiKeyStatus(trimmed ? "checking" : "empty");
-  setApiKeyStatusMessage(trimmed ? "Validating API key with OpenRouter..." : "Checking for a server-side OpenRouter key...");
+  setApiKeyStatusMessage(trimmed ? "Validating API key with OpenRouter..." : EMPTY_OPENROUTER_KEY_MESSAGE);
 
   try {
     const { validateOpenRouterKey } = await import("@/lib/openrouter");
     const validation = await validateOpenRouterKey(nextApiKey, siteUrl);
     if (requestIdRef.current !== requestId) {
-      return validation.valid;
+      return false;
     }
 
     setApiKeyStatus(validation.valid ? "valid" : "invalid");
@@ -363,10 +363,6 @@ type PendingTurnPreview = Extract<RunProgressEvent, { type: "thinking" }>;
 
 type StagePanelMode = "conversation" | "transcript";
 type StudioView = "setup" | "simulation";
-
-function maskApiKey(value: string): string {
-  return ".".repeat(value.length);
-}
 
 function kindLabel(kind: PitTurn["kind"]): string {
   return kind.replace(/_/g, " ");
@@ -918,9 +914,6 @@ function SetupParticipantCard({
         aria-describedby={moderatorActionId}
         title={isModerator ? `${participant.name} is the moderator` : `Make ${participant.name} the moderator`}
       >
-        <span className="hero-roster-check" aria-hidden="true">
-          <CheckGlyph />
-        </span>
         <div className="hero-roster-card-top">
           <ParticipantAvatar
             name={participant.name}
@@ -955,16 +948,13 @@ function SetupParticipantCard({
 function StudioHero({
   roster,
   config,
-  apiKey,
   apiKeyStatus,
   apiKeyStatusMessage,
   draftApiKey,
-  hasPendingApiKeyChanges,
   canSubmit,
   hasApiKey,
   isRunning,
   onDraftApiKeyChange,
-  onSaveApiKey,
   onPromptChange,
   onRerollStarterBundle,
   onAddMember,
@@ -973,37 +963,25 @@ function StudioHero({
 }: {
   roster: ParticipantConfig[];
   config: RunInput;
-  apiKey: string;
   apiKeyStatus: ApiKeyStatus;
   apiKeyStatusMessage: string;
   draftApiKey: string;
-  hasPendingApiKeyChanges: boolean;
   canSubmit: boolean;
   hasApiKey: boolean;
   isRunning: boolean;
   onDraftApiKeyChange: (value: string) => void;
-  onSaveApiKey: () => Promise<boolean>;
   onPromptChange: (value: string) => void;
   onRerollStarterBundle: () => void;
   onAddMember: () => void;
   onSelectModerator: (id: string) => void;
   onOpenParticipant: (id: string) => void;
 }) {
-  const apiKeyLabel = hasApiKey ? maskApiKey(apiKey) : "No personal key";
-  const [isEditingApiKey, setIsEditingApiKey] = useState(false);
   const apiKeyInputRef = useRef<HTMLInputElement | null>(null);
-  const hasMountedApiKeyEditorRef = useRef(false);
-  const isApiKeyEditorVisible = isEditingApiKey;
-  const previousApiKeyEditorVisibilityRef = useRef(isApiKeyEditorVisible);
-  const apiKeyFieldValue = isApiKeyEditorVisible ? draftApiKey : hasApiKey ? apiKeyLabel : "";
-  const displayedApiKeyStatus = hasPendingApiKeyChanges ? "unresolved" : apiKeyStatus;
-  const displayedApiKeyStatusMessage = hasPendingApiKeyChanges ? unresolvedApiKeyStatusMessage() : apiKeyStatusMessage;
-  const showHostedUsageWarning = !apiKey.trim() && !hasPendingApiKeyChanges && apiKeyStatus === "valid";
-  const showWarningStatusIcon = showHostedUsageWarning || displayedApiKeyStatus === "empty" || displayedApiKeyStatus === "unresolved";
+  const displayedApiKeyStatus = apiKeyStatus;
+  const displayedApiKeyStatusMessage = apiKeyStatusMessage;
+  const showWarningStatusIcon = displayedApiKeyStatus === "empty" || displayedApiKeyStatus === "invalid";
   const statusTone =
-    showHostedUsageWarning
-      ? "warning"
-      : displayedApiKeyStatus === "valid"
+    displayedApiKeyStatus === "valid"
       ? "success"
       : displayedApiKeyStatus === "invalid"
         ? "error"
@@ -1012,27 +990,8 @@ function StudioHero({
           : "warning";
 
   useEffect(() => {
-    const wasVisible = previousApiKeyEditorVisibilityRef.current;
-    previousApiKeyEditorVisibilityRef.current = isApiKeyEditorVisible;
-
-    if (!hasMountedApiKeyEditorRef.current) {
-      hasMountedApiKeyEditorRef.current = true;
-      return;
-    }
-
-    if (!isApiKeyEditorVisible || wasVisible) {
-      return;
-    }
-
     apiKeyInputRef.current?.focus();
-    apiKeyInputRef.current?.select();
-  }, [isApiKeyEditorVisible]);
-
-  async function handleApiKeyConfirm() {
-    if (await onSaveApiKey()) {
-      setIsEditingApiKey(false);
-    }
-  }
+  }, []);
 
   function handleApiKeyInputKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Enter") {
@@ -1040,12 +999,6 @@ function StudioHero({
     }
 
     event.preventDefault();
-
-    if (!isApiKeyEditorVisible || displayedApiKeyStatus === "checking") {
-      return;
-    }
-
-    void handleApiKeyConfirm();
   }
 
   return (
@@ -1059,7 +1012,7 @@ function StudioHero({
           <h1 className="hero-title">The AI Pit</h1>
           <p className="hero-subtitle">Where AI Minds Clash</p>
           <p className="hero-body">
-            Watch the world&apos;s top AI personas debate your toughest questions. Choose a topic, select debaters,
+            Watch the world&apos;s top AI personas debate your toughest questions. Choose a topic, configure debaters,
             and see brilliant arguments unfold in real time.
           </p>
 
@@ -1145,8 +1098,8 @@ function StudioHero({
               <span className="hero-step-badge">2</span>
               <div>
                 <div className="hero-heading-row">
-                  <h2 className="hero-panel-title">Select debaters</h2>
-                  <span className="hero-selected-pill">{roster.length} selected</span>
+                  <h2 className="hero-panel-title">Configure debaters</h2>
+                  <span className="hero-roster-count-pill">{roster.length} personas</span>
                 </div>
                 <p className="hero-panel-copy">Choose AI personas with diverse perspectives</p>
               </div>
@@ -1196,7 +1149,7 @@ function StudioHero({
             <span className="hero-step-badge">3</span>
             <div>
               <h2 className="hero-panel-title">OpenRouter access {hasApiKey ? "" : "(required)"}</h2>
-              <p className="hero-panel-copy">Use your OpenRouter key or leave blank to use our configured server.</p>
+              <p className="hero-panel-copy">Paste your OpenRouter key. It is validated automatically.</p>
             </div>
           </div>
 
@@ -1210,40 +1163,20 @@ function StudioHero({
         </div>
 
         <div className="hero-api-block">
-          <div className={`hero-api-form ${isApiKeyEditorVisible ? "is-editing" : ""}`}>
+          <div className="hero-api-form">
             <input
               id="hero-api-key-input"
               ref={apiKeyInputRef}
               className="field mono hero-api-input"
               type="text"
-              value={apiKeyFieldValue}
+              value={draftApiKey}
               onChange={(event) => onDraftApiKeyChange(event.target.value)}
               onKeyDown={handleApiKeyInputKeyDown}
               placeholder="sk-or-v1-..."
               autoComplete="off"
-              readOnly={!isApiKeyEditorVisible}
               aria-label="OpenRouter API key"
             />
           </div>
-
-          <button
-            type="button"
-            disabled={displayedApiKeyStatus === "checking"}
-            onClick={
-              isApiKeyEditorVisible
-                ? () => {
-                    void handleApiKeyConfirm();
-                  }
-                : () => {
-                    onDraftApiKeyChange(apiKey);
-                    setIsEditingApiKey(true);
-                  }
-            }
-            className="hero-manage-button"
-          >
-            {isApiKeyEditorVisible ? <SaveGlyph /> : <SettingsGlyph />}
-            <span>{isApiKeyEditorVisible ? "Save key" : "Manage in settings"}</span>
-          </button>
         </div>
 
         <div className={`hero-api-status hero-api-status-${statusTone}`} role="status" aria-live="polite">
@@ -1277,7 +1210,7 @@ function StudioHero({
       <footer className="hero-footer">
         <span className="hero-secure-note">
           <LockGlyph />
-          Your key is not saved after this browser session; requests are routed through this app&apos;s proxy to OpenRouter.
+          Your key is saved in this browser&apos;s localStorage; requests are routed through this app&apos;s proxy to OpenRouter.
         </span>
         <span className="hero-footer-links">
           <SimulationNotice className="simulation-notice-hero" />
@@ -2639,7 +2572,6 @@ export function PitStudio({
   const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>(initialStudioState.apiKeyStatus);
   const [apiKeyStatusMessage, setApiKeyStatusMessage] = useState(initialStudioState.apiKeyStatusMessage);
   const [draftApiKey, setDraftApiKey] = useState(initialStudioState.draftApiKey);
-  const [hasPendingApiKeyChanges, setHasPendingApiKeyChanges] = useState(false);
   const [showCharacterSelectorModal, setShowCharacterSelectorModal] = useState(false);
   const [studioView, setStudioView] = useState<StudioView>(initialStudioState.initialStudioView);
   const [panelMode, setPanelMode] = useState<StagePanelMode>("conversation");
@@ -2678,7 +2610,7 @@ export function PitStudio({
     roster.flatMap((participant) => (participant.presetId ? [participant.presetId] : [])),
   );
   const hasApiKey = apiKey.trim().length > 0;
-  const hasValidatedApiKey = apiKeyStatus === "valid" && !hasPendingApiKeyChanges;
+  const hasValidatedApiKey = hasApiKey && apiKeyStatus === "valid" && draftApiKey.trim() === apiKey.trim();
   const hasPrompt = config.prompt.trim().length > 0;
   const transcriptTurns = flattenTurns(result);
   const transcriptPrompt = result?.prompt ?? config.prompt;
@@ -2731,6 +2663,71 @@ export function PitStudio({
   useEffect(() => {
     configRef.current = config;
   }, [config]);
+
+  useEffect(() => {
+    try {
+      const storedApiKey = window.localStorage.getItem(OPENROUTER_API_KEY_STORAGE_KEY);
+      if (storedApiKey !== null) {
+        setDraftApiKey(storedApiKey);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    const trimmed = draftApiKey.trim();
+    setError(null);
+
+    try {
+      if (trimmed) {
+        window.localStorage.setItem(OPENROUTER_API_KEY_STORAGE_KEY, trimmed);
+      } else {
+        window.localStorage.removeItem(OPENROUTER_API_KEY_STORAGE_KEY);
+      }
+    } catch {}
+
+    setApiKey("");
+
+    if (!trimmed) {
+      keyValidationRequestIdRef.current += 1;
+      setApiKeyStatus("empty");
+      setApiKeyStatusMessage(EMPTY_OPENROUTER_KEY_MESSAGE);
+      return;
+    }
+
+    if (!OPENROUTER_API_KEY_PATTERN.test(trimmed)) {
+      keyValidationRequestIdRef.current += 1;
+      setApiKeyStatus("invalid");
+      setApiKeyStatusMessage(INVALID_OPENROUTER_KEY_FORMAT_MESSAGE);
+      return;
+    }
+
+    let isCancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      void validateApiKey({
+        nextApiKey: trimmed,
+        requestIdRef: keyValidationRequestIdRef,
+        siteUrl: window.location.origin,
+        setApiKeyStatus,
+        setApiKeyStatusMessage,
+      }).then((isValid) => {
+        if (isCancelled) {
+          return;
+        }
+
+        if (isValid) {
+          setApiKey(trimmed);
+          try {
+            window.localStorage.setItem(OPENROUTER_API_KEY_STORAGE_KEY, trimmed);
+          } catch {}
+        }
+      });
+    }, OPENROUTER_API_KEY_VALIDATION_DEBOUNCE_MS);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [draftApiKey]);
 
   useEffect(() => {
     const currentRoster = [config.coordinator, ...config.members];
@@ -2941,40 +2938,8 @@ export function PitStudio({
     });
   }
 
-  async function saveApiKey() {
-    const trimmed = draftApiKey.trim();
-    if (!trimmed) {
-      setApiKey("");
-      setDraftApiKey("");
-      setHasPendingApiKeyChanges(false);
-      await validateApiKey({
-        nextApiKey: "",
-        requestIdRef: keyValidationRequestIdRef,
-        siteUrl: window.location.origin,
-        setApiKeyStatus,
-        setApiKeyStatusMessage,
-      });
-      setError(null);
-      return true;
-    }
-
-    setApiKey(trimmed);
-    setDraftApiKey(trimmed);
-    setHasPendingApiKeyChanges(false);
-    const isValid = await validateApiKey({
-      nextApiKey: trimmed,
-      requestIdRef: keyValidationRequestIdRef,
-      siteUrl: window.location.origin,
-      setApiKeyStatus,
-      setApiKeyStatusMessage,
-    });
-    setError(null);
-    return isValid;
-  }
-
   function handleDraftApiKeyChange(value: string) {
     setDraftApiKey(value);
-    setHasPendingApiKeyChanges(value.trim() !== apiKey.trim());
   }
 
   function selectFrame(index: number) {
@@ -3184,7 +3149,7 @@ export function PitStudio({
     }
 
     if (!hasValidatedApiKey) {
-      setError("Confirm a personal OpenRouter key or configure a server-side key before starting The AI Pit.");
+      setError("Enter a valid OpenRouter API key before starting The AI Pit.");
       return;
     }
 
@@ -3466,16 +3431,13 @@ export function PitStudio({
           <StudioHero
             roster={orderedRoster}
             config={config}
-            apiKey={apiKey}
             apiKeyStatus={apiKeyStatus}
             apiKeyStatusMessage={apiKeyStatusMessage}
             draftApiKey={draftApiKey}
-            hasPendingApiKeyChanges={hasPendingApiKeyChanges}
             hasApiKey={hasApiKey}
             canSubmit={!isReplayOnly && hasValidatedApiKey && hasPrompt && config.members.length >= 2}
             isRunning={isRunning}
             onDraftApiKeyChange={handleDraftApiKeyChange}
-            onSaveApiKey={saveApiKey}
             onPromptChange={(prompt) => setConfig((current) => ({ ...current, prompt }))}
             onRerollStarterBundle={rerollStarterBundle}
             onAddMember={() => setShowCharacterSelectorModal(true)}

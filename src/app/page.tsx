@@ -3,11 +3,6 @@ import { headers } from "next/headers";
 import { PitStudioEntry } from "@/components/pit-studio-entry";
 import { resolveInitialAudience } from "@/lib/audience";
 import {
-  missingOpenRouterKeyMessage,
-  serverOpenRouterKeyMessage,
-} from "@/lib/openrouter";
-import { hasServerOpenRouterKey } from "@/lib/openrouter-server";
-import {
   compactRunInputForSerialization,
   createInputFromStarterBundle,
   createRandomStarterInput,
@@ -58,7 +53,6 @@ async function buildInitialStudioState(bundleId: string | undefined): Promise<In
     : createRandomStarterInput(undefined, audience);
   const config = starter.input;
   const lineupOrder = [config.coordinator, ...config.members].map((participant) => participant.id);
-  const hostedKeyAvailable = hasServerOpenRouterKey();
 
   return {
     config: compactRunInputForSerialization(config),
@@ -66,10 +60,8 @@ async function buildInitialStudioState(bundleId: string | undefined): Promise<In
     lineupOrder,
     starterBundleId: starter.bundle.id,
     apiKey: "",
-    apiKeyStatus: hostedKeyAvailable ? "valid" : "empty",
-    apiKeyStatusMessage: hostedKeyAvailable
-      ? serverOpenRouterKeyMessage()
-      : missingOpenRouterKeyMessage(),
+    apiKeyStatus: "empty",
+    apiKeyStatusMessage: "Enter a valid OpenRouter API key to start a debate.",
     draftApiKey: "",
     initialResult: null,
     initialStudioView: "setup",
