@@ -149,6 +149,7 @@ src/
 
 - OpenRouter requests are proxied through `src/app/api/openrouter`.
 - The AI Pit is a non-commercial experimental AI simulation project, not an advice service or official communications channel, and is not directed to children under 13.
+- The app displays global synthetic media disclosures for AI-generated debate text and built-in avatar media that may be AI-generated or manipulated.
 - First-time visitors must acknowledge the AI simulation, terms, and privacy summary before using the app; the acknowledgement uses a content-derived token stored in browser localStorage.
 - `OPENROUTER_API_KEY` is server-only and should not use a `NEXT_PUBLIC_` prefix.
 - Starter bundles are reshuffled on page load; personal API keys are persisted in browser `localStorage` and still transit the app proxy to reach OpenRouter.

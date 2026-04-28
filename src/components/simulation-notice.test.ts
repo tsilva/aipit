@@ -9,6 +9,9 @@ describe("SimulationNotice", () => {
 
     expect(markup).toContain(SIMULATION_NOTICE_TEXT);
     expect(markup).toContain("AI simulation");
+    expect(markup).toContain("AI-generated");
+    expect(markup).toContain("artificially generated or manipulated");
+    expect(markup).toContain("synthetic media");
     expect(markup).not.toContain(TAKEDOWN_LINK_TEXT);
   });
 

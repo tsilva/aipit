@@ -27,6 +27,9 @@ describe("legal page metadata", () => {
     expect(legalMarkup).toContain("Privacy preferences");
     expect(legalMarkup).toContain("non-commercial experimental AI");
     expect(legalMarkup).toContain("not directed to children under 13");
+    expect(legalMarkup).toContain("AI-generated");
+    expect(legalMarkup).toContain("artificially generated or manipulated");
+    expect(legalMarkup).toContain("synthetic media");
     expect(legalMarkup).toContain("transit the proxy");
     expect(legalMarkup).toContain("unlisted, not private");
     expect(legalMarkup).toContain("does not grant clearance");

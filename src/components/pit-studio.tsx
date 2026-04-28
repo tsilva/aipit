@@ -54,6 +54,7 @@ import {
   LEGAL_ACKNOWLEDGEMENT_TOKEN,
   PUBLIC_REPLAY_MISUSE_NOTICE_TEXT,
   PUBLIC_REPLAY_VISIBILITY_NOTICE_TEXT,
+  SYNTHETIC_MEDIA_DISCLOSURE_TEXT,
 } from "@/lib/legal-notice";
 import {
   buildCharacterProfilePreview,
@@ -2078,6 +2079,9 @@ function ShareConfirmationModal({
         <div className="share-confirmation-body">
           <SimulationNotice />
           <p>{PUBLIC_REPLAY_VISIBILITY_NOTICE_TEXT}</p>
+          <p>
+            Public replays may include this AI-generated or manipulated material. {SYNTHETIC_MEDIA_DISCLOSURE_TEXT}
+          </p>
           <p>{PUBLIC_REPLAY_MISUSE_NOTICE_TEXT}</p>
         </div>
 

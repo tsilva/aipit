@@ -9,6 +9,7 @@ import {
   LEGAL_TERMS_EFFECTIVE_DATE,
   PUBLIC_REPLAY_MISUSE_NOTICE_TEXT,
   PUBLIC_REPLAY_VISIBILITY_NOTICE_TEXT,
+  SYNTHETIC_MEDIA_DISCLOSURE_TEXT,
 } from "@/lib/legal-notice";
 import { SITE_CONTACT_EMAIL, SITE_CONTACT_MAILTO } from "@/lib/site";
 import { buildStaticPageMetadata } from "@/lib/seo";
@@ -45,11 +46,21 @@ export default function LegalPage() {
               are under 13, do not use the app or submit prompts, personal data, or replay content.
             </p>
             <p>{AI_SIMULATION_DISCLOSURE_TEXT}</p>
+            <p>
+              {SYNTHETIC_MEDIA_DISCLOSURE_TEXT} This disclosure is intended to support EU AI Act Article 50-style
+              transparency for synthetic media without changing the fictional, satirical, or parody character of the
+              experience.
+            </p>
             <p>{AI_SIMULATION_MISUSE_NOTICE_TEXT}</p>
             <p>
               You are responsible for the prompts, character settings, avatars, voices, outputs, and replays you create
               or share. The app does not grant clearance to use any name, likeness, voice, character, image, trademark,
               copyright, or other third-party right.
+            </p>
+            <p>
+              Avatar images you provide are user-provided content. Built-in speaking avatar clips and some built-in
+              avatar images may be AI-generated, regenerated, animated, edited, cropped, or otherwise manipulated from
+              source material for this simulation interface.
             </p>
             <p>
               OpenRouter requests are routed through The AI Pit&apos;s server-side proxy. Personal OpenRouter API keys are

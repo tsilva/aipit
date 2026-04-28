@@ -8,6 +8,7 @@ import {
   AI_SIMULATION_MISUSE_NOTICE_TEXT,
   AI_SIMULATION_NOTICE_TITLE,
   AI_SIMULATION_PROCESSING_NOTICE_TEXT,
+  SYNTHETIC_MEDIA_DISCLOSURE_TEXT,
 } from "@/lib/legal-notice";
 import {
   acknowledgeSimulationNotice,
@@ -152,6 +153,7 @@ export function SimulationAcknowledgementGate() {
           <h2 id={titleId}>{AI_SIMULATION_NOTICE_TITLE}</h2>
           <div id={descriptionId} className="simulation-acknowledgement-text">
             <p>{AI_SIMULATION_DISCLOSURE_TEXT}</p>
+            <p>{SYNTHETIC_MEDIA_DISCLOSURE_TEXT}</p>
             <p>{AI_SIMULATION_MISUSE_NOTICE_TEXT}</p>
             <p>{AI_SIMULATION_PROCESSING_NOTICE_TEXT}</p>
             <p>
