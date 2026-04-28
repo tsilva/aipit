@@ -3351,6 +3351,11 @@ select.field {
   outline: none;
 }
 
+.telemetry-preferences-panel .settings-modal-header {
+  justify-content: center;
+  text-align: center;
+}
+
 .telemetry-preferences-body {
   display: grid;
   gap: 0.85rem;
@@ -3376,6 +3381,7 @@ select.field {
 .telemetry-preference-copy {
   display: grid;
   gap: 0.25rem;
+  text-align: left;
 }
 
 .telemetry-preference-copy strong {
@@ -4397,6 +4403,16 @@ select.field {
     flex-direction: column;
   }
 
+  .hero-roster-header {
+    align-items: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .hero-roster-header .hero-section-heading {
+    flex: 1 1 auto;
+  }
+
   .hero-api-topline {
     display: grid;
   }
@@ -4408,6 +4424,12 @@ select.field {
   .hero-roster-actions,
   .hero-secondary-button {
     width: 100%;
+  }
+
+  .hero-roster-actions {
+    justify-content: flex-end;
+    margin-left: auto;
+    width: auto;
   }
 
   .hero-topic-header .hero-icon-control-button,

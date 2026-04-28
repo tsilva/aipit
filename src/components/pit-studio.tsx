@@ -1822,14 +1822,12 @@ function TranscriptPanel({
   markdown,
   thinkingSpeakerName,
   thinkingParticipant,
-  showReportLink,
 }: {
   turnCount: number;
   isRunning: boolean;
   markdown: string;
   thinkingSpeakerName?: string | null;
   thinkingParticipant?: ParticipantConfig | null;
-  showReportLink: boolean;
 }) {
   const transcriptBodyRef = useRef<HTMLDivElement | null>(null);
   const shouldStickToBottomRef = useRef(true);
@@ -1924,7 +1922,6 @@ function TranscriptPanel({
         onScroll={updateTranscriptScrollLock}
       >
         <div aria-hidden="true" className="transcript-sheet-copy-clearance" />
-        <SimulationNotice className="simulation-notice-transcript" showReportLink={showReportLink} />
         <TranscriptMarkdownContent markdown={markdown} />
 
         <div className="transcript-sheet-footer">
@@ -2335,7 +2332,6 @@ function ChamberStage({
                   markdown={transcriptMarkdown}
                   thinkingSpeakerName={thinkingEntry?.speakerName ?? null}
                   thinkingParticipant={thinkingEntry?.participant ?? null}
-                  showReportLink={isReplayOnly}
                 />
               ) : (
                 <div className="speaker-focus-shell">
