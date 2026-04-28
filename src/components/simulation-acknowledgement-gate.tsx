@@ -1,6 +1,14 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { type RefObject, useEffect, useId, useRef, useSyncExternalStore } from "react";
+import {
+  AI_SIMULATION_ACCEPTANCE_TEXT,
+  AI_SIMULATION_DISCLOSURE_TEXT,
+  AI_SIMULATION_MISUSE_NOTICE_TEXT,
+  AI_SIMULATION_NOTICE_TITLE,
+  AI_SIMULATION_PROCESSING_NOTICE_TEXT,
+} from "@/lib/legal-notice";
 import {
   acknowledgeSimulationNotice,
   hasAcknowledgedSimulationNotice,
@@ -103,13 +111,15 @@ export function SimulationAcknowledgementGate() {
   const descriptionId = useId();
   const panelRef = useRef<HTMLElement | null>(null);
   const acknowledgeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const pathname = usePathname();
   const hasHydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const isAcknowledged = useSyncExternalStore(
     subscribeToSimulationAcknowledgement,
     hasAcknowledgedSimulationNotice,
     () => true,
   );
-  const isVisible = hasHydrated && !isAcknowledged;
+  const isLegalRoute = pathname === "/legal" || pathname === "/terms" || pathname === "/privacy";
+  const isVisible = hasHydrated && !isLegalRoute && !isAcknowledged;
 
   useBodyScrollLock(isVisible);
   useRequiredDialogFocusTrap(panelRef, acknowledgeButtonRef, isVisible);
@@ -139,16 +149,16 @@ export function SimulationAcknowledgementGate() {
       >
         <div className="simulation-acknowledgement-copy">
           <p className="hero-kicker">Required Notice</p>
-          <h2 id={titleId}>AI simulation disclaimer</h2>
+          <h2 id={titleId}>{AI_SIMULATION_NOTICE_TITLE}</h2>
           <div id={descriptionId} className="simulation-acknowledgement-text">
+            <p>{AI_SIMULATION_DISCLOSURE_TEXT}</p>
+            <p>{AI_SIMULATION_MISUSE_NOTICE_TEXT}</p>
+            <p>{AI_SIMULATION_PROCESSING_NOTICE_TEXT}</p>
             <p>
-              The characters, personas, voices, and debate participants on The AI Pit are AI simulations.
-              They do not reflect the real opinions, beliefs, endorsements, positions, statements, or intent
-              of any person, character, brand, organization, rights holder, or estate they may portray.
-            </p>
-            <p>
-              Do not treat generated debate output as authentic quotes, factual representations, or official
-              communications from anyone depicted or referenced.
+              {AI_SIMULATION_ACCEPTANCE_TEXT}{" "}
+              <a href="/legal#terms">Terms</a>
+              {" · "}
+              <a href="/legal#privacy">Privacy Policy</a>
             </p>
           </div>
         </div>
@@ -162,7 +172,7 @@ export function SimulationAcknowledgementGate() {
             className="action-button action-button-primary"
             onClick={handleAcknowledge}
           >
-            I understand
+            I understand and agree
           </button>
         </div>
       </section>

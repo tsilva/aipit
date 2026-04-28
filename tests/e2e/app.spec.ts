@@ -1,5 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
-import { SIMULATION_ACKNOWLEDGEMENT_KEY } from "../../src/lib/simulation-acknowledgement";
+import {
+  SIMULATION_ACKNOWLEDGEMENT_KEY,
+  SIMULATION_ACKNOWLEDGEMENT_VALUE,
+} from "../../src/lib/simulation-acknowledgement";
 import { STARTER_BUNDLES } from "../../src/lib/starter-bundles";
 
 const GLOBAL_STARTER_PROMPTS = STARTER_BUNDLES.filter((bundle) => bundle.audience === "global").map((bundle) => bundle.prompt);
@@ -33,7 +36,7 @@ async function expectStarterPromptFromAudience(page: Page, prompts: string[]) {
 }
 
 async function acknowledgeSimulationNoticeIfVisible(page: Page) {
-  const gate = page.getByRole("dialog", { name: "AI simulation disclaimer" });
+  const gate = page.getByRole("dialog", { name: "AI simulation notice" });
 
   try {
     await gate.waitFor({ state: "visible", timeout: 2_000 });
@@ -41,7 +44,7 @@ async function acknowledgeSimulationNoticeIfVisible(page: Page) {
     return;
   }
 
-  await page.getByRole("button", { name: "I understand" }).click();
+  await page.getByRole("button", { name: "I understand and agree" }).click();
   await expect(gate).toBeHidden();
 }
 
@@ -102,10 +105,15 @@ async function advanceToLastBubble(page: Page) {
 test("requires simulation acknowledgement before using the site", async ({ page }) => {
   await page.goto("/");
 
-  const gate = page.getByRole("dialog", { name: "AI simulation disclaimer" });
+  const gate = page.getByRole("dialog", { name: "AI simulation notice" });
   await expect(gate).toBeVisible();
-  await expect(page.getByRole("button", { name: "I understand" })).toBeFocused();
-  await expect(page.getByText("They do not reflect the real opinions, beliefs")).toBeVisible();
+  await expect(page.getByRole("button", { name: "I understand and agree" })).toBeFocused();
+  await expect(page.getByText("not real quotes, endorsements, beliefs")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Terms", exact: true })).toHaveAttribute("href", "/legal#terms");
+  await expect(page.getByRole("link", { name: "Privacy Policy", exact: true })).toHaveAttribute(
+    "href",
+    "/legal#privacy",
+  );
 
   let blockedStartClick = false;
   try {
@@ -115,14 +123,22 @@ test("requires simulation acknowledgement before using the site", async ({ page 
   }
   expect(blockedStartClick).toBe(true);
 
-  await page.getByRole("button", { name: "I understand" }).click();
+  await page.getByRole("button", { name: "I understand and agree" }).click();
   await expect(gate).toBeHidden();
   expect(await page.evaluate((key) => window.localStorage.getItem(key), SIMULATION_ACKNOWLEDGEMENT_KEY)).toBe(
-    "acknowledged",
+    SIMULATION_ACKNOWLEDGEMENT_VALUE,
   );
 
   await page.reload();
   await expect(gate).toBeHidden();
+});
+
+test("allows legal pages to be read before acknowledgement", async ({ page }) => {
+  await page.goto("/legal");
+
+  await expect(page.getByRole("dialog", { name: "AI simulation notice" })).toBeHidden();
+  await expect(page.getByRole("heading", { name: /Terms & privacy/i })).toBeVisible();
+  await expect(page.getByText("unlisted, not private").first()).toBeVisible();
 });
 
 test("sends users to Google when the simulation notice is rejected", async ({ page }) => {
@@ -136,7 +152,7 @@ test("sends users to Google when the simulation notice is rejected", async ({ pa
 
   await page.goto("/");
 
-  const gate = page.getByRole("dialog", { name: "AI simulation disclaimer" });
+  const gate = page.getByRole("dialog", { name: "AI simulation notice" });
   await expect(gate).toBeVisible();
   expect(await page.evaluate((key) => window.localStorage.getItem(key), SIMULATION_ACKNOWLEDGEMENT_KEY)).toBeNull();
 
@@ -282,6 +298,7 @@ test("creates a share link after a mocked debate finishes", async ({ page }) => 
 
   await page.getByRole("button", { name: "Share" }).click();
   await expect(page.getByRole("dialog", { name: "Create a public replay link?" })).toBeVisible();
+  await expect(page.getByText("Public replay links are unlisted, not private.")).toBeVisible();
   await page.getByRole("button", { name: "Create public replay link" }).click();
 
   await expect.poll(() => shareCalls).toBe(1);

@@ -3473,6 +3473,13 @@ select.field {
   margin: 0;
 }
 
+.simulation-acknowledgement-text a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--foreground) 32%, transparent);
+  text-underline-offset: 0.22em;
+}
+
 .simulation-acknowledgement-actions {
   display: flex;
   justify-content: flex-end;

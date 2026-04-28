@@ -51,6 +51,11 @@ import {
 } from "@/lib/pit";
 import { OPENROUTER_MODEL_COMBATIVE, SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
 import {
+  LEGAL_ACKNOWLEDGEMENT_TOKEN,
+  PUBLIC_REPLAY_MISUSE_NOTICE_TEXT,
+  PUBLIC_REPLAY_VISIBILITY_NOTICE_TEXT,
+} from "@/lib/legal-notice";
+import {
   buildCharacterProfilePreview,
   cloneCharacterProfile,
   createCharacterProfile,
@@ -2072,15 +2077,8 @@ function ShareConfirmationModal({
 
         <div className="share-confirmation-body">
           <SimulationNotice />
-          <p>
-            Anyone with the link can view this replay. It contains AI-generated fictionalized speech and must only be
-            shared as an AI parody simulation, not as real quotes, official statements, endorsements, beliefs, or
-            positions.
-          </p>
-          <p>
-            By creating the link, you agree that you are not using this replay for unlawful, infringing, defamatory,
-            deceptive, harassing, private, confidential, sensitive, or otherwise unethical purposes.
-          </p>
+          <p>{PUBLIC_REPLAY_VISIBILITY_NOTICE_TEXT}</p>
+          <p>{PUBLIC_REPLAY_MISUSE_NOTICE_TEXT}</p>
         </div>
 
         <div className="share-confirmation-actions">
@@ -3069,6 +3067,7 @@ export function PitStudio({
         },
         body: JSON.stringify({
           input: submittedRunInput,
+          legalNoticeToken: LEGAL_ACKNOWLEDGEMENT_TOKEN,
           result,
         }),
       });

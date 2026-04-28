@@ -25,9 +25,10 @@ describe("legal page metadata", () => {
     expect(legalMarkup).toContain("defamation");
     expect(legalMarkup).toContain("your OpenRouter account");
     expect(legalMarkup).toContain("Privacy preferences");
-    expect(legalMarkup).toContain("non-commercial experimental parody");
+    expect(legalMarkup).toContain("non-commercial experimental AI");
     expect(legalMarkup).toContain("not directed to children under 13");
-    expect(legalMarkup).toContain("transits the proxy");
-    expect(legalMarkup).toContain("Shared replays contain fictionalized AI-generated speech");
+    expect(legalMarkup).toContain("transit the proxy");
+    expect(legalMarkup).toContain("unlisted, not private");
+    expect(legalMarkup).toContain("does not grant clearance");
   });
 });

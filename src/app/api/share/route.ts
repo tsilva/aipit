@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonErrorResponse, parseJsonRequest } from "@/lib/api-route-response";
 import { isJsonObject } from "@/lib/json";
+import { LEGAL_ACKNOWLEDGEMENT_TOKEN } from "@/lib/legal-notice";
 import { buildResponseHeaders, resolveRequestId } from "@/lib/request-id";
 import { captureRequestException } from "@/lib/sentry-capture";
 import { ShareStorageError, writeSharedConversationSnapshot } from "@/lib/share-storage";
@@ -17,6 +18,10 @@ export async function POST(request: Request): Promise<Response> {
 
   if (!isJsonObject(payload)) {
     return jsonErrorResponse(requestId, 400, "Invalid share payload.");
+  }
+
+  if (payload.legalNoticeToken !== LEGAL_ACKNOWLEDGEMENT_TOKEN) {
+    return jsonErrorResponse(requestId, 400, "Current legal acknowledgement is required before sharing.");
   }
 
   try {

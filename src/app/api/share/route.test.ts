@@ -29,6 +29,7 @@ vi.mock("@/lib/share-storage", () => ({
 }));
 
 import { POST } from "@/app/api/share/route";
+import { LEGAL_ACKNOWLEDGEMENT_TOKEN } from "@/lib/legal-notice";
 
 describe("/api/share", () => {
   beforeEach(() => {
@@ -53,6 +54,7 @@ describe("/api/share", () => {
         },
         body: JSON.stringify({
           input: { mode: "debate" },
+          legalNoticeToken: LEGAL_ACKNOWLEDGEMENT_TOKEN,
           result: { mode: "debate" },
         }),
       }),
@@ -96,6 +98,7 @@ describe("/api/share", () => {
         },
         body: JSON.stringify({
           input: { mode: "debate" },
+          legalNoticeToken: LEGAL_ACKNOWLEDGEMENT_TOKEN,
           result: { mode: "debate" },
         }),
       }),
@@ -104,6 +107,28 @@ describe("/api/share", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       error: { message: "Only completed debates can be shared." },
+    });
+  });
+
+  it("requires the current legal acknowledgement token", async () => {
+    const response = await POST(
+      new Request("https://aipit.example/api/share", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          input: { mode: "debate" },
+          legalNoticeToken: "acknowledged",
+          result: { mode: "debate" },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(writeSharedConversationSnapshot).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      error: { message: "Current legal acknowledgement is required before sharing." },
     });
   });
 });

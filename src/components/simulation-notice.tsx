@@ -1,7 +1,7 @@
 import { SITE_CONTACT_MAILTO } from "@/lib/contact";
+import { SIMULATION_NOTICE_TEXT } from "@/lib/legal-notice";
 
-export const SIMULATION_NOTICE_TEXT =
-  "AI simulation parody experiment. Generated content is fictionalized and is not a real statement, endorsement, belief, or position of anyone depicted or referenced.";
+export { SIMULATION_NOTICE_TEXT } from "@/lib/legal-notice";
 
 export const TAKEDOWN_LINK_TEXT = "Report copyright, image-rights, privacy, or defamation concerns";
 

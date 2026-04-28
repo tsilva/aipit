@@ -1,7 +1,9 @@
 "use client";
 
+import { LEGAL_ACKNOWLEDGEMENT_TOKEN } from "@/lib/legal-notice";
+
 export const SIMULATION_ACKNOWLEDGEMENT_KEY = "aipit.simulation-acknowledgement";
-export const SIMULATION_ACKNOWLEDGEMENT_VALUE = "acknowledged";
+export const SIMULATION_ACKNOWLEDGEMENT_VALUE = LEGAL_ACKNOWLEDGEMENT_TOKEN;
 const SIMULATION_ACKNOWLEDGEMENT_EVENT = "aipit:simulation-acknowledgement-change";
 
 export function hasAcknowledgedSimulationNotice(): boolean {

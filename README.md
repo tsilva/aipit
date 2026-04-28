@@ -20,7 +20,7 @@
 - Token and cost tracking, plus a raw prompt debug view
 - Server-rendered setup state to reduce first-load flicker
 - Server-side OpenRouter proxy with optional hosted key support
-- First-launch acknowledgement gate for the AI simulation disclaimer
+- First-launch acknowledgement gate for the AI simulation notice, terms, and privacy summary
 - Hosted-key guardrails: same-origin checks, rate limiting, model allowlisting, and payload caps
 - SEO, telemetry preferences for Google Analytics and Sentry, and optional Sentry source map upload
 - CI coverage for lint, typecheck, tests, build, and Playwright smoke checks
@@ -148,8 +148,8 @@ src/
 ## 📝 Notes
 
 - OpenRouter requests are proxied through `src/app/api/openrouter`.
-- The AI Pit is a non-commercial experimental parody and simulation project, not an advice service or official communications channel, and is not directed to children under 13.
-- First-time visitors must acknowledge that portrayed characters are AI simulations before using the app; the acknowledgement is stored in browser localStorage.
+- The AI Pit is a non-commercial experimental AI simulation project, not an advice service or official communications channel, and is not directed to children under 13.
+- First-time visitors must acknowledge the AI simulation, terms, and privacy summary before using the app; the acknowledgement uses a content-derived token stored in browser localStorage.
 - `OPENROUTER_API_KEY` is server-only and should not use a `NEXT_PUBLIC_` prefix.
 - Starter bundles are reshuffled on page load; personal API keys are persisted in browser `localStorage` and still transit the app proxy to reach OpenRouter.
 - Built-in presets can optionally define `speakingAvatarUrl`; the live stage keeps still images in the queue and transcript, and only swaps the main active-speaker avatar to video after the clip is ready.
