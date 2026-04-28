@@ -56,7 +56,7 @@ export function AnalyticsConsentBanner() {
         <strong>Privacy preferences</strong>
         <p>
           aipit uses Google Analytics and app-level Sentry reporting only after consent in your region. Read the{" "}
-          <Link href="/privacy">privacy policy</Link>.
+          <Link href="/legal#privacy">privacy policy</Link>.
         </p>
       </div>
       <div className="consent-banner-actions">

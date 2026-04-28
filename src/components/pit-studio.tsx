@@ -1184,8 +1184,7 @@ function StudioHero({
 
       <footer className="hero-footer">
         <span className="hero-footer-links">
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/terms">Terms</Link>
+          <Link href="/legal">Terms &amp; Privacy</Link>
           <TelemetryPreferencesButton className="footer-link-button" />
         </span>
         <SimulationNotice className="simulation-notice-hero" />

@@ -1,15 +1,13 @@
 import { describe, expect, it } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { metadata as privacyMetadata } from "@/app/privacy/page";
-import PrivacyPage from "@/app/privacy/page";
-import { metadata as termsMetadata } from "@/app/terms/page";
-import TermsPage from "@/app/terms/page";
+import { metadata as legalMetadata } from "@/app/legal/page";
+import LegalPage from "@/app/legal/page";
 
 describe("legal page metadata", () => {
-  it("sets an explicit canonical and noindex policy for privacy", () => {
-    expect(privacyMetadata.alternates?.canonical).toBe("/privacy");
-    expect(privacyMetadata.robots).toEqual(
+  it("sets an explicit canonical and noindex policy for legal", () => {
+    expect(legalMetadata.alternates?.canonical).toBe("/legal");
+    expect(legalMetadata.robots).toEqual(
       expect.objectContaining({
         index: false,
         follow: true,
@@ -17,28 +15,19 @@ describe("legal page metadata", () => {
     );
   });
 
-  it("sets an explicit canonical and noindex policy for terms", () => {
-    expect(termsMetadata.alternates?.canonical).toBe("/terms");
-    expect(termsMetadata.robots).toEqual(
-      expect.objectContaining({
-        index: false,
-        follow: true,
-      }),
-    );
-  });
+  it("documents privacy and terms on the combined legal page", () => {
+    const legalMarkup = renderToStaticMarkup(React.createElement(LegalPage));
 
-  it("documents public replay removal requests in privacy and terms", () => {
-    const privacyMarkup = renderToStaticMarkup(React.createElement(PrivacyPage));
-    const termsMarkup = renderToStaticMarkup(React.createElement(TermsPage));
-
-    expect(privacyMarkup).toContain("request removal of a public replay");
-    expect(privacyMarkup).toContain("copyright, image-rights, privacy, defamation");
-    expect(privacyMarkup).toContain("your OpenRouter account");
-    expect(privacyMarkup).toContain("Privacy preferences");
-    expect(termsMarkup).toContain("non-commercial experimental parody");
-    expect(termsMarkup).toContain("not directed to children under 13");
-    expect(termsMarkup).toContain("transits the proxy");
-    expect(termsMarkup).toContain("Shared replays contain fictionalized AI-generated speech");
-    expect(termsMarkup).toContain("request removal of a public replay");
+    expect(legalMarkup).toContain("Terms of use");
+    expect(legalMarkup).toContain("Privacy policy");
+    expect(legalMarkup).toContain("request removal of a public replay");
+    expect(legalMarkup).toContain("copyright, image-rights, privacy");
+    expect(legalMarkup).toContain("defamation");
+    expect(legalMarkup).toContain("your OpenRouter account");
+    expect(legalMarkup).toContain("Privacy preferences");
+    expect(legalMarkup).toContain("non-commercial experimental parody");
+    expect(legalMarkup).toContain("not directed to children under 13");
+    expect(legalMarkup).toContain("transits the proxy");
+    expect(legalMarkup).toContain("Shared replays contain fictionalized AI-generated speech");
   });
 });

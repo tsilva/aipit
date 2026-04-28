@@ -87,7 +87,7 @@ OpenRouter traffic goes through internal Next.js route handlers under `src/app/a
 | `R2_OBJECT_PREFIX` | No | Snapshot object prefix, defaults to `shares/` |
 | `SENTRY_DSN` | No | Server-side Sentry DSN. If omitted, the app falls back to `NEXT_PUBLIC_SENTRY_DSN` |
 
-If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, EU visitors must opt in before GA loads. Outside the EU, analytics loads by default unless previously declined in that browser. Visitors can change Google Analytics and app-level Sentry preferences from the app footer or `/privacy`; choices are mirrored to localStorage and cookies so browser and request-scoped telemetry can honor them.
+If `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, EU visitors must opt in before GA loads. Outside the EU, analytics loads by default unless previously declined in that browser. Visitors can change Google Analytics and app-level Sentry preferences from the app footer or `/legal#privacy`; choices are mirrored to localStorage and cookies so browser and request-scoped telemetry can honor them.
 
 Runtime Sentry reporting is production-only by default when a DSN is present and is controlled by the same privacy preferences where the app can read the visitor's cookie. To validate Sentry locally or on preview deploys, set `NEXT_PUBLIC_SENTRY_ENABLED=true`.
 

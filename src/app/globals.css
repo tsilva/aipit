@@ -3170,6 +3170,39 @@ select.field {
   line-height: 1.65;
 }
 
+.legal-section-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.legal-section-links a,
+.legal-actions a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+  text-underline-offset: 0.25rem;
+}
+
+.legal-section {
+  display: grid;
+  gap: 0.9rem;
+  scroll-margin-top: 1.5rem;
+}
+
+.legal-section + .legal-section {
+  margin-top: 1.2rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--line);
+}
+
+.legal-section h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
 .legal-copy p {
   margin: 0;
 }
@@ -3748,6 +3781,10 @@ select.field {
   .studio-form-simulation .chamber-header {
     padding: 0.8rem 0.75rem 0;
     margin-bottom: 0.75rem;
+  }
+
+  .studio-form-simulation .simulation-notice-stage {
+    padding-inline: 0.75rem;
   }
 
   .studio-form-simulation .stage-frame {
@@ -4407,6 +4444,16 @@ select.field {
     align-items: flex-start;
     flex-direction: row;
     justify-content: space-between;
+  }
+
+  .hero-topic-header {
+    align-items: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .hero-topic-header .hero-section-heading {
+    flex: 1 1 auto;
   }
 
   .hero-roster-header .hero-section-heading {
