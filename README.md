@@ -12,10 +12,6 @@ The AI Pit turns a topic into a structured debate with a moderator, multiple AI 
 
 Use the preset characters and starter bundles to begin quickly, or build a custom lineup with your own participant profiles. Completed debates can be saved as replay links when Cloudflare R2 storage is configured.
 
-## Architecture
-
-![The AI Pit architecture diagram](./architecture.png)
-
 ## Install
 
 Requires Node.js 20.9 or newer.
@@ -86,17 +82,9 @@ R2_OBJECT_PREFIX=shares/       # optional share snapshot prefix
 - Avatar assets in `public/avatars` are served with long-lived cache headers and versioned by `scripts/generate-avatar-asset-versions.mjs`.
 - The app is an experimental AI simulation, not an advice service or official communications channel.
 
-## Project Structure
+## Architecture
 
-```text
-src/app/                    Next.js pages, API routes, metadata, and legal pages
-src/components/pit-studio.tsx
-src/components/pit-studio-entry.tsx
-src/lib/pit-engine.ts       debate orchestration
-src/lib/openrouter*.ts      OpenRouter client and proxy helpers
-src/lib/character-*.ts      preset character profiles
-src/lib/share-*.ts          replay snapshot and storage helpers
-```
+![The AI Pit architecture diagram](./architecture.png)
 
 ## License
 
