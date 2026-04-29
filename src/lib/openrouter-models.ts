@@ -17,25 +17,9 @@ export function isSupportedOpenRouterModel(model: string): model is SupportedOpe
 
 export function buildOpenRouterModelFallbackOrder(
   model: string,
-  options?: { preferAuthenticSpeech?: boolean },
+  _options?: { preferAuthenticSpeech?: boolean },
 ): string[] {
+  void _options;
   const normalizedModel = model.trim();
-  const fallbackOrder = normalizedModel ? [normalizedModel] : [];
-  const candidatePool = options?.preferAuthenticSpeech
-    ? [
-        OPENROUTER_MODEL_COMBATIVE,
-        OPENROUTER_MODEL_CONVERSATIONAL,
-        OPENROUTER_MODEL_REASONING,
-        OPENROUTER_MODEL_POLISHED,
-        OPENROUTER_MODEL_LIGHTWEIGHT,
-      ]
-    : [...SUPPORTED_OPENROUTER_MODELS];
-
-  for (const candidate of candidatePool) {
-    if (candidate !== normalizedModel) {
-      fallbackOrder.push(candidate);
-    }
-  }
-
-  return fallbackOrder;
+  return isSupportedOpenRouterModel(normalizedModel) ? [normalizedModel] : [OPENROUTER_MODEL_DEEPSEEK_FLASH];
 }

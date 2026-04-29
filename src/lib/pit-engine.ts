@@ -3,14 +3,13 @@ import {
   addUsage,
   createRosterSnapshot,
   createTurn,
-  createDefaultInput,
   emptyUsage,
   type PitTurn,
   type ParticipantConfig,
   type RunInput,
   type RunResult,
   type UsageSummary,
-} from "@/lib/pit";
+} from "@/lib/pit-core";
 import type { RuntimeTurnIdentity } from "@/lib/runtime-warning";
 import { PARTICIPANT_CHARACTER_PRESET_MAP, PARTICIPANT_CHARACTER_RELATIONSHIPS } from "@/lib/character-presets";
 import {
@@ -76,20 +75,7 @@ type OpenRouterChoice = {
 };
 
 type OpenRouterResponse = {
-  choices?: Array<{
-    text?: string | null;
-    finish_reason?: string | null;
-    delta?: {
-      content?: OpenRouterContent | null;
-      refusal?: string | null;
-      tool_calls?: unknown[];
-    };
-    message?: {
-      content?: OpenRouterContent | null;
-      refusal?: string | null;
-      tool_calls?: unknown[];
-    };
-  }>;
+  choices?: OpenRouterChoice[];
   model?: string;
   usage?: {
     prompt_tokens?: number;
@@ -425,6 +411,124 @@ function extractContentPart(part: OpenRouterContentPart): string {
   return part.text ?? part.content ?? part.value ?? part.refusal ?? "";
 }
 
+function isJsonRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseOptionalString(value: unknown): string | null | undefined {
+  if (value === undefined || value === null || typeof value === "string") {
+    return value;
+  }
+
+  throw new Error("OpenRouter returned an invalid response.");
+}
+
+function parseOpenRouterContentPart(value: unknown): OpenRouterContentPart {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (!isJsonRecord(value)) {
+    throw new Error("OpenRouter returned an invalid response.");
+  }
+
+  return {
+    type: parseOptionalString(value.type) ?? undefined,
+    text: parseOptionalString(value.text) ?? undefined,
+    content: parseOptionalString(value.content) ?? undefined,
+    value: parseOptionalString(value.value) ?? undefined,
+    refusal: parseOptionalString(value.refusal) ?? undefined,
+  };
+}
+
+function parseOpenRouterContent(value: unknown): OpenRouterContent | null {
+  if (value === null || value === undefined || typeof value === "string") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(parseOpenRouterContentPart);
+  }
+
+  throw new Error("OpenRouter returned an invalid response.");
+}
+
+function parseOpenRouterChoicePart(value: unknown): OpenRouterChoice["delta"] {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!isJsonRecord(value)) {
+    throw new Error("OpenRouter returned an invalid response.");
+  }
+
+  const toolCalls = value.tool_calls;
+  if (toolCalls !== undefined && !Array.isArray(toolCalls)) {
+    throw new Error("OpenRouter returned an invalid response.");
+  }
+
+  return {
+    content: parseOpenRouterContent(value.content),
+    refusal: parseOptionalString(value.refusal),
+    tool_calls: toolCalls,
+  };
+}
+
+function parseOpenRouterChoice(value: unknown): OpenRouterChoice {
+  if (!isJsonRecord(value)) {
+    throw new Error("OpenRouter returned an invalid response.");
+  }
+
+  return {
+    text: parseOptionalString(value.text),
+    finish_reason: parseOptionalString(value.finish_reason),
+    delta: parseOpenRouterChoicePart(value.delta),
+    message: parseOpenRouterChoicePart(value.message),
+  };
+}
+
+function parseOptionalNumber(value: unknown): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  throw new Error("OpenRouter returned an invalid response.");
+}
+
+function parseOpenRouterResponse(value: unknown): OpenRouterResponse {
+  if (!isJsonRecord(value)) {
+    throw new Error("OpenRouter returned an invalid response.");
+  }
+
+  const rawChoices = value.choices;
+  const rawUsage = value.usage;
+
+  if (rawChoices !== undefined && !Array.isArray(rawChoices)) {
+    throw new Error("OpenRouter returned an invalid response.");
+  }
+
+  if (rawUsage !== undefined && !isJsonRecord(rawUsage)) {
+    throw new Error("OpenRouter returned an invalid response.");
+  }
+
+  return {
+    choices: rawChoices?.map(parseOpenRouterChoice),
+    model: parseOptionalString(value.model) ?? undefined,
+    usage: rawUsage
+      ? {
+          prompt_tokens: parseOptionalNumber(rawUsage.prompt_tokens),
+          completion_tokens: parseOptionalNumber(rawUsage.completion_tokens),
+          total_tokens: parseOptionalNumber(rawUsage.total_tokens),
+          cost: parseOptionalNumber(rawUsage.cost),
+        }
+      : undefined,
+  };
+}
+
 function extractContent(content: OpenRouterContent | null, trim = true): string {
   if (typeof content === "string") {
     return trim ? content.trim() : content;
@@ -516,7 +620,7 @@ async function parseOpenRouterStreamResponse({
 }> {
   const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
   if (!contentType.includes("text/event-stream") || !response.body) {
-    const payload = (await response.json()) as OpenRouterResponse;
+    const payload = parseOpenRouterResponse(await response.json());
     return {
       content: extractChoiceContent(payload.choices?.[0]),
       finishReason: payload.choices?.[0]?.finish_reason ?? undefined,
@@ -558,7 +662,7 @@ async function parseOpenRouterStreamResponse({
       return;
     }
 
-    const payload = JSON.parse(payloadText) as OpenRouterResponse;
+    const payload = parseOpenRouterResponse(JSON.parse(payloadText));
     sawStructuredChunk = true;
     streamedModel = payload.model || streamedModel;
 
@@ -627,7 +731,7 @@ async function parseOpenRouterStreamResponse({
       throw error;
     }
 
-    const payload = (await fallbackResponse.json()) as OpenRouterResponse;
+    const payload = parseOpenRouterResponse(await fallbackResponse.json());
     return {
       content: extractChoiceContent(payload.choices?.[0]),
       finishReason: payload.choices?.[0]?.finish_reason ?? undefined,
@@ -1225,10 +1329,9 @@ async function runDebate(input: RunInput, execution: RunExecutionOptions): Promi
 }
 
 export async function runPitWorkflow(
-  rawInput: unknown,
+  input: RunInput,
   execution: RunExecutionOptions,
 ): Promise<RunResult> {
-  const input = rawInput ? (rawInput as RunInput) : createDefaultInput();
   const [coordinator, ...members] = createRosterSnapshot(input);
 
   return runDebate(

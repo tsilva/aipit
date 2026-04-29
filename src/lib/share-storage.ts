@@ -6,6 +6,7 @@ import {
   SharedConversationSnapshotError,
   type SharedConversationSnapshot,
 } from "@/lib/share-snapshot";
+import type { ShareCreationResponse } from "@/lib/share-response";
 import { SITE_URL } from "@/lib/site";
 
 const SHARE_SLUG_PATTERN = /^[A-Za-z0-9_-]{12}$/;
@@ -42,7 +43,7 @@ export async function writeSharedConversationSnapshot({
   input: unknown;
   result: unknown;
   signal?: AbortSignal;
-}): Promise<{ slug: string; url: string }> {
+}): Promise<ShareCreationResponse> {
   let snapshot: SharedConversationSnapshot;
 
   try {

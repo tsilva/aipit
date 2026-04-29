@@ -6,6 +6,10 @@ function isLocalPath(url: string): boolean {
   return url.startsWith("/") && !url.startsWith("//");
 }
 
+function isAvatarAssetPath(pathname: string): pathname is AvatarAssetPath {
+  return Object.prototype.hasOwnProperty.call(AVATAR_ASSET_VERSIONS, pathname);
+}
+
 export function getAvatarAssetVersion(url: string): string | undefined {
   if (!isLocalPath(url)) {
     return undefined;
@@ -13,7 +17,7 @@ export function getAvatarAssetVersion(url: string): string | undefined {
 
   const parsedUrl = new URL(url, LOCAL_AVATAR_ORIGIN);
 
-  return AVATAR_ASSET_VERSIONS[parsedUrl.pathname as AvatarAssetPath];
+  return isAvatarAssetPath(parsedUrl.pathname) ? AVATAR_ASSET_VERSIONS[parsedUrl.pathname] : undefined;
 }
 
 export function withAvatarAssetVersion(url: string | undefined): string | undefined {
@@ -24,7 +28,7 @@ export function withAvatarAssetVersion(url: string | undefined): string | undefi
   }
 
   const parsedUrl = new URL(normalizedUrl, LOCAL_AVATAR_ORIGIN);
-  const version = AVATAR_ASSET_VERSIONS[parsedUrl.pathname as AvatarAssetPath];
+  const version = isAvatarAssetPath(parsedUrl.pathname) ? AVATAR_ASSET_VERSIONS[parsedUrl.pathname] : undefined;
 
   if (!version) {
     return normalizedUrl;

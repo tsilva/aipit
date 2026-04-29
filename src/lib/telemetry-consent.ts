@@ -21,7 +21,6 @@ const TELEMETRY_CONSENT_COOKIE_NAMES: Record<TelemetryPurpose, string> = {
 const TELEMETRY_CONSENT_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 export const TELEMETRY_CONSENT_CHANGE_EVENT = TELEMETRY_CONSENT_EVENT;
-export const TELEMETRY_PURPOSES: TelemetryPurpose[] = ["analytics", "errorReporting"];
 
 function isValidConsentState(value: string | null | undefined): value is TelemetryConsentState {
   return value === "unset" || value === "granted" || value === "denied";

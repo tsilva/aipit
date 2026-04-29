@@ -6,7 +6,7 @@ import {
 } from "@/lib/openrouter-models";
 
 describe("openrouter model fallback order", () => {
-  it("prefers style-preserving models for authentic participant speech", () => {
+  it("returns the single supported model for authentic participant speech", () => {
     expect(
       buildOpenRouterModelFallbackOrder(OPENROUTER_MODEL_REASONING, {
         preferAuthenticSpeech: true,
@@ -14,7 +14,11 @@ describe("openrouter model fallback order", () => {
     ).toEqual([OPENROUTER_MODEL_DEEPSEEK_FLASH]);
   });
 
-  it("preserves the general supported order when authentic-speech preference is off", () => {
+  it("returns the single supported model when authentic-speech preference is off", () => {
     expect(buildOpenRouterModelFallbackOrder(OPENROUTER_MODEL_REASONING)).toEqual([OPENROUTER_MODEL_DEEPSEEK_FLASH]);
+  });
+
+  it("normalizes unsupported model requests to the single supported model", () => {
+    expect(buildOpenRouterModelFallbackOrder("unsupported/model")).toEqual([OPENROUTER_MODEL_DEEPSEEK_FLASH]);
   });
 });

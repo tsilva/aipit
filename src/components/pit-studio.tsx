@@ -44,11 +44,17 @@ import {
 import { SimulationNotice } from "@/components/simulation-notice";
 import { TelemetryPreferencesButton } from "@/components/telemetry-preferences";
 import {
+  PIT_RUN_DEFAULTS,
+  addUsage,
+  createMember,
+  createRosterSnapshot,
+  emptyUsage,
+  makeId,
   type PitTurn,
   type ParticipantConfig,
   type RunInput,
   type RunResult,
-} from "@/lib/pit";
+} from "@/lib/pit-core";
 import { OPENROUTER_MODEL_COMBATIVE, SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
 import {
   LEGAL_ACKNOWLEDGEMENT_TOKEN,
@@ -70,23 +76,22 @@ import {
   type RuntimeWarningNotice,
 } from "@/lib/runtime-warning";
 import { isCompletedRunResult } from "@/lib/share-snapshot";
+import { isShareCreationResponse } from "@/lib/share-response";
 import { trackEvent } from "@/lib/google-analytics";
+import {
+  HOSTED_OPENROUTER_KEY_MESSAGE,
+  INVALID_OPENROUTER_KEY_FORMAT_MESSAGE,
+  OPENROUTER_API_KEY_PATTERN,
+  OPENROUTER_API_KEY_VALIDATION_DEBOUNCE_MS,
+  OPENROUTER_KEY_SESSION_ONLY_MESSAGE,
+  OPENROUTER_KEY_VALIDATION_UNAVAILABLE_MESSAGE,
+  readStoredOpenRouterApiKey,
+  removeStoredOpenRouterApiKey,
+  resolveOpenRouterKeyValidation,
+  saveOpenRouterApiKey,
+} from "@/lib/openrouter-key-state";
 
 export type { ApiKeyStatus, InitialStudioState } from "@/lib/pit-studio-state";
-
-const INVALID_OPENROUTER_KEY_MESSAGE = "This API key is invalid. Add a valid OpenRouter key to run debates.";
-const HOSTED_OPENROUTER_KEY_MESSAGE = "Using this app's configured OpenRouter key. Usage may be limited.";
-const INVALID_OPENROUTER_KEY_FORMAT_MESSAGE = "This API key is invalid. OpenRouter keys should start with sk-or-v1-.";
-const OPENROUTER_API_KEY_STORAGE_KEY = "aipit.openrouter-api-key";
-const OPENROUTER_API_KEY_PATTERN = /^sk-or-v1-[A-Za-z0-9_-]{32,}$/;
-const OPENROUTER_API_KEY_VALIDATION_DEBOUNCE_MS = 450;
-const DEFAULT_SHARED_DIRECTIVE = `Character-vs-character debate. Defend your character's instincts, style, and worldview with full conviction — let the character's natural temperament, cadence, verbal habits, and rhetorical flaws drive the delivery. Engage the strongest opposing points; respond to what was actually said, never repeat a stump speech. Hold your position but acknowledge stronger objections when they matter. Stay concrete, argumentative, conversational, and authentic to the assigned voice rather than essayistic or over-polished.`;
-const PIT_RUN_DEFAULTS = {
-  sharedDirective: DEFAULT_SHARED_DIRECTIVE,
-  rounds: 2,
-  temperature: 0.7,
-  maxCompletionTokens: 700,
-} as const;
 
 const TranscriptMarkdownContent = dynamic(() => import("@/components/transcript-markdown"), {
   loading: () => <p className="transcript-markdown-p">Loading transcript...</p>,
@@ -120,36 +125,6 @@ function syncLineupOrder(lineupOrder: string[], roster: ParticipantConfig[]): st
   return arraysEqual(lineupOrder, nextOrder) ? lineupOrder : nextOrder;
 }
 
-function makeId(prefix: string): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return `${prefix}-${crypto.randomUUID()}`;
-  }
-
-  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function createMember(index: number): ParticipantConfig {
-  return {
-    id: makeId(`member-${index}`),
-    name: `Debater ${index}`,
-    model: OPENROUTER_MODEL_COMBATIVE,
-    characterProfile:
-      index % 2 === 0
-        ? createCharacterProfile({
-            role: "Analytical pragmatist",
-            personality: "Evidence-driven, practical, and focused on tradeoffs",
-            perspective: "Evaluates proposals through tradeoffs, evidence, and practical execution.",
-            debateStyle: "Prioritize concrete tradeoffs, operational constraints, and implementation realism.",
-          })
-        : createCharacterProfile({
-            role: "Skeptical strategist",
-            personality: "Critical, risk-aware, and focused on second-order effects",
-            perspective: "Assumes incentives matter and looks for fragility, hidden costs, and downstream consequences.",
-            debateStyle: "Stress-test assumptions, risks, and second-order effects before accepting a claim.",
-          }),
-  };
-}
-
 function createFallbackCoordinator(): ParticipantConfig {
   return {
     id: makeId("coordinator"),
@@ -163,35 +138,6 @@ function createFallbackCoordinator(): ParticipantConfig {
       language: "English",
     }),
   };
-}
-
-function emptyUsage(): RunResult["usage"] {
-  return {
-    promptTokens: 0,
-    completionTokens: 0,
-    totalTokens: 0,
-    cost: 0,
-  };
-}
-
-function addUsage(target: RunResult["usage"], delta?: Partial<RunResult["usage"]> | null): RunResult["usage"] {
-  if (!delta) {
-    return target;
-  }
-
-  return {
-    promptTokens: target.promptTokens + (delta.promptTokens ?? 0),
-    completionTokens: target.completionTokens + (delta.completionTokens ?? 0),
-    totalTokens: target.totalTokens + (delta.totalTokens ?? 0),
-    cost: target.cost + (delta.cost ?? 0),
-  };
-}
-
-function createRosterSnapshot(input: RunInput): ParticipantConfig[] {
-  return [input.coordinator, ...input.members].map((participant) => ({
-    ...participant,
-    characterProfile: cloneCharacterProfile(participant.characterProfile),
-  }));
 }
 
 function useBodyScrollLock(isLocked: boolean) {
@@ -295,12 +241,16 @@ async function validateApiKey({
 
   try {
     const { validateOpenRouterKey } = await import("@/lib/openrouter");
-    const validation = await validateOpenRouterKey(nextApiKey, siteUrl);
+    const validation = await resolveOpenRouterKeyValidation({
+      apiKey: nextApiKey,
+      siteUrl,
+      validate: validateOpenRouterKey,
+    });
     if (requestIdRef.current !== requestId) {
       return false;
     }
 
-    setApiKeyStatus(validation.valid ? "valid" : "invalid");
+    setApiKeyStatus(validation.status);
     setApiKeyStatusMessage(validation.message);
     return validation.valid;
   } catch {
@@ -308,8 +258,8 @@ async function validateApiKey({
       return false;
     }
 
-    setApiKeyStatus("invalid");
-    setApiKeyStatusMessage(INVALID_OPENROUTER_KEY_MESSAGE);
+    setApiKeyStatus("unresolved");
+    setApiKeyStatusMessage(OPENROUTER_KEY_VALIDATION_UNAVAILABLE_MESSAGE);
     return false;
   }
 }
@@ -798,17 +748,6 @@ function compactCharacterSummary(participant: ParticipantConfig): string {
   return clipAtWord(source, 92);
 }
 
-function isShareResponse(
-  value: unknown,
-): value is { slug: string; url: string; error?: { message?: unknown } } {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    typeof (value as { slug?: unknown }).slug === "string" &&
-    typeof (value as { url?: unknown }).url === "string"
-  );
-}
-
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
 }
@@ -983,7 +922,10 @@ function StudioHero({
   const apiKeyInputRef = useRef<HTMLInputElement | null>(null);
   const displayedApiKeyStatus = apiKeyStatus;
   const displayedApiKeyStatusMessage = apiKeyStatusMessage;
-  const showWarningStatusIcon = displayedApiKeyStatus === "empty" || displayedApiKeyStatus === "invalid";
+  const showWarningStatusIcon =
+    displayedApiKeyStatus === "empty" ||
+    displayedApiKeyStatus === "invalid" ||
+    displayedApiKeyStatus === "unresolved";
   const statusTone =
     displayedApiKeyStatus === "valid"
       ? "success"
@@ -2634,30 +2576,21 @@ export function PitStudio({
   }, [config]);
 
   useEffect(() => {
-    try {
-      const storedApiKey = window.localStorage.getItem(OPENROUTER_API_KEY_STORAGE_KEY);
-      if (storedApiKey !== null) {
-        setDraftApiKey(storedApiKey);
-      }
-    } catch {}
+    const storedApiKey = readStoredOpenRouterApiKey(window.localStorage);
+    if (storedApiKey !== undefined) {
+      setDraftApiKey(storedApiKey);
+    }
   }, []);
 
   useEffect(() => {
     const trimmed = draftApiKey.trim();
     setError(null);
 
-    try {
-      if (trimmed) {
-        window.localStorage.setItem(OPENROUTER_API_KEY_STORAGE_KEY, trimmed);
-      } else {
-        window.localStorage.removeItem(OPENROUTER_API_KEY_STORAGE_KEY);
-      }
-    } catch {}
-
     setApiKey("");
 
     if (!trimmed) {
       keyValidationRequestIdRef.current += 1;
+      removeStoredOpenRouterApiKey(window.localStorage);
       setApiKeyStatus("valid");
       setApiKeyStatusMessage(HOSTED_OPENROUTER_KEY_MESSAGE);
       return;
@@ -2685,9 +2618,9 @@ export function PitStudio({
 
         if (isValid) {
           setApiKey(trimmed);
-          try {
-            window.localStorage.setItem(OPENROUTER_API_KEY_STORAGE_KEY, trimmed);
-          } catch {}
+          if (!saveOpenRouterApiKey(window.localStorage, trimmed)) {
+            setApiKeyStatusMessage(OPENROUTER_KEY_SESSION_ONLY_MESSAGE);
+          }
         }
       });
     }, OPENROUTER_API_KEY_VALIDATION_DEBOUNCE_MS);
@@ -3094,7 +3027,7 @@ export function PitStudio({
         );
       }
 
-      if (!isShareResponse(payload)) {
+      if (!isShareCreationResponse(payload)) {
         throw new Error("The server returned an invalid share response.");
       }
 

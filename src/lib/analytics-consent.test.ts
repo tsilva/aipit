@@ -1,44 +1,42 @@
 import { describe, expect, it } from "vitest";
 import {
-  hasAnalyticsPermission,
-  requiresAnalyticsConsent,
-} from "@/lib/analytics-consent";
-import {
+  hasTelemetryPermission,
   hasTelemetryPermissionForHeaders,
   readTelemetryConsentFromHeaders,
   readTelemetryConsentRequirementFromHeaders,
+  requiresTelemetryConsent,
 } from "@/lib/telemetry-consent";
 
-describe("analytics consent helpers", () => {
+describe("telemetry consent helpers", () => {
   it("requires analytics consent for EU country codes", () => {
-    expect(requiresAnalyticsConsent("PT")).toBe(true);
-    expect(requiresAnalyticsConsent("de")).toBe(true);
+    expect(requiresTelemetryConsent("PT")).toBe(true);
+    expect(requiresTelemetryConsent("de")).toBe(true);
   });
 
   it("does not require analytics consent for non-EU country codes", () => {
-    expect(requiresAnalyticsConsent("US")).toBe(false);
-    expect(requiresAnalyticsConsent("BR")).toBe(false);
+    expect(requiresTelemetryConsent("US")).toBe(false);
+    expect(requiresTelemetryConsent("BR")).toBe(false);
   });
 
   it("defaults unknown country codes to requiring consent", () => {
-    expect(requiresAnalyticsConsent()).toBe(true);
-    expect(requiresAnalyticsConsent("")).toBe(true);
-    expect(requiresAnalyticsConsent("unknown")).toBe(true);
+    expect(requiresTelemetryConsent()).toBe(true);
+    expect(requiresTelemetryConsent("")).toBe(true);
+    expect(requiresTelemetryConsent("unknown")).toBe(true);
   });
 
   it("always allows analytics after explicit grant", () => {
-    expect(hasAnalyticsPermission({ consent: "granted", requireConsent: true })).toBe(true);
-    expect(hasAnalyticsPermission({ consent: "granted", requireConsent: false })).toBe(true);
+    expect(hasTelemetryPermission({ consent: "granted", requireConsent: true })).toBe(true);
+    expect(hasTelemetryPermission({ consent: "granted", requireConsent: false })).toBe(true);
   });
 
   it("always blocks analytics after explicit denial", () => {
-    expect(hasAnalyticsPermission({ consent: "denied", requireConsent: true })).toBe(false);
-    expect(hasAnalyticsPermission({ consent: "denied", requireConsent: false })).toBe(false);
+    expect(hasTelemetryPermission({ consent: "denied", requireConsent: true })).toBe(false);
+    expect(hasTelemetryPermission({ consent: "denied", requireConsent: false })).toBe(false);
   });
 
   it("treats unset consent as allowed only when consent is not required", () => {
-    expect(hasAnalyticsPermission({ consent: "unset", requireConsent: true })).toBe(false);
-    expect(hasAnalyticsPermission({ consent: "unset", requireConsent: false })).toBe(true);
+    expect(hasTelemetryPermission({ consent: "unset", requireConsent: true })).toBe(false);
+    expect(hasTelemetryPermission({ consent: "unset", requireConsent: false })).toBe(true);
   });
 
   it("reads explicit telemetry choices from request cookies", () => {

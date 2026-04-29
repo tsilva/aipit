@@ -400,4 +400,24 @@ describe("pit-engine helpers", () => {
     expect(finalOpeningEvent?.turnId).toBe(openingStreamEvents[0]?.turnId);
     expect(finalOpeningEvent?.content).toBe(streamedContents[0]);
   });
+
+  it("rejects invalid OpenRouter response shapes before consuming choices", async () => {
+    const input = createDefaultInput();
+    input.rounds = 1;
+    input.members = input.members.slice(0, 2);
+
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ choices: "not-an-array" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+
+    await expect(
+      runPitWorkflow(input, {
+        apiKey: "test-key",
+        siteUrl: "https://aipit.example",
+      }),
+    ).rejects.toThrow("OpenRouter returned an invalid response.");
+  });
 });
