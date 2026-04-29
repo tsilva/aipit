@@ -10,6 +10,8 @@
 
 Next.js 16 + React 19 + Tailwind CSS 4 App Router application for AI debates ("pits") via OpenRouter.
 
+Live site: https://aipit.tsilva.eu
+
 OpenRouter requests go through internal Next.js API routes. Personal OpenRouter API keys are stored in browser localStorage and sent through the proxy for the user's account. If `OPENROUTER_API_KEY` is configured server-side, blank-key hosted debates can use the app's hosted key with same-origin checks, rate limiting, model allowlisting, and payload caps. Completed debate shares are immutable snapshots served through `/s/<slug>`.
 
 ### Path Alias
