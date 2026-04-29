@@ -961,8 +961,28 @@ function StudioHero({
         </div>
 
         <figure className="hero-arena-card" aria-label="Two AI personas in a debate arena">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/landing/ai-pit-arena.png" alt="" aria-hidden="true" />
+          <picture>
+            <source
+              type="image/avif"
+              srcSet="/brand/landing/ai-pit-arena-960.avif 960w, /brand/landing/ai-pit-arena-1280.avif 1280w, /brand/landing/ai-pit-arena-1896.avif 1896w"
+              sizes="(max-width: 1180px) calc(100vw - 2rem), 56rem"
+            />
+            <source
+              type="image/webp"
+              srcSet="/brand/landing/ai-pit-arena-960.webp 960w, /brand/landing/ai-pit-arena-1280.webp 1280w, /brand/landing/ai-pit-arena-1896.webp 1896w"
+              sizes="(max-width: 1180px) calc(100vw - 2rem), 56rem"
+            />
+            <img
+              src="/brand/landing/ai-pit-arena.png"
+              alt=""
+              aria-hidden="true"
+              width={1896}
+              height={830}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+            />
+          </picture>
         </figure>
       </section>
 

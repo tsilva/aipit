@@ -1,5 +1,3 @@
-"use client";
-
 import { LEGAL_ACKNOWLEDGEMENT_TOKEN } from "@/lib/legal-notice";
 
 export const SIMULATION_ACKNOWLEDGEMENT_KEY = "aipit.simulation-acknowledgement";
@@ -25,6 +23,7 @@ export function acknowledgeSimulationNotice(): boolean {
 
   try {
     window.localStorage.setItem(SIMULATION_ACKNOWLEDGEMENT_KEY, SIMULATION_ACKNOWLEDGEMENT_VALUE);
+    window.document.documentElement.dataset.simulationAcknowledged = "true";
     window.dispatchEvent(new Event(SIMULATION_ACKNOWLEDGEMENT_EVENT));
     return true;
   } catch {

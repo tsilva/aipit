@@ -1,6 +1,6 @@
 "use client";
 
-import { withAvatarAssetVersion } from "@/lib/avatar-assets";
+import { getAvatarAssetSrcSet, withAvatarAssetVersion } from "@/lib/avatar-assets";
 import {
   useEffect,
   useEffectEvent,
@@ -45,6 +45,7 @@ export function ParticipantAvatar({
   children,
   decorative = true,
   priority = false,
+  sizes = "64px",
 }: {
   name: string;
   avatarUrl?: string;
@@ -58,6 +59,7 @@ export function ParticipantAvatar({
 }) {
   const normalizedAvatarUrl = avatarUrl?.trim();
   const versionedAvatarUrl = withAvatarAssetVersion(normalizedAvatarUrl);
+  const avatarSrcSet = getAvatarAssetSrcSet(normalizedAvatarUrl);
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
   const showImage = Boolean(normalizedAvatarUrl) && failedAvatarUrl !== normalizedAvatarUrl;
 
@@ -72,6 +74,8 @@ export function ParticipantAvatar({
         <img
           className={imageClassName ?? "avatar-image"}
           src={versionedAvatarUrl}
+          srcSet={avatarSrcSet}
+          sizes={avatarSrcSet ? sizes : undefined}
           alt={decorative ? "" : `${name} avatar`}
           loading={priority ? "eager" : "lazy"}
           decoding="async"

@@ -39,3 +39,37 @@ export function withAvatarAssetVersion(url: string | undefined): string | undefi
 
   return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
 }
+
+function getPresetAvatarThumbnailPath(pathname: string, size: 128 | 256): AvatarAssetPath | undefined {
+  const match = pathname.match(/^\/avatars\/presets\/([^/]+)\.webp$/);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const thumbnailPath = `/avatars/presets/thumbs/${match[1]}-${size}.webp`;
+
+  return isAvatarAssetPath(thumbnailPath) ? thumbnailPath : undefined;
+}
+
+export function getAvatarAssetSrcSet(url: string | undefined): string | undefined {
+  const normalizedUrl = url?.trim();
+
+  if (!normalizedUrl || !isLocalPath(normalizedUrl)) {
+    return undefined;
+  }
+
+  const parsedUrl = new URL(normalizedUrl, LOCAL_AVATAR_ORIGIN);
+  const thumbnail128 = getPresetAvatarThumbnailPath(parsedUrl.pathname, 128);
+  const thumbnail256 = getPresetAvatarThumbnailPath(parsedUrl.pathname, 256);
+
+  if (!thumbnail128 || !thumbnail256 || !isAvatarAssetPath(parsedUrl.pathname)) {
+    return undefined;
+  }
+
+  return [
+    `${withAvatarAssetVersion(thumbnail128)} 128w`,
+    `${withAvatarAssetVersion(thumbnail256)} 256w`,
+    `${withAvatarAssetVersion(parsedUrl.pathname)} 1024w`,
+  ].join(", ");
+}

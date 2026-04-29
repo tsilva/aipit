@@ -764,10 +764,14 @@ select.field {
   pointer-events: none;
 }
 
+.hero-arena-card picture,
 .hero-arena-card img {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.hero-arena-card img {
   object-fit: cover;
 }
 
@@ -3358,6 +3362,15 @@ select.field {
     rgba(6, 9, 12, 0.76);
   padding: 1rem;
   backdrop-filter: blur(12px);
+}
+
+html[data-simulation-acknowledged="true"] .simulation-acknowledgement-backdrop {
+  display: none;
+}
+
+html:not([data-simulation-acknowledged="true"]) body:has(.simulation-acknowledgement-backdrop) main {
+  content-visibility: hidden;
+  contain-intrinsic-size: 100vh;
 }
 
 .settings-modal-dismiss {

@@ -113,11 +113,11 @@ export function SimulationAcknowledgementGate() {
   const panelRef = useRef<HTMLElement | null>(null);
   const acknowledgeButtonRef = useRef<HTMLButtonElement | null>(null);
   const pathname = usePathname();
-  const hasHydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
+  const hasHydrated = useSyncExternalStore(subscribeToHydration, () => true, () => true);
   const isAcknowledged = useSyncExternalStore(
     subscribeToSimulationAcknowledgement,
     hasAcknowledgedSimulationNotice,
-    () => true,
+    () => false,
   );
   const isLegalRoute = pathname === "/legal" || pathname === "/terms" || pathname === "/privacy";
   const isVisible = hasHydrated && !isLegalRoute && !isAcknowledged;
