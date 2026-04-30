@@ -340,7 +340,11 @@ test("allows clearing a saved personal API key", async ({ page }) => {
 
   await page.getByLabel("OpenRouter API key").fill("");
 
-  await expect(page.getByText("Using this app's configured OpenRouter key. Usage may be limited.")).toBeVisible();
+  await expect(
+    page.getByText(
+      "Using The AI Pit's built-in OpenRouter key. Prompts will be processed through The AI Pit's OpenRouter account; usage may be limited.",
+    ),
+  ).toBeVisible();
   await expect(page.getByLabel("OpenRouter API key")).toHaveValue("");
 });
 
@@ -353,7 +357,7 @@ test("locks background scrolling while the character selector is open", async ({
   await page.evaluate(() => window.scrollTo(0, 500));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 
-  await page.getByRole("button", { name: "Add debater" }).click();
+  await page.getByRole("button", { name: "Edit roster" }).click();
   await expect(page.locator(".character-selector-modal-panel")).toBeVisible();
 
   const lockedScrollY = await page.evaluate(() => window.scrollY);
@@ -367,7 +371,7 @@ test("uses the participant terminology in the settings sheet actions", async ({ 
   await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
-  await page.getByRole("button", { name: /^Edit / }).first().click();
+  await page.locator(".hero-roster-edit").first().click();
 
   await expect(page.getByRole("button", { name: "Close participant settings" })).toBeVisible();
 });
@@ -378,7 +382,7 @@ test("keeps keyboard focus inside the character selector", async ({ page }) => {
   await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
-  await page.getByRole("button", { name: "Add debater" }).click();
+  await page.getByRole("button", { name: "Edit roster" }).click();
   await expect(page.locator(".character-selector-modal-panel")).toBeVisible();
 
   for (let index = 0; index < 8; index += 1) {
