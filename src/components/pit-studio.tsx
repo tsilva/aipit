@@ -314,9 +314,25 @@ type QueueEntry = {
 };
 
 type PendingTurnPreview = Extract<RunProgressEvent, { type: "thinking" }>;
+type RuntimePlaybackTurnIdentity = {
+  speakerId: string;
+  kind: PitTurn["kind"];
+  round?: number;
+};
 
 type StagePanelMode = "conversation" | "transcript";
 type StudioView = "setup" | "simulation";
+
+export function isSameRuntimePlaybackTurn(
+  frame: RuntimePlaybackTurnIdentity,
+  pendingTurn: RuntimePlaybackTurnIdentity,
+): boolean {
+  return (
+    frame.speakerId === pendingTurn.speakerId &&
+    frame.kind === pendingTurn.kind &&
+    frame.round === pendingTurn.round
+  );
+}
 
 function kindLabel(kind: PitTurn["kind"]): string {
   return kind.replace(/_/g, " ");
@@ -2247,18 +2263,32 @@ function ChamberStage({
   const activeEntry = queueEntries.find((entry) => entry.state === "speaking") ?? null;
   const thinkingEntry = queueEntries.find((entry) => entry.state === "thinking") ?? null;
   const queuedFocusEntry = activeEntry ?? thinkingEntry ?? queueEntries.find((entry) => entry.state !== "waiting") ?? null;
-  const hasPendingFrame = isAwaitingTurnResponse && pendingTurn !== null;
+  const pendingTurnHasFrame = pendingTurn ? frames.some((frame) => isSameRuntimePlaybackTurn(frame, pendingTurn)) : false;
+  const hasPendingFrame = isAwaitingTurnResponse && pendingTurn !== null && !pendingTurnHasFrame;
   const isShowingPendingTurn = hasPendingFrame && !currentFrame;
   const maxNavigableFrameIndex = hasPendingFrame ? frames.length : Math.max(frames.length - 1, 0);
   const queueScrollTargetId = (isShowingPendingTurn ? thinkingEntry?.id : activeEntry?.id) ?? thinkingEntry?.id ?? null;
   const pendingParticipant =
     pendingTurn ? roster.find((participant) => participant.id === pendingTurn.speakerId) ?? null : null;
+  const pendingPreviewEntry =
+    pendingTurn && hasPendingFrame
+      ? {
+          id: `pending-${pendingTurn.speakerId}-${pendingTurn.kind}-${pendingTurn.round ?? "final"}`,
+          kind: pendingTurn.kind,
+          speakerName: pendingTurn.speakerName,
+          model: pendingTurn.model,
+          chapterLabel: pendingTurn.round ? `${kindLabel(pendingTurn.kind)} ${pendingTurn.round}` : kindLabel(pendingTurn.kind),
+          participant: pendingParticipant,
+          state: "thinking" as const,
+          frameIndex: null,
+        }
+      : null;
   const focusSpeaker =
-    (isShowingPendingTurn ? pendingParticipant : null) ??
+    (isShowingPendingTurn ? pendingPreviewEntry?.participant : null) ??
     (currentFrame ? roster.find((participant) => participant.id === currentFrame.speakerId) : null) ??
     queuedFocusEntry?.participant ??
     null;
-  const visibleQueuedEntry = isShowingPendingTurn ? (thinkingEntry ?? queuedFocusEntry) : queuedFocusEntry;
+  const visibleQueuedEntry = isShowingPendingTurn ? (pendingPreviewEntry ?? thinkingEntry ?? queuedFocusEntry) : queuedFocusEntry;
   const isViewingFinalFrame =
     Boolean(currentFrame) && !isShowingPendingTurn && frames.length > 0 && activeFrameIndex === frames.length - 1;
 
@@ -2641,7 +2671,8 @@ export function PitStudio({
   const playbackTurnIds = buildPlaybackTurnIds(frames);
   const chapters = timeline.chapters;
   const totalDurationMs = timeline.totalDurationMs;
-  const hasPendingFrame = isAwaitingTurnResponse && pendingTurn !== null;
+  const pendingTurnHasFrame = pendingTurn ? frames.some((frame) => isSameRuntimePlaybackTurn(frame, pendingTurn)) : false;
+  const hasPendingFrame = isAwaitingTurnResponse && pendingTurn !== null && !pendingTurnHasFrame;
   const pendingFrameIndex = frames.length;
   const maxNavigableFrameIndex = hasPendingFrame ? pendingFrameIndex : Math.max(frames.length - 1, 0);
   const currentFrame =
