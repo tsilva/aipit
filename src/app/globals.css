@@ -3681,6 +3681,12 @@ html:not([data-simulation-acknowledged="true"]) body:has(.simulation-acknowledge
   text-transform: uppercase;
 }
 
+@media (min-width: 720px) {
+  .character-selector-selected-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .character-selector-modal-list {
   max-height: min(58vh, 30rem);
 }
