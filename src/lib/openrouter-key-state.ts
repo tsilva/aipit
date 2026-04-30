@@ -1,7 +1,8 @@
 import type { ApiKeyStatus } from "@/lib/pit-studio-state";
 
 export const INVALID_OPENROUTER_KEY_MESSAGE = "This API key is invalid. Add a valid OpenRouter key to run debates.";
-export const HOSTED_OPENROUTER_KEY_MESSAGE = "Using this app's configured OpenRouter key. Usage may be limited.";
+export const HOSTED_OPENROUTER_KEY_MESSAGE =
+  "Using The AI Pit's built-in OpenRouter key. Prompts will be processed through The AI Pit's OpenRouter account; usage may be limited.";
 export const INVALID_OPENROUTER_KEY_FORMAT_MESSAGE = "This API key is invalid. OpenRouter keys should start with sk-or-v1-.";
 export const OPENROUTER_API_KEY_STORAGE_KEY = "aipit.openrouter-api-key";
 export const OPENROUTER_API_KEY_PATTERN = /^sk-or-v1-[A-Za-z0-9_-]{32,}$/;

@@ -23,7 +23,7 @@ export function invalidOpenRouterKeyMessage(): string {
 }
 
 export function serverOpenRouterKeyMessage(): string {
-  return "Usage will be limited if no key is provided.";
+  return "If no key is provided, The AI Pit's built-in OpenRouter key will be used and prompts will be processed through The AI Pit's OpenRouter account. Usage may be limited.";
 }
 
 function resolveAppName(): string {

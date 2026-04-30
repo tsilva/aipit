@@ -26,7 +26,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-You can paste a personal OpenRouter API key in the app. To allow blank-key hosted debates, set `OPENROUTER_API_KEY` in `.env`.
+You can paste a personal OpenRouter API key in the app. If users leave the key blank and `OPENROUTER_API_KEY` is set in `.env`, prompts are processed through The AI Pit's built-in OpenRouter key and The AI Pit's OpenRouter account.
 
 ## Commands
 
@@ -43,7 +43,7 @@ npm run sentry:issues # query Sentry issues with a read-only token
 
 ## Configuration
 
-The app runs without a server OpenRouter key if users provide their own key in the browser.
+The app runs without a server OpenRouter key if users provide their own key in the browser. If `OPENROUTER_API_KEY` is configured and no personal key is provided, the app uses The AI Pit's built-in key and processes prompts through The AI Pit's OpenRouter account.
 
 ```bash
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
@@ -76,7 +76,7 @@ R2_OBJECT_PREFIX=shares/       # optional share snapshot prefix
 
 - OpenRouter calls go through the internal Next.js routes under `src/app/api/openrouter`.
 - Personal OpenRouter keys are stored in browser `localStorage` and still transit the app proxy so OpenRouter can fulfill requests.
-- Hosted OpenRouter access uses same-origin checks, simple rate limits, model allowlisting, and payload caps.
+- Hosted OpenRouter access uses The AI Pit's built-in OpenRouter key, processes prompts through The AI Pit's OpenRouter account, and applies same-origin checks, simple rate limits, model allowlisting, and payload caps.
 - Share links are public-by-URL replay snapshots stored in Cloudflare R2. Replay pages do not make new model calls.
 - Google Analytics and browser Sentry are optional and respect the app's telemetry consent controls.
 - Avatar assets in `public/avatars` are served with long-lived cache headers and versioned by `scripts/generate-avatar-asset-versions.mjs`.

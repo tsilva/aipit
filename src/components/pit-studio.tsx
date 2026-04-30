@@ -1104,7 +1104,10 @@ function StudioHero({
             <span className="hero-step-badge">3</span>
             <div>
               <h2 className="hero-panel-title">OpenRouter access {hasApiKey ? "" : "(required)"}</h2>
-              <p className="hero-panel-copy">Paste your OpenRouter key or leave blank to use this app&apos;s configured key.</p>
+              <p className="hero-panel-copy">
+                Paste your OpenRouter key, or leave blank to use The AI Pit&apos;s built-in key. Blank-key prompts are
+                processed through The AI Pit&apos;s OpenRouter account.
+              </p>
             </div>
           </div>
 
