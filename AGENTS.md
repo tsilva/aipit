@@ -34,3 +34,4 @@ OpenRouter requests go through internal Next.js API routes. Personal OpenRouter 
 ## Guidelines
 
 - README.md must be kept up to date with any significant project changes
+- Do not suggest skill improvements for official OpenAI plugin skills. Skill retrospective suggestions should only be made for project-local or user-maintained skills.
