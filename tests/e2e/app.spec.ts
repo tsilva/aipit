@@ -9,22 +9,16 @@ const GLOBAL_STARTER_PROMPTS = STARTER_BUNDLES.filter((bundle) => bundle.audienc
 const PORTUGAL_STARTER_PROMPTS = STARTER_BUNDLES.filter((bundle) => bundle.audience === "portugal").map((bundle) => bundle.prompt);
 
 function getStartButton(page: Page) {
-  return page.getByRole("button", { name: /Start debate arena|Starting debate arena/ });
+  return page.getByRole("button", { name: /Start Debate|Starting Debate/i });
 }
 
-function getSaveKeyButton(page: Page) {
-  return page.getByRole("button", { name: /Save (API )?key/ });
+function getRandomTopicButton(page: Page) {
+  return page.getByRole("button", { name: "Random topic" });
 }
 
 async function openApiKeyEditor(page: Page) {
   const input = page.getByLabel("OpenRouter API key");
-  const manageButton = page.getByRole("button", { name: "Manage in settings" });
 
-  if (await manageButton.isVisible().catch(() => false)) {
-    await manageButton.click();
-  }
-
-  await expect(getSaveKeyButton(page)).toBeVisible();
   await expect(input).toBeEditable();
   return input;
 }
@@ -76,8 +70,8 @@ async function ensureRunCanStart(page: Page) {
     });
   });
 
-  await (await openApiKeyEditor(page)).fill("good-key");
-  await getSaveKeyButton(page).click();
+  await (await openApiKeyEditor(page)).fill("sk-or-v1-abcdefghijklmnopqrstuvwxyz123456");
+  await expect(page.getByText("OpenRouter API key verified. Selected models are enabled.")).toBeVisible();
   await expect(startButton).toBeEnabled();
 }
 
@@ -217,12 +211,13 @@ test("allows telemetry preferences to be changed after the banner is gone", asyn
 
   await page.getByRole("button", { name: "Privacy preferences" }).click();
   const dialog = page.getByRole("dialog", { name: "Privacy preferences" });
+  const analyticsSwitch = dialog.getByRole("switch", { name: /Help improve aipit/ });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("switch", { name: /Google Analytics/ })).not.toBeChecked();
-  await dialog.getByRole("switch", { name: /Google Analytics/ }).check();
-  await expect(dialog.getByRole("switch", { name: /Google Analytics/ })).toBeChecked();
-  await dialog.getByRole("button", { name: "Disable both" }).click();
-  await expect(dialog.getByRole("switch", { name: /Google Analytics/ })).not.toBeChecked();
+  await expect(analyticsSwitch).not.toBeChecked();
+  await analyticsSwitch.check();
+  await expect(analyticsSwitch).toBeChecked();
+  await dialog.getByRole("button", { name: "Turn both off" }).click();
+  await expect(analyticsSwitch).not.toBeChecked();
   await dialog.getByRole("button", { name: "Done" }).click();
   await expect(dialog).toBeHidden();
 });
@@ -320,13 +315,11 @@ test("keeps an invalid API key editable after failed validation", async ({ page 
   await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
-  await (await openApiKeyEditor(page)).fill("bad-key");
-  await getSaveKeyButton(page).click();
+  await (await openApiKeyEditor(page)).fill("sk-or-v1-abcdefghijklmnopqrstuvwxyz123456");
 
   await expect(page.getByText("This API key is invalid. Add a valid OpenRouter key to run debates.")).toBeVisible();
-  await expect(page.getByLabel("OpenRouter API key")).toHaveValue("bad-key");
+  await expect(page.getByLabel("OpenRouter API key")).toHaveValue("sk-or-v1-abcdefghijklmnopqrstuvwxyz123456");
   await expect(page.getByLabel("OpenRouter API key")).toBeEditable();
-  await expect(getSaveKeyButton(page)).toBeVisible();
 });
 
 test("allows clearing a saved personal API key", async ({ page }) => {
@@ -342,18 +335,13 @@ test("allows clearing a saved personal API key", async ({ page }) => {
   await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
-  await (await openApiKeyEditor(page)).fill("good-key");
-  await getSaveKeyButton(page).click();
+  await (await openApiKeyEditor(page)).fill("sk-or-v1-abcdefghijklmnopqrstuvwxyz123456");
   await expect(page.getByText("OpenRouter API key verified. Selected models are enabled.")).toBeVisible();
 
-  await page.getByRole("button", { name: "Manage in settings" }).click();
   await page.getByLabel("OpenRouter API key").fill("");
-  await expect(getSaveKeyButton(page)).toBeVisible();
-  await getSaveKeyButton(page).click();
 
-  await expect(page.getByText("Usage will be limited if no key is provided.")).toBeVisible();
+  await expect(page.getByText("Using this app's configured OpenRouter key. Usage may be limited.")).toBeVisible();
   await expect(page.getByLabel("OpenRouter API key")).toHaveValue("");
-  await expect(page.getByRole("button", { name: "Manage in settings" })).toBeVisible();
 });
 
 test("locks background scrolling while the character selector is open", async ({ page }) => {
@@ -363,13 +351,14 @@ test("locks background scrolling while the character selector is open", async ({
   await dismissConsentBannerIfVisible(page);
 
   await page.evaluate(() => window.scrollTo(0, 500));
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(500);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 
   await page.getByRole("button", { name: "Add debater" }).click();
   await expect(page.locator(".character-selector-modal-panel")).toBeVisible();
 
+  const lockedScrollY = await page.evaluate(() => window.scrollY);
   await page.mouse.wheel(0, 500);
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(500);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(lockedScrollY);
 });
 
 test("uses the participant terminology in the settings sheet actions", async ({ page }) => {
@@ -433,8 +422,7 @@ test("resets the scroll position when entering simulation on short screens", asy
   await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
-  await (await openApiKeyEditor(page)).fill("good-key");
-  await getSaveKeyButton(page).click();
+  await (await openApiKeyEditor(page)).fill("sk-or-v1-abcdefghijklmnopqrstuvwxyz123456");
   await expect(page.getByText("OpenRouter API key verified. Selected models are enabled.")).toBeVisible();
 
   await getStartButton(page).click();
@@ -460,8 +448,8 @@ test.describe("audience-aware setup", () => {
     await dismissConsentBannerIfVisible(page);
 
     await expectStarterPromptFromAudience(page, GLOBAL_STARTER_PROMPTS);
-    await expect(page.locator("main").getByRole("button", { name: "Global" })).toHaveCount(0);
-    await expect(page.locator("main").getByRole("button", { name: "Portugal" })).toHaveCount(0);
+    await expect(page.locator("main").getByRole("button", { name: "Global", exact: true })).toHaveCount(0);
+    await expect(page.locator("main").getByRole("button", { name: "Portugal", exact: true })).toHaveCount(0);
   });
 
   test("reroll keeps non-Portuguese visitors out of Portugal starters", async ({ page }) => {
@@ -470,7 +458,7 @@ test.describe("audience-aware setup", () => {
     await dismissConsentBannerIfVisible(page);
 
     const initialPrompt = await expectStarterPromptFromAudience(page, GLOBAL_STARTER_PROMPTS);
-    await page.getByRole("button", { name: "Shuffle starter debate" }).click();
+    await getRandomTopicButton(page).click();
     await expect.poll(async () => page.locator("#hero-pit-prompt").inputValue()).not.toBe(initialPrompt);
     await expectStarterPromptFromAudience(page, GLOBAL_STARTER_PROMPTS);
   });
@@ -493,7 +481,7 @@ test.describe("Portuguese locale defaults", () => {
     await dismissConsentBannerIfVisible(page);
 
     const initialPrompt = await expectStarterPromptFromAudience(page, PORTUGAL_STARTER_PROMPTS);
-    await page.getByRole("button", { name: "Shuffle starter debate" }).click();
+    await getRandomTopicButton(page).click();
     await expect.poll(async () => page.locator("#hero-pit-prompt").inputValue()).not.toBe(initialPrompt);
     await expectStarterPromptFromAudience(page, PORTUGAL_STARTER_PROMPTS);
   });
