@@ -51,7 +51,10 @@ async function buildInitialStudioState(bundleId: string | undefined): Promise<In
   const starter = queryStarterBundle
     ? {
         bundle: queryStarterBundle,
-        input: createInputFromStarterBundle(queryStarterBundle),
+        input: createInputFromStarterBundle(queryStarterBundle, {
+          audience,
+          randomizeLineup: true,
+        }),
       }
     : createRandomStarterInput(undefined, audience);
   const config = starter.input;

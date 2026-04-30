@@ -5,9 +5,9 @@ import {
 } from "@/lib/audience";
 
 describe("audience helpers", () => {
-  it("defaults Portuguese locales to the Portugal audience", () => {
-    expect(detectAudience({ acceptLanguage: "pt-PT,pt;q=0.9,en;q=0.8" })).toBe("portugal");
-    expect(detectAudience({ acceptLanguage: "pt-BR" })).toBe("portugal");
+  it("does not infer the Portugal audience from language alone", () => {
+    expect(detectAudience({ acceptLanguage: "pt-PT,pt;q=0.9,en;q=0.8" })).toBe("global");
+    expect(detectAudience({ acceptLanguage: "pt-BR" })).toBe("global");
   });
 
   it("defaults Portuguese geolocation to the Portugal audience", () => {
@@ -23,19 +23,20 @@ describe("audience helpers", () => {
     expect(detectAudience({})).toBe("global");
   });
 
-  it("prefers the explicit starter bundle audience over locale", () => {
+  it("uses client country instead of explicit starter bundle audience", () => {
     expect(
       resolveInitialAudience({
         acceptLanguage: "en-US,en;q=0.9",
         countryCode: "PT",
-        starterBundleAudience: "portugal",
+        starterBundleAudience: "global",
       }),
     ).toBe("portugal");
 
     expect(
       resolveInitialAudience({
         acceptLanguage: "pt-PT,pt;q=0.9",
-        starterBundleAudience: "global",
+        countryCode: "US",
+        starterBundleAudience: "portugal",
       }),
     ).toBe("global");
   });

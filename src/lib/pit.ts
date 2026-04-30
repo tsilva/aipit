@@ -7,6 +7,7 @@ import {
   type ParticipantCharacterProfile,
 } from "@/lib/character-profile";
 import {
+  MAX_DEBATE_MEMBER_COUNT,
   PIT_RUN_DEFAULTS,
   createMember,
   makeId,
@@ -271,18 +272,49 @@ type RandomStarterOptions = {
   ignoreAudience?: boolean;
 };
 
-function pickRandomStarterBundle(
-  excludingId?: string,
-  audience?: PresetAudience,
-  options?: RandomStarterOptions,
-): StarterBundle {
-  const sourceBundles = options?.ignoreAudience ? STARTER_BUNDLES : listStarterBundles(audience);
+function pickRandomStarterBundle(excludingId?: string): StarterBundle {
+  const sourceBundles = STARTER_BUNDLES;
   const eligibleBundles = excludingId
     ? sourceBundles.filter((bundle) => bundle.id !== excludingId)
     : sourceBundles;
   const bundlePool = eligibleBundles.length > 0 ? eligibleBundles : sourceBundles;
 
   return bundlePool[Math.floor(Math.random() * bundlePool.length)];
+}
+
+function isPortuguesePersonality(preset: { characterProfile: ParticipantCharacterProfile }): boolean {
+  return preset.characterProfile.nationality.trim().toLowerCase() === "portuguese";
+}
+
+function filterEligiblePersonalities<T extends { characterProfile: ParticipantCharacterProfile }>(
+  presets: readonly T[],
+  audience?: PresetAudience,
+): T[] {
+  if (audience === "portugal") {
+    return [...presets];
+  }
+
+  return presets.filter((preset) => !isPortuguesePersonality(preset));
+}
+
+function pickRandomItem<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)] ?? items[0]!;
+}
+
+function pickRandomSample<T>(items: readonly T[], count: number): T[] {
+  const available = [...items];
+  const selected: T[] = [];
+
+  while (selected.length < count && available.length > 0) {
+    const selectedIndex = Math.floor(Math.random() * available.length);
+    const [item] = available.splice(selectedIndex, 1);
+
+    if (item) {
+      selected.push(item);
+    }
+  }
+
+  return selected;
 }
 
 function getStarterBundle(bundleId: string): StarterBundle | undefined {
@@ -296,13 +328,37 @@ export function resolveStarterBundle(bundleId: string): StarterBundle | undefine
   return getStarterBundle(resolvedId);
 }
 
-export function createInputFromStarterBundle(bundle: StarterBundle): RunInput {
+export function createRandomLineup(audience?: PresetAudience): Pick<RunInput, "coordinator" | "members"> {
+  const moderatorPool = filterEligiblePersonalities(MODERATOR_CHARACTER_PRESETS, audience);
+  const memberPool = filterEligiblePersonalities(PARTICIPANT_CHARACTER_PRESETS, audience);
+  const coordinatorPreset = pickRandomItem(moderatorPool);
+  const memberPresets = pickRandomSample(memberPool, MAX_DEBATE_MEMBER_COUNT);
+
+  return {
+    coordinator: createCoordinatorFromPreset(coordinatorPreset.id),
+    members: memberPresets.map((preset, index) => createMemberFromPresetId(preset.id, index + 1)),
+  };
+}
+
+export function createInputFromStarterBundle(
+  bundle: StarterBundle,
+  options?: {
+    audience?: PresetAudience;
+    randomizeLineup?: boolean;
+  },
+): RunInput {
+  const lineup = options?.randomizeLineup
+    ? createRandomLineup(options.audience)
+    : {
+        coordinator: createCoordinatorFromPreset(bundle.moderatorPresetId),
+        members: bundle.memberPresetIds.map((presetId, index) => createMemberFromPresetId(presetId, index + 1)),
+      };
+
   return {
     mode: "debate",
     prompt: bundle.prompt,
     ...PIT_RUN_DEFAULTS,
-    coordinator: createCoordinatorFromPreset(bundle.moderatorPresetId),
-    members: bundle.memberPresetIds.map((presetId, index) => createMemberFromPresetId(presetId, index + 1)),
+    ...lineup,
   };
 }
 
@@ -311,11 +367,15 @@ export function createRandomStarterInput(
   audience?: PresetAudience,
   options?: RandomStarterOptions,
 ): { bundle: StarterBundle; input: RunInput } {
-  const bundle = pickRandomStarterBundle(excludingId, audience, options);
+  void options;
+  const bundle = pickRandomStarterBundle(excludingId);
 
   return {
     bundle,
-    input: createInputFromStarterBundle(bundle),
+    input: createInputFromStarterBundle(bundle, {
+      audience,
+      randomizeLineup: true,
+    }),
   };
 }
 

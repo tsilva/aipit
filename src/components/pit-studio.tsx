@@ -2972,7 +2972,7 @@ export function PitStudio({
 
   async function rerollTopic() {
     const { listStarterBundles } = await import("@/lib/pit");
-    const bundles = listStarterBundles(audience);
+    const bundles = listStarterBundles();
     const currentPrompt = configRef.current.prompt.trim();
     const eligibleBundles = bundles.filter((bundle) => bundle.prompt !== currentPrompt);
     const bundlePool = eligibleBundles.length > 0 ? eligibleBundles : bundles;
@@ -2991,12 +2991,12 @@ export function PitStudio({
   }
 
   async function rerollDebaters() {
-    const { createRandomStarterInput } = await import("@/lib/pit");
-    const nextStarter = createRandomStarterInput(starterBundleId, audience);
+    const { createRandomLineup } = await import("@/lib/pit");
+    const nextLineup = createRandomLineup(audience);
     const nextConfig = {
       ...configRef.current,
-      coordinator: nextStarter.input.coordinator,
-      members: nextStarter.input.members,
+      coordinator: nextLineup.coordinator,
+      members: nextLineup.members,
     };
 
     hasHydratedPresetConfigRef.current = true;
@@ -3004,8 +3004,8 @@ export function PitStudio({
     setStarterBundleId(undefined);
     setConfig(nextConfig);
     trackEvent("starter_debaters_reroll", {
-      starter_bundle_id: nextStarter.bundle.id,
-      starter_bundle_audience: nextStarter.bundle.audience,
+      starter_bundle_id: starterBundleId,
+      starter_bundle_audience: audience,
     });
   }
 

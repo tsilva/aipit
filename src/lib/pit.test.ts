@@ -2,38 +2,71 @@ import { describe, expect, it, vi } from "vitest";
 import { filterParticipantCharacterPresets } from "@/lib/character-presets";
 import {
   compactParticipantForSerialization,
+  createRandomLineup,
   createRandomStarterInput,
   hydrateParticipantFromPreset,
   listStarterBundles,
 } from "@/lib/pit";
 import { createCharacterProfile } from "@/lib/character-profile";
 
-describe("audience-aware starter selection", () => {
-  it("keeps random global starters inside the global bundle pool", () => {
-    const starter = createRandomStarterInput(undefined, "global");
+describe("unbiased starter selection", () => {
+  it("selects random starter topics from the full bundle pool", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
 
-    expect(starter.bundle.audience).toBe("global");
+    try {
+      const starter = createRandomStarterInput(undefined, "global");
+      const firstBundle = listStarterBundles()[0];
+
+      expect(starter.bundle.id).toBe(firstBundle?.id);
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
-  it("rerolls within the same audience pool when excluding the current bundle", () => {
-    const globalBundles = listStarterBundles("global");
-    const current = globalBundles[0];
+  it("excludes Portuguese personalities from non-Portugal random starter lineups", () => {
+    const starter = createRandomStarterInput(undefined, "global");
+    const lineup = [starter.input.coordinator, ...starter.input.members];
+
+    expect(lineup.every((participant) => participant.characterProfile.nationality !== "Portuguese")).toBe(true);
+  });
+
+  it("excludes Portuguese personalities from non-Portugal debater shuffles", () => {
+    const lineup = createRandomLineup("global");
+    const participants = [lineup.coordinator, ...lineup.members];
+
+    expect(participants.every((participant) => participant.characterProfile.nationality !== "Portuguese")).toBe(true);
+  });
+
+  it("allows Portuguese personalities in random lineups for Portugal clients", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+
+    try {
+      const lineup = createRandomLineup("portugal");
+      const participants = [lineup.coordinator, ...lineup.members];
+
+      expect(participants.some((participant) => participant.characterProfile.nationality === "Portuguese")).toBe(true);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it("rerolls topics across the full starter pool when excluding the current bundle", () => {
+    const bundles = listStarterBundles();
+    const current = bundles[0];
 
     expect(current).toBeDefined();
 
     const starter = createRandomStarterInput(current?.id, "global");
 
-    expect(starter.bundle.audience).toBe("global");
     expect(starter.bundle.id).not.toBe(current?.id);
   });
 
-  it("can reroll across all audiences when explicitly unrestricted", () => {
+  it("keeps compatibility with explicitly unrestricted rerolls", () => {
     const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.2);
 
     try {
       const starter = createRandomStarterInput("portugal-housing-war", "portugal", { ignoreAudience: true });
 
-      expect(starter.bundle.audience).toBe("global");
       expect(starter.bundle.id).not.toBe("portugal-housing-war");
     } finally {
       randomSpy.mockRestore();
