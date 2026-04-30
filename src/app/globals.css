@@ -3691,6 +3691,14 @@ html:not([data-simulation-acknowledged="true"]) body:has(.simulation-acknowledge
   max-height: min(58vh, 30rem);
 }
 
+.character-selector-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
 .settings-modal-header {
   display: flex;
   flex-wrap: wrap;

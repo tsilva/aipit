@@ -1173,29 +1173,29 @@ function StudioHero({
 }
 
 function CharacterSelectorModal({
-  onClose,
-  onSelectPreset,
-  onRemoveParticipant,
-  activeParticipants,
-  activeModeratorId,
-  canSelectMore,
+  initialConfig,
+  lineupOrder,
+  onCancel,
+  onConfirm,
 }: {
-  onClose: () => void;
-  onSelectPreset: (preset: ParticipantCharacterPreset) => void;
-  onRemoveParticipant: (participantId: string) => void;
-  activeParticipants: ParticipantConfig[];
-  activeModeratorId: string;
-  canSelectMore: boolean;
+  initialConfig: RunInput;
+  lineupOrder: string[];
+  onCancel: () => void;
+  onConfirm: (nextConfig: RunInput) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [draftConfig, setDraftConfig] = useState(initialConfig);
   const [filterPresets, setFilterPresets] = useState<((query: string) => ParticipantCharacterPreset[]) | null>(null);
   const [didPresetLoadFail, setDidPresetLoadFail] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const presets = filterPresets ? filterPresets(deferredQuery) : [];
+  const draftRoster = [draftConfig.coordinator, ...draftConfig.members];
+  const activeParticipants = orderParticipants(draftRoster, lineupOrder);
   const activeParticipantByPresetId = new Map(
     activeParticipants.flatMap((participant) => (participant.presetId ? [[participant.presetId, participant] as const] : [])),
   );
   const canRemoveSelectedParticipant = activeParticipants.length > 1;
+  const canSelectMore = draftConfig.members.length < MAX_DEBATE_MEMBER_COUNT;
   const modalRef = useRef<HTMLElement | null>(null);
 
   useBodyScrollLock(true);
@@ -1232,7 +1232,7 @@ function CharacterSelectorModal({
         className="settings-modal-dismiss"
         aria-hidden="true"
         tabIndex={-1}
-        onClick={onClose}
+        onClick={onCancel}
       />
 
       <section
@@ -1252,8 +1252,8 @@ function CharacterSelectorModal({
 
           <button
             type="button"
-            onClick={onClose}
-            aria-label="Close character selector"
+            onClick={onCancel}
+            aria-label="Cancel lineup changes"
             className="icon-circle-button character-selector-modal-close"
           >
             <CloseGlyph />
@@ -1272,10 +1272,10 @@ function CharacterSelectorModal({
                   key={participant.id}
                   type="button"
                   className="character-selector-selected-pill"
-                  onClick={() => onRemoveParticipant(participant.id)}
                   disabled={!canRemoveSelectedParticipant}
                   aria-label={`Remove ${participant.name} from lineup`}
                   title={canRemoveSelectedParticipant ? `Remove ${participant.name}` : "Keep at least one persona"}
+                  onClick={() => setDraftConfig((current) => removeParticipantFromLineup(current, participant.id))}
                 >
                   <ParticipantAvatar
                     name={participant.name}
@@ -1288,7 +1288,7 @@ function CharacterSelectorModal({
                   <span className="character-selector-selected-copy">
                     <span className="character-selector-selected-name">{participant.name}</span>
                     <span className="character-selector-selected-role">
-                      {participant.id === activeModeratorId ? "Moderator" : "Debater"}
+                      {participant.id === draftConfig.coordinator.id ? "Moderator" : "Debater"}
                     </span>
                   </span>
                   <CloseGlyph aria-hidden="true" />
@@ -1329,11 +1329,11 @@ function CharacterSelectorModal({
                     aria-pressed={isApplied}
                     onClick={() => {
                       if (activeParticipant) {
-                        onRemoveParticipant(activeParticipant.id);
+                        setDraftConfig((current) => removeParticipantFromLineup(current, activeParticipant.id));
                         return;
                       }
 
-                      onSelectPreset(preset);
+                      setDraftConfig((current) => addParticipantToLineup(current, preset));
                     }}
                   >
                     <span className="character-preset-card-top">
@@ -1368,6 +1368,19 @@ function CharacterSelectorModal({
                 No presets match that search yet. Try a name, party, or ideology keyword.
               </div>
             )}
+          </div>
+
+          <div className="character-selector-actions">
+            <button type="button" className="action-button" onClick={onCancel}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="action-button action-button-primary"
+              onClick={() => onConfirm(draftConfig)}
+            >
+              Apply lineup
+            </button>
           </div>
         </div>
       </section>
@@ -2611,14 +2624,10 @@ export function PitStudio({
 
   const roster = [config.coordinator, ...config.members];
   const orderedRoster = orderParticipants(roster, lineupOrder);
-  const activePresetIds = new Set(
-    roster.flatMap((participant) => (participant.presetId ? [participant.presetId] : [])),
-  );
   const hasApiKey = apiKey.trim().length > 0;
   const hasValidatedApiKey =
     apiKeyStatus === "valid" && (!draftApiKey.trim() || draftApiKey.trim() === apiKey.trim());
   const hasPrompt = config.prompt.trim().length > 0;
-  const isLineupFull = config.members.length >= MAX_DEBATE_MEMBER_COUNT;
   const hasValidLineupSize = config.members.length >= 2 && config.members.length <= MAX_DEBATE_MEMBER_COUNT;
   const transcriptTurns = flattenTurns(result);
   const transcriptPrompt = result?.prompt ?? config.prompt;
@@ -2890,12 +2899,6 @@ export function PitStudio({
     }));
   }
 
-  function addMemberFromPreset(preset: ParticipantCharacterPreset) {
-    hasHydratedPresetConfigRef.current = true;
-    setStarterBundleId(undefined);
-    setConfig((current) => addParticipantToLineup(current, preset));
-  }
-
   function selectModerator(id: string) {
     setStarterBundleId(undefined);
     setConfig((current) => promoteParticipantToModerator(current, id));
@@ -2904,6 +2907,46 @@ export function PitStudio({
   function removeParticipant(id: string) {
     setStarterBundleId(undefined);
     setConfig((current) => removeParticipantFromLineup(current, id));
+  }
+
+  function applyCharacterLineup(nextConfig: RunInput) {
+    const currentPresetIds = new Set(
+      roster.flatMap((participant) => (participant.presetId ? [participant.presetId] : [])),
+    );
+    const nextRoster = [nextConfig.coordinator, ...nextConfig.members];
+    const nextPresetIds = new Set(
+      nextRoster.flatMap((participant) => (participant.presetId ? [participant.presetId] : [])),
+    );
+
+    nextRoster.forEach((participant) => {
+      if (!participant.presetId || currentPresetIds.has(participant.presetId)) {
+        return;
+      }
+
+      trackEvent("character_added", {
+        preset_id: participant.presetId,
+        debater_count: roster.length,
+      });
+    });
+
+    roster.forEach((participant) => {
+      if (!participant.presetId || nextPresetIds.has(participant.presetId)) {
+        return;
+      }
+
+      trackEvent("character_removed", {
+        debater_count: roster.length,
+      });
+    });
+
+    hasHydratedPresetConfigRef.current = true;
+    setStarterBundleId(undefined);
+    setConfig((current) => ({
+      ...current,
+      coordinator: nextConfig.coordinator,
+      members: nextConfig.members,
+    }));
+    setShowCharacterSelectorModal(false);
   }
 
   async function ensureHydratedConfig(): Promise<RunInput> {
@@ -3525,27 +3568,10 @@ export function PitStudio({
 
       {showCharacterSelectorModal ? (
         <CharacterSelectorModal
-          activeParticipants={orderedRoster}
-          activeModeratorId={config.coordinator.id}
-          canSelectMore={!isLineupFull}
-          onClose={() => setShowCharacterSelectorModal(false)}
-          onRemoveParticipant={(participantId) => {
-            trackEvent("character_removed", {
-              debater_count: roster.length,
-            });
-            removeParticipant(participantId);
-          }}
-          onSelectPreset={(preset) => {
-            if (activePresetIds.has(preset.id) || isLineupFull) {
-              return;
-            }
-
-            trackEvent("character_added", {
-              preset_id: preset.id,
-              debater_count: roster.length,
-            });
-            addMemberFromPreset(preset);
-          }}
+          initialConfig={config}
+          lineupOrder={lineupOrder}
+          onCancel={() => setShowCharacterSelectorModal(false)}
+          onConfirm={applyCharacterLineup}
         />
       ) : null}
 
