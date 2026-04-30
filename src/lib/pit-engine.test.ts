@@ -421,16 +421,16 @@ describe("pit-engine helpers", () => {
     ).rejects.toThrow("OpenRouter returned an invalid response.");
   });
 
-  it("rejects lineups with more than five total personas", async () => {
+  it("rejects lineups with more than four total personas", async () => {
     const input = createDefaultInput();
-    input.members = [createMember(1), createMember(2), createMember(3), createMember(4), createMember(5)];
+    input.members = [createMember(1), createMember(2), createMember(3), createMember(4)];
 
     await expect(
       runPitWorkflow(input, {
         apiKey: "test-key",
         siteUrl: "https://aipit.example",
       }),
-    ).rejects.toThrow("at most 5 personas total");
+    ).rejects.toThrow("at most 4 personas total");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

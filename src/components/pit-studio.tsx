@@ -1075,8 +1075,8 @@ function StudioHero({
                 onClick={onAddMember}
                 className="hero-icon-add-button"
                 disabled={!canAddMember}
-                aria-label="Add debater"
-                title={canAddMember ? "Add debater" : `Maximum ${MAX_DEBATE_PERSON_COUNT} personas`}
+                aria-label="Edit roster"
+                title={canAddMember ? "Edit roster" : "Roster locked"}
               >
                 <PlusGlyph />
               </button>
@@ -1175,12 +1175,16 @@ function StudioHero({
 function CharacterSelectorModal({
   onClose,
   onSelectPreset,
-  activePresetIds,
+  onRemoveParticipant,
+  activeParticipants,
+  activeModeratorId,
   canSelectMore,
 }: {
   onClose: () => void;
   onSelectPreset: (preset: ParticipantCharacterPreset) => void;
-  activePresetIds: ReadonlySet<string>;
+  onRemoveParticipant: (participantId: string) => void;
+  activeParticipants: ParticipantConfig[];
+  activeModeratorId: string;
   canSelectMore: boolean;
 }) {
   const [query, setQuery] = useState("");
@@ -1188,6 +1192,10 @@ function CharacterSelectorModal({
   const [didPresetLoadFail, setDidPresetLoadFail] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const presets = filterPresets ? filterPresets(deferredQuery) : [];
+  const activeParticipantByPresetId = new Map(
+    activeParticipants.flatMap((participant) => (participant.presetId ? [[participant.presetId, participant] as const] : [])),
+  );
+  const canRemoveSelectedParticipant = activeParticipants.length > 1;
   const modalRef = useRef<HTMLElement | null>(null);
 
   useBodyScrollLock(true);
@@ -1237,7 +1245,7 @@ function CharacterSelectorModal({
             <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted)]">Pit Lineup</p>
             <p className="hero-panel-copy">
               {canSelectMore
-                ? "Choose a preset character to quickly populate this seat in the debate."
+                ? `Build a lineup of up to ${MAX_DEBATE_PERSON_COUNT} personas including the moderator.`
                 : `Debates are limited to ${MAX_DEBATE_PERSON_COUNT} personas including the moderator.`}
             </p>
           </div>
@@ -1253,6 +1261,42 @@ function CharacterSelectorModal({
         </div>
 
         <div className="character-selector-modal-stack">
+          <div className="character-selector-selected-panel" aria-label="Selected lineup">
+            <div className="character-selector-selected-header">
+              <span>Selected lineup</span>
+              <span>{activeParticipants.length}/{MAX_DEBATE_PERSON_COUNT}</span>
+            </div>
+            <div className="character-selector-selected-list">
+              {activeParticipants.map((participant) => (
+                <button
+                  key={participant.id}
+                  type="button"
+                  className="character-selector-selected-pill"
+                  onClick={() => onRemoveParticipant(participant.id)}
+                  disabled={!canRemoveSelectedParticipant}
+                  aria-label={`Remove ${participant.name} from lineup`}
+                  title={canRemoveSelectedParticipant ? `Remove ${participant.name}` : "Keep at least one persona"}
+                >
+                  <ParticipantAvatar
+                    name={participant.name}
+                    avatarUrl={participant.avatarUrl}
+                    className="character-selector-selected-avatar"
+                    fallbackClassName="character-selector-selected-avatar-fallback"
+                    imageClassName="character-selector-selected-image"
+                    sizes="32px"
+                  />
+                  <span className="character-selector-selected-copy">
+                    <span className="character-selector-selected-name">{participant.name}</span>
+                    <span className="character-selector-selected-role">
+                      {participant.id === activeModeratorId ? "Moderator" : "Debater"}
+                    </span>
+                  </span>
+                  <CloseGlyph aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          </div>
+
           <input
             className="field"
             value={query}
@@ -1271,8 +1315,9 @@ function CharacterSelectorModal({
               </div>
             ) : presets.length > 0 ? (
               presets.map((preset) => {
-                const isApplied = activePresetIds.has(preset.id);
-                const isDisabled = isApplied || !canSelectMore;
+                const activeParticipant = activeParticipantByPresetId.get(preset.id);
+                const isApplied = Boolean(activeParticipant);
+                const isDisabled = isApplied ? !canRemoveSelectedParticipant : !canSelectMore;
 
                 return (
                   <button
@@ -1281,7 +1326,15 @@ function CharacterSelectorModal({
                     className={`character-preset-card${isApplied ? " is-applied" : ""}`}
                     disabled={isDisabled}
                     aria-disabled={isDisabled}
-                    onClick={() => onSelectPreset(preset)}
+                    aria-pressed={isApplied}
+                    onClick={() => {
+                      if (activeParticipant) {
+                        onRemoveParticipant(activeParticipant.id);
+                        return;
+                      }
+
+                      onSelectPreset(preset);
+                    }}
                   >
                     <span className="character-preset-card-top">
                       <ParticipantAvatar
@@ -1297,7 +1350,7 @@ function CharacterSelectorModal({
                           <span className="character-preset-card-name">{preset.name}</span>
                           <span className="character-preset-card-chip">
                             {isApplied
-                              ? "Already added"
+                              ? "Selected"
                               : canSelectMore
                                 ? getAudienceContextLabel(preset.audience)
                                 : "Lineup full"}
@@ -3415,18 +3468,13 @@ export function PitStudio({
             draftApiKey={draftApiKey}
             hasApiKey={hasApiKey || apiKeyStatus === "valid"}
             canSubmit={!isReplayOnly && hasValidatedApiKey && hasPrompt && hasValidLineupSize}
-            canAddMember={!isReplayOnly && !isLineupFull}
+            canAddMember={!isReplayOnly}
             isRunning={isRunning}
             onDraftApiKeyChange={handleDraftApiKeyChange}
             onPromptChange={(prompt) => setConfig((current) => ({ ...current, prompt }))}
             onRerollDebaters={rerollDebaters}
             onRerollTopic={rerollTopic}
             onAddMember={() => {
-              if (isLineupFull) {
-                setError(`Debates are limited to ${MAX_DEBATE_PERSON_COUNT} people total, including the moderator.`);
-                return;
-              }
-
               setShowCharacterSelectorModal(true);
             }}
             onSelectModerator={selectModerator}
@@ -3477,9 +3525,16 @@ export function PitStudio({
 
       {showCharacterSelectorModal ? (
         <CharacterSelectorModal
-          activePresetIds={activePresetIds}
+          activeParticipants={orderedRoster}
+          activeModeratorId={config.coordinator.id}
           canSelectMore={!isLineupFull}
           onClose={() => setShowCharacterSelectorModal(false)}
+          onRemoveParticipant={(participantId) => {
+            trackEvent("character_removed", {
+              debater_count: roster.length,
+            });
+            removeParticipant(participantId);
+          }}
           onSelectPreset={(preset) => {
             if (activePresetIds.has(preset.id) || isLineupFull) {
               return;
@@ -3490,7 +3545,6 @@ export function PitStudio({
               debater_count: roster.length,
             });
             addMemberFromPreset(preset);
-            setShowCharacterSelectorModal(false);
           }}
         />
       ) : null}

@@ -3558,6 +3558,129 @@ html:not([data-simulation-acknowledged="true"]) body:has(.simulation-acknowledge
   margin-top: 1.5rem;
 }
 
+.character-selector-selected-panel {
+  display: grid;
+  gap: 0.7rem;
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 231, 198, 0.12);
+  background: rgba(255, 248, 237, 0.04);
+  padding: 0.85rem;
+}
+
+.character-selector-selected-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.character-selector-selected-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.character-selector-selected-pill {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-width: 0;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(240, 171, 105, 0.24);
+  background: rgba(216, 122, 59, 0.1);
+  padding: 0.45rem 0.55rem;
+  color: var(--foreground);
+  text-align: left;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.character-selector-selected-pill:hover,
+.character-selector-selected-pill:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(240, 171, 105, 0.44);
+  background: rgba(216, 122, 59, 0.16);
+  outline: none;
+}
+
+.character-selector-selected-pill:disabled {
+  cursor: default;
+  opacity: 0.72;
+  transform: none;
+}
+
+.character-selector-selected-pill svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--accent-strong);
+}
+
+.character-selector-selected-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 2rem;
+  width: 2rem;
+  height: 2rem;
+  overflow: hidden;
+  border-radius: 0.7rem;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 243, 227, 0.9), rgba(216, 122, 59, 0.88)),
+    #d87a3b;
+}
+
+.character-selector-selected-image {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  max-width: 2rem;
+  border-radius: 0.7rem;
+  object-fit: cover;
+}
+
+.character-selector-selected-avatar-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: #fff8ef;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.character-selector-selected-copy {
+  display: grid;
+  gap: 0.08rem;
+  min-width: 0;
+}
+
+.character-selector-selected-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.character-selector-selected-role {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .character-selector-modal-list {
   max-height: min(58vh, 30rem);
 }
