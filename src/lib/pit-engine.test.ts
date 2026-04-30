@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PARTICIPANT_CHARACTER_PRESET_MAP } from "@/lib/character-presets";
 import { cloneCharacterProfile } from "@/lib/character-profile";
-import { createDefaultInput, createTurn } from "@/lib/pit";
+import { createDefaultInput, createMember, createTurn } from "@/lib/pit";
 import {
   buildModeratorInterventionPacket,
   buildPromptMessages,
@@ -419,5 +419,18 @@ describe("pit-engine helpers", () => {
         siteUrl: "https://aipit.example",
       }),
     ).rejects.toThrow("OpenRouter returned an invalid response.");
+  });
+
+  it("rejects lineups with more than five total personas", async () => {
+    const input = createDefaultInput();
+    input.members = [createMember(1), createMember(2), createMember(3), createMember(4), createMember(5)];
+
+    await expect(
+      runPitWorkflow(input, {
+        apiKey: "test-key",
+        siteUrl: "https://aipit.example",
+      }),
+    ).rejects.toThrow("at most 5 personas total");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

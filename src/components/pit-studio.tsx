@@ -44,6 +44,8 @@ import {
 import { SimulationNotice } from "@/components/simulation-notice";
 import { TelemetryPreferencesButton } from "@/components/telemetry-preferences";
 import {
+  MAX_DEBATE_MEMBER_COUNT,
+  MAX_DEBATE_PERSON_COUNT,
   PIT_RUN_DEFAULTS,
   addUsage,
   createMember,
@@ -783,6 +785,10 @@ function promoteParticipantToModerator(input: RunInput, participantId: string): 
 }
 
 function addParticipantToLineup(input: RunInput, preset: ParticipantCharacterPreset): RunInput {
+  if (input.members.length >= MAX_DEBATE_MEMBER_COUNT) {
+    return input;
+  }
+
   const isPresetAlreadyInLineup = [input.coordinator, ...input.members].some(
     (participant) => participant.presetId === preset.id,
   );
@@ -893,6 +899,7 @@ function StudioHero({
   apiKeyStatusMessage,
   draftApiKey,
   canSubmit,
+  canAddMember,
   hasApiKey,
   isRunning,
   onDraftApiKeyChange,
@@ -909,6 +916,7 @@ function StudioHero({
   apiKeyStatusMessage: string;
   draftApiKey: string;
   canSubmit: boolean;
+  canAddMember: boolean;
   hasApiKey: boolean;
   isRunning: boolean;
   onDraftApiKeyChange: (value: string) => void;
@@ -1044,7 +1052,9 @@ function StudioHero({
               <div>
                 <div className="hero-heading-row">
                   <h2 className="hero-panel-title">Configure debaters</h2>
-                  <span className="hero-roster-count-pill">{roster.length} personas</span>
+                  <span className="hero-roster-count-pill">
+                    {roster.length}/{MAX_DEBATE_PERSON_COUNT} personas
+                  </span>
                 </div>
                 <p className="hero-panel-copy">Choose AI personas with diverse perspectives</p>
               </div>
@@ -1064,8 +1074,9 @@ function StudioHero({
                 type="button"
                 onClick={onAddMember}
                 className="hero-icon-add-button"
+                disabled={!canAddMember}
                 aria-label="Add debater"
-                title="Add debater"
+                title={canAddMember ? "Add debater" : `Maximum ${MAX_DEBATE_PERSON_COUNT} personas`}
               >
                 <PlusGlyph />
               </button>
@@ -1165,10 +1176,12 @@ function CharacterSelectorModal({
   onClose,
   onSelectPreset,
   activePresetIds,
+  canSelectMore,
 }: {
   onClose: () => void;
   onSelectPreset: (preset: ParticipantCharacterPreset) => void;
   activePresetIds: ReadonlySet<string>;
+  canSelectMore: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [filterPresets, setFilterPresets] = useState<((query: string) => ParticipantCharacterPreset[]) | null>(null);
@@ -1222,7 +1235,11 @@ function CharacterSelectorModal({
         <div className="settings-modal-header">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted)]">Pit Lineup</p>
-            <p className="hero-panel-copy">Choose a preset character to quickly populate this seat in the debate.</p>
+            <p className="hero-panel-copy">
+              {canSelectMore
+                ? "Choose a preset character to quickly populate this seat in the debate."
+                : `Debates are limited to ${MAX_DEBATE_PERSON_COUNT} personas including the moderator.`}
+            </p>
           </div>
 
           <button
@@ -1255,14 +1272,15 @@ function CharacterSelectorModal({
             ) : presets.length > 0 ? (
               presets.map((preset) => {
                 const isApplied = activePresetIds.has(preset.id);
+                const isDisabled = isApplied || !canSelectMore;
 
                 return (
                   <button
                     key={preset.id}
                     type="button"
                     className={`character-preset-card${isApplied ? " is-applied" : ""}`}
-                    disabled={isApplied}
-                    aria-disabled={isApplied}
+                    disabled={isDisabled}
+                    aria-disabled={isDisabled}
                     onClick={() => onSelectPreset(preset)}
                   >
                     <span className="character-preset-card-top">
@@ -1278,7 +1296,11 @@ function CharacterSelectorModal({
                         <span className="character-preset-card-header">
                           <span className="character-preset-card-name">{preset.name}</span>
                           <span className="character-preset-card-chip">
-                            {isApplied ? "Already added" : getAudienceContextLabel(preset.audience)}
+                            {isApplied
+                              ? "Already added"
+                              : canSelectMore
+                                ? getAudienceContextLabel(preset.audience)
+                                : "Lineup full"}
                           </span>
                         </span>
                         <span className="character-preset-card-title">{preset.title}</span>
@@ -2543,6 +2565,8 @@ export function PitStudio({
   const hasValidatedApiKey =
     apiKeyStatus === "valid" && (!draftApiKey.trim() || draftApiKey.trim() === apiKey.trim());
   const hasPrompt = config.prompt.trim().length > 0;
+  const isLineupFull = config.members.length >= MAX_DEBATE_MEMBER_COUNT;
+  const hasValidLineupSize = config.members.length >= 2 && config.members.length <= MAX_DEBATE_MEMBER_COUNT;
   const transcriptTurns = flattenTurns(result);
   const transcriptPrompt = result?.prompt ?? config.prompt;
   const [transcriptMarkdown, setTranscriptMarkdown] = useState("");
@@ -3102,6 +3126,11 @@ export function PitStudio({
       return;
     }
 
+    if (!hasValidLineupSize) {
+      setError(`Choose 2 to ${MAX_DEBATE_MEMBER_COUNT} debaters. The moderator counts toward the ${MAX_DEBATE_PERSON_COUNT}-person limit.`);
+      return;
+    }
+
     runAbortControllerRef.current?.abort();
     const abortController = new AbortController();
     runAbortControllerRef.current = abortController;
@@ -3370,6 +3399,7 @@ export function PitStudio({
   return (
     <main className="studio-page">
       {shareNotice ? <div className="notice-row notice-row-warning">{shareNotice}</div> : null}
+      {studioView === "setup" && error ? <div className="notice-row notice-row-error">{error}</div> : null}
       <form
         onSubmit={handleSubmit}
         className={`studio-form flex w-full flex-col gap-5 px-2 py-2 sm:px-5 lg:px-6 lg:py-3 ${
@@ -3384,13 +3414,21 @@ export function PitStudio({
             apiKeyStatusMessage={apiKeyStatusMessage}
             draftApiKey={draftApiKey}
             hasApiKey={hasApiKey || apiKeyStatus === "valid"}
-            canSubmit={!isReplayOnly && hasValidatedApiKey && hasPrompt && config.members.length >= 2}
+            canSubmit={!isReplayOnly && hasValidatedApiKey && hasPrompt && hasValidLineupSize}
+            canAddMember={!isReplayOnly && !isLineupFull}
             isRunning={isRunning}
             onDraftApiKeyChange={handleDraftApiKeyChange}
             onPromptChange={(prompt) => setConfig((current) => ({ ...current, prompt }))}
             onRerollDebaters={rerollDebaters}
             onRerollTopic={rerollTopic}
-            onAddMember={() => setShowCharacterSelectorModal(true)}
+            onAddMember={() => {
+              if (isLineupFull) {
+                setError(`Debates are limited to ${MAX_DEBATE_PERSON_COUNT} people total, including the moderator.`);
+                return;
+              }
+
+              setShowCharacterSelectorModal(true);
+            }}
             onSelectModerator={selectModerator}
             onOpenParticipant={openParticipantEditor}
           />
@@ -3440,9 +3478,10 @@ export function PitStudio({
       {showCharacterSelectorModal ? (
         <CharacterSelectorModal
           activePresetIds={activePresetIds}
+          canSelectMore={!isLineupFull}
           onClose={() => setShowCharacterSelectorModal(false)}
           onSelectPreset={(preset) => {
-            if (activePresetIds.has(preset.id)) {
+            if (activePresetIds.has(preset.id) || isLineupFull) {
               return;
             }
 

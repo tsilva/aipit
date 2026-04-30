@@ -1,5 +1,7 @@
 import {
   BALLOON_DELIMITER,
+  MAX_DEBATE_MEMBER_COUNT,
+  MAX_DEBATE_PERSON_COUNT,
   addUsage,
   createRosterSnapshot,
   createTurn,
@@ -1332,6 +1334,10 @@ export async function runPitWorkflow(
   input: RunInput,
   execution: RunExecutionOptions,
 ): Promise<RunResult> {
+  if (input.members.length > MAX_DEBATE_MEMBER_COUNT) {
+    throw new Error(`A debate can include at most ${MAX_DEBATE_PERSON_COUNT} personas total, including the moderator.`);
+  }
+
   const [coordinator, ...members] = createRosterSnapshot(input);
 
   return runDebate(

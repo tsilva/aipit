@@ -83,6 +83,8 @@ export const PIT_RUN_DEFAULTS = {
   temperature: 0.7,
   maxCompletionTokens: 700,
 } as const;
+export const MAX_DEBATE_PERSON_COUNT = 5;
+export const MAX_DEBATE_MEMBER_COUNT = MAX_DEBATE_PERSON_COUNT - 1;
 
 export function makeId(prefix: string): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {

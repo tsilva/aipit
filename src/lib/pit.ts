@@ -22,6 +22,8 @@ import {
 } from "@/lib/starter-bundles";
 export {
   BALLOON_DELIMITER,
+  MAX_DEBATE_MEMBER_COUNT,
+  MAX_DEBATE_PERSON_COUNT,
   PIT_RUN_DEFAULTS,
   addUsage,
   createMember,

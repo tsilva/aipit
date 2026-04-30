@@ -135,9 +135,9 @@ export default function LegalPage() {
             </p>
             <p>
               If telemetry is configured for the deployment, visitors in European Union countries are asked for explicit
-              consent before Google Analytics or client-side Sentry reporting loads. Outside the European Union,
+              consent before Google Analytics or client-side Sentry error reporting loads. Outside the European Union,
               telemetry may load by default unless you have already declined it in this browser. Declining telemetry
-              keeps the app functional and disables Google Analytics and app-level Sentry reporting where the app can
+              keeps the app functional and disables Google Analytics and app-level Sentry error reporting where the app can
               read your preference. Hosting, security, and abuse-prevention logs may still be processed by service
               providers.
             </p>

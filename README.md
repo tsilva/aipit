@@ -10,7 +10,7 @@
 
 The AI Pit turns a topic into a structured debate with a moderator, multiple AI participants, opening statements, rounds, interventions, and a closing synthesis. It is built with Next.js, React, Tailwind CSS, and OpenRouter.
 
-Use the preset characters and starter bundles to begin quickly, or build a custom lineup with your own participant profiles. Completed debates can be saved as replay links when Cloudflare R2 storage is configured.
+Use the preset characters and starter bundles to begin quickly, or build a custom lineup with up to five people total: one moderator and as many as four debaters. Completed debates can be saved as replay links when Cloudflare R2 storage is configured.
 
 ## Install
 

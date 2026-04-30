@@ -95,8 +95,24 @@ describe("resolveSentryRuntimeConfig", () => {
       dsn: undefined,
       enabled: false,
       environment: "production",
-      tracesSampleRate: 0.1,
+      tracesSampleRate: undefined,
     });
+  });
+
+  it("keeps Sentry performance tracing disabled unless it gets its own consent gate", () => {
+    expect(
+      resolveSentryRuntimeConfig("client", {
+        NEXT_PUBLIC_SENTRY_DSN: "https://public@example.ingest.sentry.io/123",
+        NEXT_PUBLIC_SENTRY_ENABLED: "true",
+        NODE_ENV: "development",
+      }).tracesSampleRate,
+    ).toBeUndefined();
+    expect(
+      resolveSentryRuntimeConfig("server", {
+        SENTRY_DSN: "https://server@example.ingest.sentry.io/456",
+        NODE_ENV: "production",
+      }).tracesSampleRate,
+    ).toBeUndefined();
   });
 });
 

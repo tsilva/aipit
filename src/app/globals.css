@@ -1255,6 +1255,25 @@ select.field {
   color: #ffb270;
 }
 
+.hero-secondary-button:disabled,
+.hero-icon-control-button:disabled,
+.hero-icon-add-button:disabled {
+  transform: none;
+  cursor: default;
+  opacity: 0.5;
+}
+
+.hero-secondary-button:disabled:hover,
+.hero-icon-control-button:disabled:hover,
+.hero-icon-add-button:disabled:hover {
+  transform: none;
+  border-color: rgba(255, 248, 237, 0.13);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03)),
+    rgba(255, 248, 237, 0.04);
+  color: #f8f0e7;
+}
+
 .hero-roster-grid {
   display: grid;
   gap: 0.7rem;

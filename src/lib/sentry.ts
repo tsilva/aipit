@@ -25,10 +25,9 @@ type SentryRuntimeConfig = {
   enabled: boolean;
   environment: string;
   beforeSend: (event: ErrorEvent, hint: EventHint) => ErrorEvent | null;
-  tracesSampleRate: number;
+  tracesSampleRate?: number;
 };
 
-const SENTRY_TRACES_SAMPLE_RATE = 0.1;
 const SENSITIVE_FIELD_PATTERN = /(api[-_ ]?key|authorization|bearer|cookie|token|secret|password|credential)/i;
 
 type SentryEvent = ErrorEvent & {
@@ -57,7 +56,7 @@ export function resolveSentryRuntimeConfig(
     enabled: Boolean(dsn) && isSentryRuntimeEnabled(source),
     environment: resolveSentryEnvironment(source),
     beforeSend: (event) => beforeSendSentryEvent(runtime, event),
-    tracesSampleRate: SENTRY_TRACES_SAMPLE_RATE,
+    tracesSampleRate: undefined,
   };
 }
 
