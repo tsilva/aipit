@@ -10,12 +10,12 @@ import {
 import { createCharacterProfile } from "@/lib/character-profile";
 
 describe("unbiased starter selection", () => {
-  it("selects random starter topics from the full bundle pool", () => {
+  it("selects random starter topics from the requested audience pool", () => {
     const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
 
     try {
       const starter = createRandomStarterInput(undefined, "global");
-      const firstBundle = listStarterBundles()[0];
+      const firstBundle = listStarterBundles("global")[0];
 
       expect(starter.bundle.id).toBe(firstBundle?.id);
     } finally {
@@ -50,8 +50,8 @@ describe("unbiased starter selection", () => {
     }
   });
 
-  it("rerolls topics across the full starter pool when excluding the current bundle", () => {
-    const bundles = listStarterBundles();
+  it("rerolls topics within the requested audience pool when excluding the current bundle", () => {
+    const bundles = listStarterBundles("global");
     const current = bundles[0];
 
     expect(current).toBeDefined();

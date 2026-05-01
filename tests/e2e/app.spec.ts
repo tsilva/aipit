@@ -444,7 +444,7 @@ test("shows a notice when an old shared replay link is unsupported", async ({ pa
 });
 
 test.describe("audience-aware setup", () => {
-  test.use({ locale: "en-US" });
+  test.use({ extraHTTPHeaders: { "x-vercel-ip-country": "US" }, locale: "en-US" });
 
   test("defaults non-Portuguese visitors to the global lane", async ({ page }) => {
     await page.goto("/");
@@ -468,8 +468,8 @@ test.describe("audience-aware setup", () => {
   });
 });
 
-test.describe("Portuguese locale defaults", () => {
-  test.use({ locale: "pt-PT" });
+test.describe("Portuguese country defaults", () => {
+  test.use({ extraHTTPHeaders: { "x-vercel-ip-country": "PT" }, locale: "pt-PT" });
 
   test("defaults Portuguese visitors to the Portugal lane", async ({ page }) => {
     await page.goto("/");

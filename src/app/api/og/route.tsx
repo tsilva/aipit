@@ -8,8 +8,6 @@ const size = {
   height: 630,
 };
 
-export const contentType = "image/png";
-
 function clamp(value: string | null, fallback: string, maxLength: number): string {
   const trimmed = value?.trim();
 

@@ -272,8 +272,12 @@ type RandomStarterOptions = {
   ignoreAudience?: boolean;
 };
 
-function pickRandomStarterBundle(excludingId?: string): StarterBundle {
-  const sourceBundles = STARTER_BUNDLES;
+function pickRandomStarterBundle(
+  excludingId?: string,
+  audience?: PresetAudience,
+  options?: RandomStarterOptions,
+): StarterBundle {
+  const sourceBundles = options?.ignoreAudience ? STARTER_BUNDLES : listStarterBundles(audience);
   const eligibleBundles = excludingId
     ? sourceBundles.filter((bundle) => bundle.id !== excludingId)
     : sourceBundles;
@@ -367,8 +371,7 @@ export function createRandomStarterInput(
   audience?: PresetAudience,
   options?: RandomStarterOptions,
 ): { bundle: StarterBundle; input: RunInput } {
-  void options;
-  const bundle = pickRandomStarterBundle(excludingId);
+  const bundle = pickRandomStarterBundle(excludingId, audience, options);
 
   return {
     bundle,

@@ -3003,7 +3003,7 @@ export function PitStudio({
 
   async function rerollTopic() {
     const { listStarterBundles } = await import("@/lib/pit");
-    const bundles = listStarterBundles();
+    const bundles = listStarterBundles(audience);
     const currentPrompt = configRef.current.prompt.trim();
     const eligibleBundles = bundles.filter((bundle) => bundle.prompt !== currentPrompt);
     const bundlePool = eligibleBundles.length > 0 ? eligibleBundles : bundles;
