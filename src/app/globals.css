@@ -3090,46 +3090,6 @@ select.field {
   justify-content: flex-start;
 }
 
-.consent-banner {
-  position: fixed;
-  right: 1rem;
-  bottom: 1rem;
-  z-index: 50;
-  display: grid;
-  gap: 0.9rem;
-  width: min(28rem, calc(100vw - 2rem));
-  padding: 1rem 1.1rem;
-  border: 1px solid rgba(255, 231, 198, 0.16);
-  border-radius: 1.25rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 40%),
-    var(--panel-strong);
-  box-shadow: 0 1rem 2.4rem rgba(2, 5, 8, 0.36);
-  backdrop-filter: blur(20px);
-}
-
-.consent-banner-copy {
-  display: grid;
-  gap: 0.35rem;
-  color: var(--foreground);
-}
-
-.consent-banner-copy p {
-  margin: 0;
-  color: var(--ink-soft);
-  line-height: 1.5;
-}
-
-.consent-banner-copy a {
-  color: var(--accent-strong);
-}
-
-.consent-banner-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.7rem;
-}
-
 .privacy-preferences-button {
   border: 1px solid rgba(255, 231, 198, 0.16);
   border-radius: 999px;
@@ -3514,6 +3474,26 @@ html:not([data-simulation-acknowledged="true"]) body:has(.simulation-acknowledge
   text-underline-offset: 0.22em;
 }
 
+.simulation-acknowledgement-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  border: 1px solid rgba(255, 231, 198, 0.14);
+  border-radius: 1rem;
+  background: rgba(255, 248, 237, 0.05);
+  color: var(--foreground);
+  padding: 0.85rem 0.9rem;
+  line-height: 1.45;
+}
+
+.simulation-acknowledgement-checkbox input {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  margin-top: 0.12rem;
+  accent-color: var(--accent);
+}
+
 .simulation-acknowledgement-actions {
   display: flex;
   justify-content: flex-end;
@@ -3809,11 +3789,6 @@ html:not([data-simulation-acknowledged="true"]) body:has(.simulation-acknowledge
 }
 
 @media (max-width: 900px) {
-  .consent-banner {
-    left: 1rem;
-    width: auto;
-  }
-
   .hero-title {
     max-width: none;
   }
@@ -3928,14 +3903,6 @@ html:not([data-simulation-acknowledged="true"]) body:has(.simulation-acknowledge
 }
 
 @media (max-width: 640px) {
-  .consent-banner {
-    right: 0.75rem;
-    bottom: 0.75rem;
-    left: 0.75rem;
-    width: auto;
-  }
-
-  .consent-banner-actions,
   .legal-actions {
     flex-direction: column;
     align-items: stretch;

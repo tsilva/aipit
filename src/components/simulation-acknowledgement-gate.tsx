@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { type RefObject, useEffect, useId, useRef, useSyncExternalStore } from "react";
+import { type RefObject, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { GA_MEASUREMENT_ID } from "@/lib/google-analytics";
 import {
   AI_SIMULATION_ACCEPTANCE_TEXT,
   AI_SIMULATION_DISCLOSURE_TEXT,
@@ -15,8 +16,17 @@ import {
   hasAcknowledgedSimulationNotice,
   subscribeToSimulationAcknowledgement,
 } from "@/lib/simulation-acknowledgement";
+import {
+  type TelemetryPurpose,
+  writeTelemetryConsentForPurposes,
+} from "@/lib/telemetry-consent";
 
 const EXIT_URL = "https://www.google.com/";
+const SENTRY_CLIENT_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN?.trim() ?? "";
+const CONFIGURED_TELEMETRY_PURPOSES: TelemetryPurpose[] = [
+  ...(GA_MEASUREMENT_ID ? (["analytics"] as const) : []),
+  ...(SENTRY_CLIENT_DSN ? (["errorReporting"] as const) : []),
+];
 
 function subscribeToHydration() {
   return () => {};
@@ -111,7 +121,7 @@ export function SimulationAcknowledgementGate() {
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef<HTMLElement | null>(null);
-  const acknowledgeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [hasAcceptedLegal, setHasAcceptedLegal] = useState(false);
   const pathname = usePathname();
   const hasHydrated = useSyncExternalStore(subscribeToHydration, () => true, () => true);
   const isAcknowledged = useSyncExternalStore(
@@ -121,15 +131,21 @@ export function SimulationAcknowledgementGate() {
   );
   const isLegalRoute = pathname === "/legal" || pathname === "/terms" || pathname === "/privacy";
   const isVisible = hasHydrated && !isLegalRoute && !isAcknowledged;
+  const hasTelemetryPurposes = CONFIGURED_TELEMETRY_PURPOSES.length > 0;
 
   useBodyScrollLock(isVisible);
-  useRequiredDialogFocusTrap(panelRef, acknowledgeButtonRef, isVisible);
+  useRequiredDialogFocusTrap(panelRef, panelRef, isVisible);
 
   if (!isVisible) {
     return null;
   }
 
   function handleAcknowledge() {
+    if (!hasAcceptedLegal) {
+      return;
+    }
+
+    writeTelemetryConsentForPurposes(CONFIGURED_TELEMETRY_PURPOSES, "granted");
     acknowledgeSimulationNotice();
   }
 
@@ -162,19 +178,33 @@ export function SimulationAcknowledgementGate() {
               {" · "}
               <a href="/legal#privacy">Privacy Policy</a>
             </p>
+            {hasTelemetryPurposes ? (
+              <p>
+                Accepting the privacy policy also allows configured Google Analytics and app-level Sentry reporting for
+                this browser. You can change privacy preferences later from the legal page.
+              </p>
+            ) : null}
           </div>
         </div>
+        <label className="simulation-acknowledgement-checkbox">
+          <input
+            type="checkbox"
+            checked={hasAcceptedLegal}
+            onChange={(event) => setHasAcceptedLegal(event.target.checked)}
+          />
+          <span>I accept The AI Pit Terms and Privacy Policy.</span>
+        </label>
         <div className="simulation-acknowledgement-actions">
           <button type="button" className="action-button" onClick={handleLeaveSite}>
             Leave site
           </button>
           <button
-            ref={acknowledgeButtonRef}
             type="button"
             className="action-button action-button-primary"
+            disabled={!hasAcceptedLegal}
             onClick={handleAcknowledge}
           >
-            I understand and agree
+            I agree and continue
           </button>
         </div>
       </section>

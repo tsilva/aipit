@@ -1,5 +1,5 @@
 export const LEGAL_TERMS_EFFECTIVE_DATE = "2026-04-28";
-export const LEGAL_PRIVACY_EFFECTIVE_DATE = "2026-04-28";
+export const LEGAL_PRIVACY_EFFECTIVE_DATE = "2026-05-07";
 
 export const AI_SIMULATION_NOTICE_TITLE = "AI simulation notice";
 

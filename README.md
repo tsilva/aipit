@@ -78,7 +78,7 @@ R2_OBJECT_PREFIX=shares/       # optional share snapshot prefix
 - Personal OpenRouter keys are stored in browser `localStorage` and still transit the app proxy so OpenRouter can fulfill requests.
 - Hosted OpenRouter access uses The AI Pit's built-in OpenRouter key, processes prompts through The AI Pit's OpenRouter account, and applies same-origin checks, simple rate limits, model allowlisting, and payload caps.
 - Share links are public-by-URL replay snapshots stored in Cloudflare R2. Replay pages do not make new model calls.
-- Google Analytics and browser Sentry are optional and respect the app's telemetry consent controls.
+- Google Analytics and browser Sentry are optional and respect the app's onboarding privacy consent controls.
 - Avatar assets in `public/avatars` are served with long-lived cache headers and versioned by `scripts/generate-avatar-asset-versions.mjs`.
 - The app is an experimental AI simulation, not an advice service or official communications channel.
 
