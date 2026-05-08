@@ -18,7 +18,7 @@ import {
 } from "@/lib/simulation-acknowledgement";
 import {
   type TelemetryPurpose,
-  writeTelemetryConsentForPurposes,
+  writeTelemetryConsent,
 } from "@/lib/telemetry-consent";
 
 const EXIT_URL = "https://www.google.com/";
@@ -27,6 +27,16 @@ const CONFIGURED_TELEMETRY_PURPOSES: TelemetryPurpose[] = [
   ...(GA_MEASUREMENT_ID ? (["analytics"] as const) : []),
   ...(SENTRY_CLIENT_DSN ? (["errorReporting"] as const) : []),
 ];
+const TELEMETRY_PREFERENCE_COPY: Record<TelemetryPurpose, { title: string; description: string }> = {
+  analytics: {
+    title: "Help improve aipit",
+    description: "Share basic usage signals so we can see what is helpful and what needs work.",
+  },
+  errorReporting: {
+    title: "Share crash reports",
+    description: "Send details when something breaks so we can find and fix problems faster.",
+  },
+};
 
 function subscribeToHydration() {
   return () => {};
@@ -122,6 +132,11 @@ export function SimulationAcknowledgementGate() {
   const descriptionId = useId();
   const panelRef = useRef<HTMLElement | null>(null);
   const [hasAcceptedLegal, setHasAcceptedLegal] = useState(false);
+  const [step, setStep] = useState<"notice" | "privacy">("notice");
+  const [telemetrySelections, setTelemetrySelections] = useState<Record<TelemetryPurpose, boolean>>({
+    analytics: true,
+    errorReporting: true,
+  });
   const pathname = usePathname();
   const hasHydrated = useSyncExternalStore(subscribeToHydration, () => true, () => true);
   const isAcknowledged = useSyncExternalStore(
@@ -136,16 +151,54 @@ export function SimulationAcknowledgementGate() {
   useBodyScrollLock(isVisible);
   useRequiredDialogFocusTrap(panelRef, panelRef, isVisible);
 
+  useEffect(() => {
+    if (!isVisible) {
+      return;
+    }
+
+    panelRef.current?.scrollTo({ top: 0 });
+    panelRef.current?.focus();
+  }, [isVisible, step]);
+
   if (!isVisible) {
     return null;
   }
 
-  function handleAcknowledge() {
+  function setTelemetrySelection(purpose: TelemetryPurpose, value: boolean) {
+    setTelemetrySelections((current) => ({
+      ...current,
+      [purpose]: value,
+    }));
+  }
+
+  function setAllTelemetrySelections(value: boolean) {
+    setTelemetrySelections((current) => ({
+      ...current,
+      ...Object.fromEntries(CONFIGURED_TELEMETRY_PURPOSES.map((purpose) => [purpose, value])),
+    }));
+  }
+
+  function writeSelectedTelemetryConsent() {
+    for (const purpose of CONFIGURED_TELEMETRY_PURPOSES) {
+      writeTelemetryConsent(purpose, telemetrySelections[purpose] ? "granted" : "denied");
+    }
+  }
+
+  function handleNoticeContinue() {
     if (!hasAcceptedLegal) {
       return;
     }
 
-    writeTelemetryConsentForPurposes(CONFIGURED_TELEMETRY_PURPOSES, "granted");
+    if (hasTelemetryPurposes) {
+      setStep("privacy");
+      return;
+    }
+
+    acknowledgeSimulationNotice();
+  }
+
+  function handlePrivacyDone() {
+    writeSelectedTelemetryConsent();
     acknowledgeSimulationNotice();
   }
 
@@ -164,49 +217,98 @@ export function SimulationAcknowledgementGate() {
         aria-describedby={descriptionId}
         tabIndex={-1}
       >
-        <div className="simulation-acknowledgement-copy">
-          <p className="hero-kicker">Required Notice</p>
-          <h2 id={titleId}>{AI_SIMULATION_NOTICE_TITLE}</h2>
-          <div id={descriptionId} className="simulation-acknowledgement-text">
-            <p>{AI_SIMULATION_DISCLOSURE_TEXT}</p>
-            <p>{SYNTHETIC_MEDIA_DISCLOSURE_TEXT}</p>
-            <p>{AI_SIMULATION_MISUSE_NOTICE_TEXT}</p>
-            <p>{AI_SIMULATION_PROCESSING_NOTICE_TEXT}</p>
-            <p>
-              {AI_SIMULATION_ACCEPTANCE_TEXT}{" "}
-              <a href="/legal#terms">Terms</a>
-              {" · "}
-              <a href="/legal#privacy">Privacy Policy</a>
-            </p>
-            {hasTelemetryPurposes ? (
+        {step === "notice" ? (
+          <>
+            <div className="simulation-acknowledgement-copy">
+              <p className="hero-kicker">Required Notice</p>
+              <h2 id={titleId}>{AI_SIMULATION_NOTICE_TITLE}</h2>
+              <div id={descriptionId} className="simulation-acknowledgement-text">
+                <p>{AI_SIMULATION_DISCLOSURE_TEXT}</p>
+                <p>{SYNTHETIC_MEDIA_DISCLOSURE_TEXT}</p>
+                <p>{AI_SIMULATION_MISUSE_NOTICE_TEXT}</p>
+                <p>{AI_SIMULATION_PROCESSING_NOTICE_TEXT}</p>
+                <p>
+                  {AI_SIMULATION_ACCEPTANCE_TEXT}{" "}
+                  <a href="/legal#terms">Terms</a>
+                  {" · "}
+                  <a href="/legal#privacy">Privacy Policy</a>
+                </p>
+                {hasTelemetryPurposes ? (
+                  <p>
+                    After accepting, you can choose whether this browser shares usage signals or crash reports.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+            <label className="simulation-acknowledgement-checkbox">
+              <input
+                type="checkbox"
+                checked={hasAcceptedLegal}
+                onChange={(event) => setHasAcceptedLegal(event.target.checked)}
+              />
+              <span>I accept The AI Pit Terms and Privacy Policy.</span>
+            </label>
+            <div className="simulation-acknowledgement-actions">
+              <button type="button" className="action-button" onClick={handleLeaveSite}>
+                Leave site
+              </button>
+              <button
+                type="button"
+                className="action-button action-button-primary"
+                disabled={!hasAcceptedLegal}
+                onClick={handleNoticeContinue}
+              >
+                {hasTelemetryPurposes ? "Continue" : "I agree and continue"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="settings-modal-header">
+              <div>
+                <p className="hero-kicker">Privacy</p>
+                <h2 id={titleId} className="hero-panel-title">
+                  Privacy preferences
+                </h2>
+              </div>
+            </div>
+            <div id={descriptionId} className="telemetry-preferences-body">
               <p>
-                Accepting the privacy policy also allows configured Google Analytics and app-level Sentry reporting for
-                this browser. You can change privacy preferences later from the legal page.
+                Choose what aipit can use from this browser. Turning these off will not affect your debates, saved
+                settings, or access to the app.
               </p>
-            ) : null}
-          </div>
-        </div>
-        <label className="simulation-acknowledgement-checkbox">
-          <input
-            type="checkbox"
-            checked={hasAcceptedLegal}
-            onChange={(event) => setHasAcceptedLegal(event.target.checked)}
-          />
-          <span>I accept The AI Pit Terms and Privacy Policy.</span>
-        </label>
-        <div className="simulation-acknowledgement-actions">
-          <button type="button" className="action-button" onClick={handleLeaveSite}>
-            Leave site
-          </button>
-          <button
-            type="button"
-            className="action-button action-button-primary"
-            disabled={!hasAcceptedLegal}
-            onClick={handleAcknowledge}
-          >
-            I agree and continue
-          </button>
-        </div>
+              {CONFIGURED_TELEMETRY_PURPOSES.map((purpose) => {
+                const copy = TELEMETRY_PREFERENCE_COPY[purpose];
+
+                return (
+                  <label key={purpose} className="telemetry-preference-row">
+                    <span className="telemetry-preference-copy">
+                      <strong>{copy.title}</strong>
+                      <span>{copy.description}</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      checked={telemetrySelections[purpose]}
+                      onChange={(event) => setTelemetrySelection(purpose, event.target.checked)}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+            <div className="telemetry-preferences-actions">
+              <button type="button" className="action-button" onClick={() => setAllTelemetrySelections(false)}>
+                Turn both off
+              </button>
+              <button type="button" className="action-button" onClick={() => setAllTelemetrySelections(true)}>
+                Allow both
+              </button>
+              <button type="button" className="action-button action-button-primary" onClick={handlePrivacyDone}>
+                Done
+              </button>
+            </div>
+          </>
+        )}
       </section>
     </div>
   );
