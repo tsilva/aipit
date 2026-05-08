@@ -29,7 +29,31 @@ async function expectStarterPromptFromAudience(page: Page, prompts: string[]) {
   return prompt;
 }
 
-async function acknowledgeSimulationNoticeIfVisible(page: Page) {
+async function completeSimulationAcknowledgement(
+  page: Page,
+  { telemetry = "deny" }: { telemetry?: "allow" | "deny" } = {},
+) {
+  const noticeDialog = page.getByRole("dialog", { name: "AI simulation notice" });
+  const legalCheckbox = noticeDialog.getByRole("checkbox", { name: /I accept The AI Pit Terms/i });
+
+  await legalCheckbox.check();
+  await expect(noticeDialog.getByRole("button", { name: /Continue|I agree and continue/i })).toBeEnabled();
+  await noticeDialog.getByRole("button", { name: /Continue|I agree and continue/i }).click();
+
+  const privacyDialog = page.getByRole("dialog", { name: "Privacy preferences" });
+  if (await privacyDialog.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    await privacyDialog.getByRole("button", { name: telemetry === "allow" ? "Allow both" : "Turn both off" }).click();
+    await privacyDialog.getByRole("button", { name: "Done" }).click();
+    await expect(privacyDialog).toBeHidden();
+  }
+
+  await expect(noticeDialog).toBeHidden();
+}
+
+async function acknowledgeSimulationNoticeIfVisible(
+  page: Page,
+  options?: Parameters<typeof completeSimulationAcknowledgement>[1],
+) {
   const gate = page.getByRole("dialog", { name: "AI simulation notice" });
 
   try {
@@ -38,8 +62,7 @@ async function acknowledgeSimulationNoticeIfVisible(page: Page) {
     return;
   }
 
-  await page.getByRole("button", { name: "I understand and agree" }).click();
-  await expect(gate).toBeHidden();
+  await completeSimulationAcknowledgement(page, options);
 }
 
 async function dismissConsentBannerIfVisible(page: Page) {
@@ -100,8 +123,12 @@ test("requires simulation acknowledgement before using the site", async ({ page 
   await page.goto("/");
 
   const gate = page.getByRole("dialog", { name: "AI simulation notice" });
+  const legalCheckbox = gate.getByRole("checkbox", { name: /I accept The AI Pit Terms/i });
+  const continueButton = gate.getByRole("button", { name: /Continue|I agree and continue/i });
+
   await expect(gate).toBeVisible();
-  await expect(page.getByRole("button", { name: "I understand and agree" })).toBeFocused();
+  await expect(legalCheckbox).toBeVisible();
+  await expect(continueButton).toBeDisabled();
   await expect(page.getByText("not real quotes, endorsements, beliefs")).toBeVisible();
   await expect(page.getByRole("link", { name: "Terms", exact: true })).toHaveAttribute("href", "/legal#terms");
   await expect(page.getByRole("link", { name: "Privacy Policy", exact: true })).toHaveAttribute(
@@ -117,8 +144,7 @@ test("requires simulation acknowledgement before using the site", async ({ page 
   }
   expect(blockedStartClick).toBe(true);
 
-  await page.getByRole("button", { name: "I understand and agree" }).click();
-  await expect(gate).toBeHidden();
+  await completeSimulationAcknowledgement(page);
   expect(await page.evaluate((key) => window.localStorage.getItem(key), SIMULATION_ACKNOWLEDGEMENT_KEY)).toBe(
     SIMULATION_ACKNOWLEDGEMENT_VALUE,
   );
@@ -188,12 +214,8 @@ test("gates telemetry by consent and completes a mocked debate", async ({ page }
   await page.goto("/");
 
   await expect(page.locator('script[src*="googletagmanager.com/gtag/js"]')).toHaveCount(0);
-  await acknowledgeSimulationNoticeIfVisible(page);
-  const acceptTelemetryButton = page.getByRole("button", { name: "Accept" });
-  if (await acceptTelemetryButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
-    await acceptTelemetryButton.click();
-    await expect(page.locator('script[src*="googletagmanager.com/gtag/js"]')).toHaveCount(1);
-  }
+  await acknowledgeSimulationNoticeIfVisible(page, { telemetry: "allow" });
+  await expect(page.locator('script[src*="googletagmanager.com/gtag/js"]')).toHaveCount(1);
   await ensureRunCanStart(page);
 
   await getStartButton(page).click();
