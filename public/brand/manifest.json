@@ -6,8 +6,9 @@
     "web-seo"
   ],
   "sources": [
-    "built_in_defaults",
-    "cli_args"
+    "codex_native_image_generation",
+    "chroma_key_alpha_cleanup",
+    "deterministic_derivation"
   ],
   "metadata": {
     "title": "The AI Pit | Next.js AI Debate Simulator",
@@ -28,10 +29,43 @@
   },
   "assets": [
     {
+      "key": "logo-source",
+      "kind": "source",
+      "target": "shared",
+      "strategy": "generated_chroma_key_removed",
+      "path": "sources/logo-source.png",
+      "size": [
+        1254,
+        1254
+      ]
+    },
+    {
+      "key": "icon-source",
+      "kind": "source",
+      "target": "shared",
+      "strategy": "generated_chroma_key_removed",
+      "path": "sources/icon-source.png",
+      "size": [
+        1254,
+        1254
+      ]
+    },
+    {
+      "key": "social-source",
+      "kind": "source",
+      "target": "web-seo",
+      "strategy": "generated",
+      "path": "sources/social-source.png",
+      "size": [
+        1731,
+        909
+      ]
+    },
+    {
       "key": "logo",
       "kind": "logo",
       "target": "shared",
-      "strategy": "generated",
+      "strategy": "resized_from_logo_source",
       "path": "logo/logo-1024.png",
       "size": [
         1024,
@@ -42,11 +76,22 @@
       "key": "icon",
       "kind": "icon",
       "target": "shared",
-      "strategy": "generated_from_logo_reference",
+      "strategy": "resized_from_icon_source",
       "path": "icon/icon-1024.png",
       "size": [
         1024,
         1024
+      ]
+    },
+    {
+      "key": "root-logo",
+      "kind": "logo",
+      "target": "repository",
+      "strategy": "cropped_from_logo_source",
+      "path": "../../logo.png",
+      "size": [
+        814,
+        924
       ]
     },
     {
@@ -126,7 +171,7 @@
       "key": "web-seo-og-image",
       "kind": "social-card",
       "target": "web-seo",
-      "strategy": "generated_from_logo_reference",
+      "strategy": "cropped_from_social_source",
       "path": "web-seo/og-image-1200x630.png",
       "size": [
         1200,
