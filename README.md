@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./public/brand/logo/logo-1024.png" alt="The AI Pit logo" width="180" />
+  <img src="./public/brand/logo/logo-1024.png" alt="The AI Pit logo" width="512" />
 
   <h1>The AI Pit</h1>
 
