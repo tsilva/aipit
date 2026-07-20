@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev-server.mjs next dev",
     "prebuild": "node scripts/generate-avatar-asset-versions.mjs",
     "build": "next build --webpack",
-    "start": "next start",
+    "start": "node scripts/dev-server.mjs next start",
     "lint": "eslint",
     "sentry:issues": "node scripts/sentry-issues.mjs",
     "typecheck": "tsc --noEmit",
