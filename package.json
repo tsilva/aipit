@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/dev-server.mjs next dev",
     "prebuild": "node scripts/generate-avatar-asset-versions.mjs",
-    "build": "next build --webpack",
+    "build": "next build",
     "start": "node scripts/dev-server.mjs next start",
     "lint": "eslint",
     "sentry:issues": "node scripts/sentry-issues.mjs",
@@ -15,8 +15,9 @@
   },
   "dependencies": {
     "@sentry/nextjs": "^10.43.0",
+    "@vercel/analytics": "^1.6.1",
     "lucide-react": "^0.577.0",
-    "next": "16.1.6",
+    "next": "^16.3.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0"
@@ -28,7 +29,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "^16.3.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4",
     "typescript": "^5",

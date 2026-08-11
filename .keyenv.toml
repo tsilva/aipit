@@ -2,6 +2,18 @@
 [keyenv]
 version = 1
 
+[secrets.OPENROUTER_API_KEY]
+account = "aipit/OPENROUTER_API_KEY"
+required = false
+
+[secrets.R2_ACCESS_KEY_ID]
+account = "aipit/R2_ACCESS_KEY_ID"
+required = false
+
+[secrets.R2_SECRET_ACCESS_KEY]
+account = "aipit/R2_SECRET_ACCESS_KEY"
+required = false
+
 [secrets.SENTRY_AUTH_TOKEN]
 account = "aipit/SENTRY_AUTH_TOKEN"
-required = true
+required = false

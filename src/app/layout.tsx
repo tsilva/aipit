@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { SimulationAcknowledgementGate } from "@/components/simulation-acknowledgement-gate";
 import {
@@ -47,6 +48,7 @@ export default function RootLayout({
         ) : null}
         <SimulationAcknowledgementGate />
         <Suspense fallback={null}>{children}</Suspense>
+        <Analytics />
       </body>
     </html>
   );
