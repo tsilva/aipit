@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev-server.mjs next dev",
-    "prebuild": "node scripts/generate-avatar-asset-versions.mjs",
-    "build": "next build",
+    "build": "node scripts/generate-avatar-asset-versions.mjs && next build",
     "start": "node scripts/dev-server.mjs next start",
     "lint": "eslint",
+    "check:dependencies": "node scripts/check-dependency-sources.mjs && npm audit --audit-level=high",
     "sentry:issues": "node scripts/sentry-issues.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -34,5 +34,8 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.0"
+  },
+  "overrides": {
+    "eslint-plugin-react-hooks": "7.0.1"
   }
 }
