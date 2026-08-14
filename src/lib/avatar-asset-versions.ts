@@ -60,7 +60,6 @@ export const AVATAR_ASSET_VERSIONS = {
   "/avatars/presets/speaking/cornholio.mp4": "dd9baa3b0006b5dc",
   "/avatars/presets/speaking/daniel-oliveira.mp4": "6ed3903cccababcf",
   "/avatars/presets/speaking/david-attenborough.mp4": "645ad9bba8133435",
-  "/avatars/presets/speaking/donald-trump.mp4": "49c0a38040a18beb",
   "/avatars/presets/speaking/dr-phil.mp4": "f100c27f894e6005",
   "/avatars/presets/speaking/dwight-schrute.mp4": "7ea5766462ba9a41",
   "/avatars/presets/speaking/elon-musk.mp4": "e1d398997cbfd89b",
