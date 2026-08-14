@@ -20,13 +20,13 @@ Requires Node.js 20.9 or newer.
 git clone https://github.com/tsilva/aipit.git
 cd aipit
 npm install
-cp .env.example .env
-npm run dev
+keyenv doctor
+keyenv run -- npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-You can paste a personal OpenRouter API key in the app. If users leave the key blank and `OPENROUTER_API_KEY` is set in `.env`, prompts are processed through The AI Pit's built-in OpenRouter key and The AI Pit's OpenRouter account.
+You can paste a personal OpenRouter API key in the app. If users leave the key blank and `OPENROUTER_API_KEY` is supplied by `keyenv`, prompts are processed through The AI Pit's built-in OpenRouter key and The AI Pit's OpenRouter account.
 
 ## Commands
 
@@ -43,7 +43,7 @@ npm run sentry:issues # query Sentry issues with a read-only token
 
 ## Configuration
 
-The app runs without a server OpenRouter key if users provide their own key in the browser. If `OPENROUTER_API_KEY` is configured and no personal key is provided, the app uses The AI Pit's built-in key and processes prompts through The AI Pit's OpenRouter account.
+The app runs without a server OpenRouter key if users provide their own key in the browser. Private local values declared in `.keyenv.toml` live in macOS Keychain and are injected with `keyenv run -- ...`; Node reads them normally from `process.env`. Non-secret and public settings may remain in `.env`.
 
 ```bash
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
