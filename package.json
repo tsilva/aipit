@@ -2,8 +2,15 @@
   "name": "llm-pit",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@11.16.0",
   "scripts": {
-    "dev": "node scripts/dev-server.mjs next dev",
+    "dev": "python3 scripts/infisical/run.py dev",
+    "dev:secrets": "python3 scripts/infisical/run.py dev",
+    "secrets:check": "python3 scripts/infisical/run.py check",
+    "secrets:add": "python3 scripts/infisical/add_secret.py",
+    "secrets:migrate": "python3 scripts/infisical/migrate_keyenv.py",
+    "build:secrets": "python3 scripts/infisical/run.py build",
+    "start:secrets": "python3 scripts/infisical/run.py start",
     "build": "node scripts/generate-avatar-asset-versions.mjs && next build",
     "start": "node scripts/dev-server.mjs next start",
     "lint": "eslint",
@@ -11,13 +18,19 @@
     "sentry:issues": "node scripts/sentry-issues.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "dev:bitwarden": "node scripts/bitwarden-run.mjs dev",
+    "build:bitwarden": "node scripts/bitwarden-run.mjs build",
+    "start:bitwarden": "node scripts/bitwarden-run.mjs start",
+    "bitwarden:check": "node scripts/bitwarden-run.mjs check",
+    "bitwarden:add": "uv run --locked --project scripts/bitwarden python scripts/bitwarden/add_secret.py",
+    "bitwarden:migrate": "env -u OPENROUTER_API_KEY -u R2_ACCESS_KEY_ID -u R2_SECRET_ACCESS_KEY -u SENTRY_AUTH_TOKEN keyenv run -- uv run --locked --project scripts/bitwarden python scripts/bitwarden/migrate_keyenv.py"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.43.0",
     "@vercel/analytics": "^1.6.1",
     "lucide-react": "^0.577.0",
-    "next": "^16.3.0",
+    "next": "^16.3.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0"
@@ -36,6 +49,7 @@
     "vitest": "^4.1.0"
   },
   "overrides": {
-    "eslint-plugin-react-hooks": "7.0.1"
+    "eslint-plugin-react-hooks": "7.0.1",
+    "source-map-js": "1.2.2"
   }
 }

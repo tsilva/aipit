@@ -14,24 +14,30 @@ Use the preset characters and starter bundles to begin quickly, or build a custo
 
 ## Install
 
-Requires Node.js 20.9 or newer.
+Requires Node.js 20.17+ (20.x) or 22.9+ and npm 11.16.0, pinned in `package.json`.
 
 ```bash
 git clone https://github.com/tsilva/aipit.git
 cd aipit
-npm install
-keyenv doctor
-keyenv run -- npm run dev
+npm install --global "$(node -p "require('./package.json').packageManager")" --ignore-scripts
+npm ci
+npm run dev:secrets
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Use `npm ci` to install the committed `package-lock.json`; use `npm install` when intentionally updating dependencies. `.npmrc` enforces a seven-day minimum release age for dependency resolution and disables installation lifecycle scripts. CI uses the same pinned npm version and explicitly installs the Playwright browser separately.
 
-You can paste a personal OpenRouter API key in the app. If users leave the key blank and `OPENROUTER_API_KEY` is supplied by `keyenv`, prompts are processed through The AI Pit's built-in OpenRouter key and The AI Pit's OpenRouter account.
+You can paste a personal OpenRouter API key in the app. If users leave the key blank and `OPENROUTER_API_KEY` is supplied to the server, prompts are processed through The AI Pit's built-in OpenRouter key and The AI Pit's OpenRouter account.
 
 ## Commands
 
 ```bash
-npm run dev           # start the local Next.js dev server
+npm run dev
+npm run dev:secrets
+npm run secrets:check
+npm run secrets:add -- OPENROUTER_API_KEY # add a development key with hidden value input
+npm run secrets:migrate
+npm run build:secrets
+npm run start:secrets
 npm run build         # generate avatar asset versions and build production output
 npm run start         # serve the production build
 npm run lint          # run ESLint
@@ -42,8 +48,6 @@ npm run sentry:issues # query Sentry issues with a read-only token
 ```
 
 ## Configuration
-
-The app runs without a server OpenRouter key if users provide their own key in the browser. Private local values declared in `.keyenv.toml` live in macOS Keychain and are injected with `keyenv run -- ...`; Node reads them normally from `process.env`. Non-secret and public settings may remain in `.env`.
 
 ```bash
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
@@ -58,7 +62,8 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID= # Google Analytics 4
 NEXT_PUBLIC_SENTRY_DSN=        # browser Sentry DSN
 NEXT_PUBLIC_SENTRY_ENABLED=    # force Sentry outside production
 SENTRY_DSN=                    # server Sentry DSN
-SENTRY_AUTH_TOKEN=             # source map upload or read-only issue queries
+SENTRY_AUTH_TOKEN=             # source map upload; org:ci build token
+SENTRY_SMOKE_TEST_TOKEN=       # optional protected deployment diagnostic
 SENTRY_ORG=                    # defaults to tsilva
 SENTRY_PROJECT=                # defaults to aipit
 SENTRY_BASE_URL=https://sentry.io
@@ -71,6 +76,12 @@ R2_OBJECT_PREFIX=shares/       # optional share snapshot prefix
 ```
 
 `NEXT_PUBLIC_SITE_URL` should be set in production unless the deployment platform provides a canonical Vercel URL.
+
+Sentry delivery must be confirmed with an event received in the expected project.
+The [delivery verification procedure](docs/sentry-delivery.md) covers consent,
+production commit checks, and the read-only `scripts/verify-sentry-delivery.mjs`
+verifier. Browser events use the deployment environment, unless `SENTRY_ENVIRONMENT`
+explicitly overrides it. Obtain approval before synthetic events or deployment.
 
 ## Notes
 

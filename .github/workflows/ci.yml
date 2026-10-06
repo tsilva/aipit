@@ -25,6 +25,11 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Install pinned npm version
+        run: |
+          npm install --global "$(node -p "require('./package.json').packageManager")" --ignore-scripts
+          npm --version
+
       - name: Install dependencies
         run: npm ci
 

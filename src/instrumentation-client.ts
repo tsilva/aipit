@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
-import { resolveSentryRuntimeConfig, shouldCaptureSentryClientEvent } from "./src/lib/sentry";
-import { TELEMETRY_CONSENT_CHANGE_EVENT } from "./src/lib/telemetry-consent";
+import { resolveSentryRuntimeConfig, shouldCaptureSentryClientEvent } from "./lib/sentry";
+import { TELEMETRY_CONSENT_CHANGE_EVENT } from "./lib/telemetry-consent";
 
 const sentryConfig = resolveSentryRuntimeConfig("client", {
   NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,

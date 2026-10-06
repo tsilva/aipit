@@ -57,12 +57,16 @@ const contentSecurityPolicy = [
   .join("; ");
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NODE_ENV === "development" ? `.next-dev-${process.pid}` : ".next",
   experimental: {
     inlineCss: true,
   },
   env: resolveSentryClientBuildEnv({
     NEXT_PUBLIC_SENTRY_DSN: appEnv.publicSentryDsn,
     SENTRY_DSN: appEnv.sentryDsn,
+    NODE_ENV: appEnv.nodeEnv,
+    VERCEL_ENV: appEnv.vercelEnv,
+    SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
   }),
   turbopack: {
     root: process.cwd(),

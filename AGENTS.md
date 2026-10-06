@@ -2,7 +2,11 @@
 
 ## Development Commands
 
-- `npm run dev` — Start Next.js dev server
+- `npm run dev` — Fetch Infisical development secrets and start Next.js on an available port
+- `npm run dev:secrets` — Start with Infisical development secrets and an available port
+- `npm run secrets:check` — Check Infisical access and secret presence without displaying values
+- `npm run secrets:add -- OPENROUTER_API_KEY` — Add a development secret through the Infisical CLI with a hidden value prompt; existing keys are rejected
+- `npm run secrets:migrate` — Copy existing keyenv credentials to the Infisical `aipit` Development environment, verify values without displaying them, and retain Keychain originals
 - `npm run build` — Production build
 - `npm run lint` — Run ESLint
 
@@ -33,6 +37,7 @@ OpenRouter requests go through internal Next.js API routes. Personal OpenRouter 
 
 ## Guidelines
 
+- Local secrets use Infisical via the saved human CLI login. `.infisical.json` contains the project UUID, cloud domain and `dev` environment only. The Python 3.11+ helpers capture provider output in memory, transport imported credentials through stdin/private pipes, check readback, and remove secrets-manager credentials before launching the app. Never persist or display credential values or include them in command arguments. Keep native Keychain originals during migration. Use separate projects for production when local readers must not access it; Free built-in Viewer permissions cover the entire project. Vercel builds use provider-injected variables and the normal build command; local helpers do not sync or deploy. Explicit `*:bitwarden` / `bitwarden:*` scripts retain the earlier workflow.
 - README.md must be kept up to date with any significant project changes
 - Do not suggest skill improvements for official OpenAI plugin skills. Skill retrospective suggestions should only be made for project-local or user-maintained skills.
 

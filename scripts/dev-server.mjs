@@ -67,8 +67,14 @@ async function main() {
   }
 
   const args = await resolveAutoPortArgs(command, rawArgs);
+  const environment = { ...process.env };
+  if (command === "next" && args[0] === "dev" && !environment.NEXT_PUBLIC_SITE_URL) {
+    const portIndex = args.findIndex((arg) => arg === "--port" || arg === "-p");
+    const port = portIndex >= 0 ? args[portIndex + 1] : args.find((arg) => arg.startsWith("--port="))?.split("=")[1];
+    if (port) environment.NEXT_PUBLIC_SITE_URL = `http://localhost:${port}`;
+  }
   const child = spawn(command, args, {
-    env: process.env,
+    env: environment,
     stdio: "inherit",
     shell: process.platform === "win32",
   });
