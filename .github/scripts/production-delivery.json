@@ -1,0 +1,23 @@
+{
+  "repository": "tsilva/aipit",
+  "githubRepositoryId": 1176180208,
+  "identityId": "672c01c3-c025-40f9-b89b-5abcc03e8261",
+  "infisicalProjectId": "c18b9241-653d-4426-b9e2-3949352c0d76",
+  "secretNames": [
+    "NEXT_PUBLIC_SENTRY_DSN",
+    "NEXT_PUBLIC_SITE_URL",
+    "OPENROUTER_API_KEY",
+    "R2_ACCESS_KEY_ID",
+    "R2_ACCOUNT_ID",
+    "R2_BUCKET_NAME",
+    "R2_OBJECT_PREFIX",
+    "R2_SECRET_ACCESS_KEY",
+    "SENTRY_AUTH_TOKEN",
+    "SENTRY_DSN",
+    "SENTRY_SMOKE_TEST_TOKEN"
+  ],
+  "destination": "vercel",
+  "vercelProjectId": "prj_IQMwNukbxGXroHZESU9IbDFJbkQN",
+  "vercelProjectName": "aipit",
+  "vercelTeamId": "team_eE2Iv7IMqPOx8ZVN2xNfR2f0"
+}
