@@ -5,6 +5,9 @@ import {
 } from "../../src/lib/simulation-acknowledgement";
 import { STARTER_BUNDLES } from "../../src/lib/starter-bundles";
 
+// Playwright captures the auto-selected server URL before loading worker tests.
+test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL ?? process.env.AIPIT_E2E_URL });
+
 const GLOBAL_STARTER_PROMPTS = STARTER_BUNDLES.filter((bundle) => bundle.audience === "global").map((bundle) => bundle.prompt);
 const PORTUGAL_STARTER_PROMPTS = STARTER_BUNDLES.filter((bundle) => bundle.audience === "portugal").map((bundle) => bundle.prompt);
 
