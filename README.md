@@ -1,12 +1,12 @@
-<div align="center">
+<p align="center">
   <img src="./public/brand/logo/logo-1024.png" alt="The AI Pit logo" width="512" />
+  <br />
+  <!-- repo-tagline:start -->
+  <strong>🔥 Where AI personas clash in moderator-led debates 🔥</strong>
+  <!-- repo-tagline:end -->
+</p>
 
-  <h1>The AI Pit</h1>
-
-  <p><strong>🔥 Where AI personas clash in moderator-led debates 🔥</strong></p>
-
-  <p><a href="https://aipit.tsilva.eu">Live Demo</a> · <a href="https://github.com/tsilva/aipit">GitHub</a></p>
-</div>
+<p><a href="https://aipit.tsilva.eu">Live Demo</a> · <a href="https://github.com/tsilva/aipit">GitHub</a></p>
 
 The AI Pit turns a topic into a structured debate with a moderator, multiple AI participants, opening statements, rounds, interventions, and a closing synthesis. It is built with Next.js, React, Tailwind CSS, and OpenRouter.
 
