@@ -5,8 +5,7 @@
 - `npm run dev` — Fetch Infisical development secrets and start Next.js on an available port
 - `npm run dev:secrets` — Start with Infisical development secrets and an available port
 - `npm run secrets:check` — Check Infisical access and secret presence without displaying values
-- `npm run secrets:add -- OPENROUTER_API_KEY` — Add a development secret through the Infisical CLI with a hidden value prompt; existing keys are rejected
-- `npm run secrets:migrate` — Copy existing keyenv credentials to the Infisical `aipit` Development environment, verify values without displaying them, and retain Keychain originals
+- `npm run secrets:add -- AGENTBRIDGE_API_KEY` — Add a development secret through the Infisical CLI with a hidden value prompt; existing keys are rejected
 - `npm run build` — Production build
 - `npm run lint` — Run ESLint
 
@@ -16,7 +15,7 @@ Next.js 16 + React 19 + Tailwind CSS 4 App Router application for AI debates ("p
 
 Live site: https://aipit.tsilva.eu
 
-OpenRouter requests go through internal Next.js API routes. Personal OpenRouter API keys are stored in browser localStorage and sent through the proxy for the user's account. If `OPENROUTER_API_KEY` is configured server-side, blank-key hosted debates can use the app's hosted key with same-origin checks, rate limiting, model allowlisting, and payload caps. Completed debate shares are immutable snapshots served through `/s/<slug>`.
+Model requests use internal Next.js routes and OpenRouter in production and AgentBridge in development. Personal OpenRouter keys are not accepted. All requests enforce same-origin checks, rate limits, model allowlisting, and payload caps. Completed debate shares remain immutable snapshots served through `/s/<slug>`.
 
 ### Path Alias
 

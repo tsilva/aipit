@@ -14,9 +14,8 @@ environment variables; no Bitwarden SDK is needed in the application.
    **Billing → Subscription** and enable **Subscribe to Secrets Manager**.
 3. Open Secrets Manager from the product switcher. Create a project named
    `aipit` and copy its project UUID.
-4. Optionally add `OPENROUTER_API_KEY` with a development OpenRouter key for
-   server-hosted debates. Otherwise enter your personal key in the browser.
-   Existing keyenv credentials can be copied with the migration command below.
+4. Optionally add `AGENTBRIDGE_API_KEY` with a gateway access token for
+   development debates. Personal provider keys are not accepted by the app.
 5. Create a machine account named `aipit-local`. Give it **Can read** access to
    `aipit` only. Create an access token for this machine account and
    save it in your password manager. The token is shown only once.
@@ -42,39 +41,16 @@ based on your physical location; use the server that contains your account.
 
 ## Run locally
 
-### Copy existing keyenv credentials
-
-For the initial migration, give a temporary machine account **Can read, write**
-access to the Bitwarden `aipit` project, then run:
-
-```bash
-npm run bitwarden:migrate
-```
-
-The command clears inherited app keys so keyenv reads its declared Keychain
-accounts. It copies the available credentials directly through the SDK, checks
-each stored value against its source without displaying either, and retains all
-Keychain originals. Missing optional credentials are skipped. Existing matching
-values are verified and skipped; differing values or duplicate entries stop the
-transfer before new writes. A retry after a partial transfer skips verified
-matching entries.
-
-The token comes from `BWS_ACCESS_TOKEN` if supplied by your secret provider, or a
-hidden terminal prompt. Keyenv may display its access prompt and macOS may ask
-for Keychain access. Only non-secret project settings are saved locally. After
-testing with a read-only machine token, revoke the temporary write token in
-Bitwarden.
-
 ### Add a key from the terminal
 
 With `uv` and `bws` installed, run:
 
 ```bash
-npm run bitwarden:add -- OPENROUTER_API_KEY
+npm run bitwarden:add -- AGENTBRIDGE_API_KEY
 ```
 
 Paste your `aipit-import` machine token at the first hidden prompt, and the
-OpenRouter key at the second hidden prompt. The import machine account needs
+AgentBridge token at the second hidden prompt. The import machine account needs
 **Can read, write** access to `aipit`. The helper discovers that
 project automatically and saves its UUID and US/EU endpoint in
 `.bitwarden.local.json`; neither credential is saved there. Your confirmed US
@@ -84,7 +60,7 @@ The helper uses the official Python SDK with locked dependencies and a seven-day
 release cutoff. Only project metadata goes through CLI output; secret values go
 through the SDK in process memory, avoiding the CLI's value arguments and default
 secret output. Existing keys are never overwritten. It supports the four private
-server credentials listed in `.keyenv.toml`. Keep existing Keychain entries while
+server credentials allowlisted in `scripts/bitwarden/add_secret.py`. Keep existing Keychain entries while
 testing. SDK errors are reported without their potentially sensitive details.
 
 After importing, use a separate `aipit-local` machine token with **Can read**
@@ -122,8 +98,8 @@ prompt. It is used for that invocation and is never saved or placed in command
 arguments. Do not put it in a command, dotenv file, configuration file, manifest,
 or chat. `bitwarden:check` checks access and reports optional-secret presence without
 displaying values or making OpenRouter requests. Open the URL printed by Next.js.
-If a server OpenRouter key is configured, leave the personal key blank in the app
-to exercise it; otherwise enter your personal OpenRouter key in the app.
+Debates use the configured AgentBridge endpoint. The app does not accept personal
+provider keys. An AgentBridge access token is optional when the gateway requires authentication.
 
 For automation, a secret provider may supply `BWS_ACCESS_TOKEN` instead of using
 the prompt. `BWS_PROJECT_ID` and `BWS_SERVER_URL` can override local configuration.

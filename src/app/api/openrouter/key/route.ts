@@ -36,7 +36,7 @@ export async function POST(request: Request): Promise<Response> {
       signal: request.signal,
     });
 
-    if (isServerOpenRouterKeyRequest(apiKey) && response.ok) {
+    if (isServerOpenRouterKeyRequest() && response.ok) {
       return new Response(null, {
         status: 204,
         headers: buildResponseHeaders(requestId, { "Cache-Control": "no-store" }),

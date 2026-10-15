@@ -1,3 +1,4 @@
+import { providerBaseUrl, providerModel, providerApiKey, usesProductionProvider } from "@/lib/agentbridge";
 import * as Sentry from "@sentry/nextjs";
 import { isJsonObject } from "@/lib/json";
 import { SUPPORTED_OPENROUTER_MODELS } from "@/lib/openrouter-models";
@@ -47,24 +48,16 @@ export class OpenRouterProxyError extends Error {
   }
 }
 
-function resolveServerApiKey(): string | undefined {
-  const configuredKey = process.env.OPENROUTER_API_KEY?.trim();
-
-  return configuredKey || undefined;
+export function isServerOpenRouterKeyRequest(): boolean {
+  return true;
 }
 
-export function isServerOpenRouterKeyRequest(apiKey?: string): boolean {
-  return !apiKey?.trim();
-}
-
-function resolveOpenRouterProxyApiKey(apiKey?: string): string {
-  const resolvedApiKey = apiKey?.trim() || resolveServerApiKey();
-
-  if (!resolvedApiKey) {
-    throw new OpenRouterProxyError("Missing OpenRouter API key.", 400);
+function resolveOpenRouterProxyApiKey(): string {
+  try {
+    return providerApiKey();
+  } catch {
+    throw new OpenRouterProxyError("Debates are temporarily unavailable.", 503);
   }
-
-  return resolvedApiKey;
 }
 
 // Access control follows the actual request URL and ignores forwarded origin headers.
@@ -228,7 +221,6 @@ export async function proxyOpenRouterRequest({
   routeName,
   upstreamUrl,
   method,
-  apiKey,
   siteUrl,
   body,
   signal,
@@ -246,20 +238,22 @@ export async function proxyOpenRouterRequest({
 }): Promise<Response> {
   const startedAt = Date.now();
   const resolvedRequestId = requestId ?? resolveRequestId(request);
-  const usingServerKey = isServerOpenRouterKeyRequest(apiKey);
-  const resolvedApiKey = resolveOpenRouterProxyApiKey(apiKey);
+  const usingServerKey = isServerOpenRouterKeyRequest();
+  const resolvedApiKey = resolveOpenRouterProxyApiKey();
   const resolvedSiteUrl = usingServerKey ? assertHostedKeyOrigin(request) : siteUrl?.trim() || undefined;
 
   if (usingServerKey) {
     enforceHostedKeyRateLimit(request, routeName);
   }
 
-  const resolvedBody = usingServerKey && method === "POST" ? normalizeHostedChatBody(body) : body;
+  const normalizedBody = method === "POST" ? normalizeHostedChatBody(body) : undefined;
+  const resolvedBody = normalizedBody ? { ...normalizedBody, model: providerModel(normalizedBody.model), ...(usesProductionProvider() ? { reasoning: { enabled: false } } : {}) } : undefined;
+  const gatewayUrl = `${providerBaseUrl()}${method === "POST" ? "/chat/completions" : usesProductionProvider() ? "/key" : "/openrouter/key"}`;
 
   let upstreamResponse: Response;
 
   try {
-    upstreamResponse = await fetch(upstreamUrl, {
+    upstreamResponse = await fetch(gatewayUrl, {
       method,
       headers: buildOpenRouterHeaders({
         apiKey: resolvedApiKey,

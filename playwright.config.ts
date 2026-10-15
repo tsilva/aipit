@@ -8,7 +8,7 @@ const webServer = process.env.PLAYWRIGHT_BASE_URL
       env: {
         NEXT_PUBLIC_SITE_URL: "",
         NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST123",
-        OPENROUTER_API_KEY: "test-server-key",
+        AGENTBRIDGE_API_KEY: "test-server-key",
         R2_ACCESS_KEY_ID: "",
         R2_SECRET_ACCESS_KEY: "",
         SENTRY_AUTH_TOKEN: "",

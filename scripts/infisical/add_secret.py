@@ -3,16 +3,20 @@
 import getpass
 import sys
 
-from common import Infisical, KEYS, SecretError
+from common import KEYS, Infisical, SecretError
 
 
 def main():
     if len(sys.argv) != 2 or sys.argv[1] not in KEYS:
-        raise SecretError("Specify one key declared in .keyenv.toml, for example OPENROUTER_API_KEY.")
+        raise SecretError(
+            "Specify one supported Infisical key, for example AGENTBRIDGE_API_KEY."
+        )
     destination = Infisical()
     key = sys.argv[1]
     if key in destination.read():
-        raise SecretError("That key already exists. Manage intentional updates in the Infisical dashboard.")
+        raise SecretError(
+            "That key already exists. Manage intentional updates in the Infisical dashboard."
+        )
     if not sys.stdin.isatty():
         raise SecretError("Use an interactive terminal for the hidden secret prompt.")
     value = getpass.getpass(f"{key} (hidden): ")

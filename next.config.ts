@@ -22,7 +22,6 @@ if (sentryValidation.errors.length > 0) {
 function getAllowedConnectSources(): string {
   const connectSources = new Set([
     "'self'",
-    "https://openrouter.ai",
     "https://www.google-analytics.com",
     "https://region1.google-analytics.com",
     "https://stats.g.doubleclick.net",

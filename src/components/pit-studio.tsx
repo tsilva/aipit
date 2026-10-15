@@ -4,7 +4,6 @@ import {
   ArrowLeft as BackGlyph,
   CircleCheck as CheckGlyph,
   Copy as CopyGlyph,
-  ExternalLink as ExternalLinkGlyph,
   FileText as PromptGlyph,
   Flame as FlameGlyph,
   Pause as PauseGlyph,
@@ -16,7 +15,6 @@ import {
   SkipForward as NextGlyph,
   Shuffle as ShuffleGlyph,
   Trash2 as TrashGlyph,
-  TriangleAlert as WarningGlyph,
   X as CloseGlyph,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -71,7 +69,7 @@ import {
 } from "@/lib/character-profile";
 import type { ParticipantCharacterPreset } from "@/lib/character-presets";
 import type { RunProgressEvent } from "@/lib/pit-engine";
-import type { ApiKeyStatus, InitialStudioState } from "@/lib/pit-studio-state";
+import type { InitialStudioState } from "@/lib/pit-studio-state";
 import {
   shouldDisplayRuntimeWarning,
   type RuntimeTurnIdentity,
@@ -80,20 +78,8 @@ import {
 import { isCompletedRunResult } from "@/lib/share-snapshot";
 import { isShareCreationResponse } from "@/lib/share-response";
 import { trackEvent } from "@/lib/google-analytics";
-import {
-  HOSTED_OPENROUTER_KEY_MESSAGE,
-  INVALID_OPENROUTER_KEY_FORMAT_MESSAGE,
-  OPENROUTER_API_KEY_PATTERN,
-  OPENROUTER_API_KEY_VALIDATION_DEBOUNCE_MS,
-  OPENROUTER_KEY_SESSION_ONLY_MESSAGE,
-  OPENROUTER_KEY_VALIDATION_UNAVAILABLE_MESSAGE,
-  readStoredOpenRouterApiKey,
-  removeStoredOpenRouterApiKey,
-  resolveOpenRouterKeyValidation,
-  saveOpenRouterApiKey,
-} from "@/lib/openrouter-key-state";
 
-export type { ApiKeyStatus, InitialStudioState } from "@/lib/pit-studio-state";
+export type { InitialStudioState } from "@/lib/pit-studio-state";
 
 const TranscriptMarkdownContent = dynamic(() => import("@/components/transcript-markdown"), {
   loading: () => <p className="transcript-markdown-p">Loading transcript...</p>,
@@ -221,50 +207,6 @@ function useModalFocusTrap(containerRef: React.RefObject<HTMLElement | null>, is
   }, [containerRef, isActive]);
 }
 
-async function validateApiKey({
-  nextApiKey,
-  requestIdRef,
-  siteUrl,
-  setApiKeyStatus,
-  setApiKeyStatusMessage,
-}: {
-  nextApiKey: string;
-  requestIdRef: { current: number };
-  siteUrl: string;
-  setApiKeyStatus: React.Dispatch<React.SetStateAction<ApiKeyStatus>>;
-  setApiKeyStatusMessage: React.Dispatch<React.SetStateAction<string>>;
-}): Promise<boolean> {
-  const trimmed = nextApiKey.trim();
-
-  const requestId = requestIdRef.current + 1;
-  requestIdRef.current = requestId;
-  setApiKeyStatus(trimmed ? "checking" : "empty");
-  setApiKeyStatusMessage(trimmed ? "Validating API key with OpenRouter..." : HOSTED_OPENROUTER_KEY_MESSAGE);
-
-  try {
-    const { validateOpenRouterKey } = await import("@/lib/openrouter");
-    const validation = await resolveOpenRouterKeyValidation({
-      apiKey: nextApiKey,
-      siteUrl,
-      validate: validateOpenRouterKey,
-    });
-    if (requestIdRef.current !== requestId) {
-      return false;
-    }
-
-    setApiKeyStatus(validation.status);
-    setApiKeyStatusMessage(validation.message);
-    return validation.valid;
-  } catch {
-    if (requestIdRef.current !== requestId) {
-      return false;
-    }
-
-    setApiKeyStatus("unresolved");
-    setApiKeyStatusMessage(OPENROUTER_KEY_VALIDATION_UNAVAILABLE_MESSAGE);
-    return false;
-  }
-}
 
 type PlaybackFrame = {
   id: string;
@@ -911,14 +853,9 @@ function SetupParticipantCard({
 function StudioHero({
   roster,
   config,
-  apiKeyStatus,
-  apiKeyStatusMessage,
-  draftApiKey,
   canSubmit,
   canAddMember,
-  hasApiKey,
   isRunning,
-  onDraftApiKeyChange,
   onPromptChange,
   onRerollDebaters,
   onRerollTopic,
@@ -928,14 +865,9 @@ function StudioHero({
 }: {
   roster: ParticipantConfig[];
   config: RunInput;
-  apiKeyStatus: ApiKeyStatus;
-  apiKeyStatusMessage: string;
-  draftApiKey: string;
   canSubmit: boolean;
   canAddMember: boolean;
-  hasApiKey: boolean;
   isRunning: boolean;
-  onDraftApiKeyChange: (value: string) => void;
   onPromptChange: (value: string) => void;
   onRerollDebaters: () => void;
   onRerollTopic: () => void;
@@ -943,33 +875,6 @@ function StudioHero({
   onSelectModerator: (id: string) => void;
   onOpenParticipant: (id: string) => void;
 }) {
-  const apiKeyInputRef = useRef<HTMLInputElement | null>(null);
-  const displayedApiKeyStatus = apiKeyStatus;
-  const displayedApiKeyStatusMessage = apiKeyStatusMessage;
-  const showWarningStatusIcon =
-    displayedApiKeyStatus === "empty" ||
-    displayedApiKeyStatus === "invalid" ||
-    displayedApiKeyStatus === "unresolved";
-  const statusTone =
-    displayedApiKeyStatus === "valid"
-      ? "success"
-      : displayedApiKeyStatus === "invalid"
-        ? "error"
-        : displayedApiKeyStatus === "checking"
-          ? "info"
-          : "warning";
-
-  useEffect(() => {
-    apiKeyInputRef.current?.focus();
-  }, []);
-
-  function handleApiKeyInputKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== "Enter") {
-      return;
-    }
-
-    event.preventDefault();
-  }
 
   return (
     <section className="hero-shell">
@@ -1115,56 +1020,8 @@ function StudioHero({
       </section>
 
       <section className="hero-panel hero-api-shell">
-        <div className="hero-api-topline">
-          <div className="hero-section-heading">
-            <span className="hero-step-badge">3</span>
-            <div>
-              <h2 className="hero-panel-title">OpenRouter access {hasApiKey ? "" : "(required)"}</h2>
-              <p className="hero-panel-copy">
-                Paste your OpenRouter key, or leave blank to use The AI Pit&apos;s built-in key. Blank-key prompts are
-                processed through The AI Pit&apos;s OpenRouter account.
-              </p>
-            </div>
-          </div>
-
-          <p className="hero-api-link-row">
-            Get your key at{" "}
-            <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer" className="hero-api-link">
-              OpenRouter.ai
-              <ExternalLinkGlyph />
-            </a>
-          </p>
-        </div>
-
-        <div className="hero-api-block">
-          <div className="hero-api-form">
-            <input
-              id="hero-api-key-input"
-              ref={apiKeyInputRef}
-              className="field mono hero-api-input"
-              type="text"
-              value={draftApiKey}
-              onChange={(event) => onDraftApiKeyChange(event.target.value)}
-              onKeyDown={handleApiKeyInputKeyDown}
-              placeholder="sk-or-v1-..."
-              autoComplete="off"
-              aria-label="OpenRouter API key"
-            />
-          </div>
-        </div>
-
-        <div className={`hero-api-status hero-api-status-${statusTone}`} role="status" aria-live="polite">
-          {displayedApiKeyStatus === "valid" ? (
-            <span className="hero-api-status-icon" aria-hidden="true">
-              <CheckGlyph />
-            </span>
-          ) : showWarningStatusIcon ? (
-            <span className="hero-api-status-icon" aria-hidden="true">
-              <WarningGlyph />
-            </span>
-          ) : null}
-          <span>{displayedApiKeyStatusMessage}</span>
-        </div>
+        <h2 className="hero-panel-title">Ready to debate</h2>
+        <p className="hero-panel-copy">Debates use The AI Pit&apos;s hosted models. Usage may be limited.</p>
       </section>
 
       <button
@@ -2619,10 +2476,7 @@ export function PitStudio({
   const [result, setResult] = useState<RunResult | null>(initialStudioState.initialResult);
   const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
-  const [apiKey, setApiKey] = useState(initialStudioState.apiKey);
-  const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>(initialStudioState.apiKeyStatus);
-  const [apiKeyStatusMessage, setApiKeyStatusMessage] = useState(initialStudioState.apiKeyStatusMessage);
-  const [draftApiKey, setDraftApiKey] = useState(initialStudioState.draftApiKey);
+  const apiKey = "";
   const [showCharacterSelectorModal, setShowCharacterSelectorModal] = useState(false);
   const [studioView, setStudioView] = useState<StudioView>(initialStudioState.initialStudioView);
   const [panelMode, setPanelMode] = useState<StagePanelMode>("conversation");
@@ -2646,7 +2500,6 @@ export function PitStudio({
   const [shareNotice] = useState<string | null>(initialStudioState.shareNotice);
   const [isShareConfirmationOpen, setIsShareConfirmationOpen] = useState(false);
   const [isReplayOnly] = useState(initialStudioState.isReplayOnly);
-  const keyValidationRequestIdRef = useRef(0);
   const configRef = useRef(initialStudioState.config);
   const hasHydratedPresetConfigRef = useRef(false);
   const runAbortControllerRef = useRef<AbortController | null>(null);
@@ -2657,9 +2510,8 @@ export function PitStudio({
 
   const roster = [config.coordinator, ...config.members];
   const orderedRoster = orderParticipants(roster, lineupOrder);
-  const hasApiKey = apiKey.trim().length > 0;
   const hasValidatedApiKey =
-    apiKeyStatus === "valid" && (!draftApiKey.trim() || draftApiKey.trim() === apiKey.trim());
+    true;
   const hasPrompt = config.prompt.trim().length > 0;
   const hasValidLineupSize = config.members.length >= 2 && config.members.length <= MAX_DEBATE_MEMBER_COUNT;
   const transcriptTurns = flattenTurns(result);
@@ -2716,60 +2568,9 @@ export function PitStudio({
   }, [config]);
 
   useEffect(() => {
-    const storedApiKey = readStoredOpenRouterApiKey(window.localStorage);
-    if (storedApiKey !== undefined) {
-      setDraftApiKey(storedApiKey);
-    }
+    // Retire the old personal-key setting; all requests use the hosted gateway.
+    try { window.localStorage.removeItem("aipit.openrouter-api-key"); } catch {}
   }, []);
-
-  useEffect(() => {
-    const trimmed = draftApiKey.trim();
-    setError(null);
-
-    setApiKey("");
-
-    if (!trimmed) {
-      keyValidationRequestIdRef.current += 1;
-      removeStoredOpenRouterApiKey(window.localStorage);
-      setApiKeyStatus("valid");
-      setApiKeyStatusMessage(HOSTED_OPENROUTER_KEY_MESSAGE);
-      return;
-    }
-
-    if (!OPENROUTER_API_KEY_PATTERN.test(trimmed)) {
-      keyValidationRequestIdRef.current += 1;
-      setApiKeyStatus("invalid");
-      setApiKeyStatusMessage(INVALID_OPENROUTER_KEY_FORMAT_MESSAGE);
-      return;
-    }
-
-    let isCancelled = false;
-    const timeoutId = window.setTimeout(() => {
-      void validateApiKey({
-        nextApiKey: trimmed,
-        requestIdRef: keyValidationRequestIdRef,
-        siteUrl: window.location.origin,
-        setApiKeyStatus,
-        setApiKeyStatusMessage,
-      }).then((isValid) => {
-        if (isCancelled) {
-          return;
-        }
-
-        if (isValid) {
-          setApiKey(trimmed);
-          if (!saveOpenRouterApiKey(window.localStorage, trimmed)) {
-            setApiKeyStatusMessage(OPENROUTER_KEY_SESSION_ONLY_MESSAGE);
-          }
-        }
-      });
-    }, OPENROUTER_API_KEY_VALIDATION_DEBOUNCE_MS);
-
-    return () => {
-      isCancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [draftApiKey]);
 
   useEffect(() => {
     const currentRoster = [config.coordinator, ...config.members];
@@ -3038,10 +2839,6 @@ export function PitStudio({
       starter_bundle_id: starterBundleId,
       starter_bundle_audience: audience,
     });
-  }
-
-  function handleDraftApiKeyChange(value: string) {
-    setDraftApiKey(value);
   }
 
   function selectFrame(index: number) {
@@ -3540,14 +3337,9 @@ export function PitStudio({
           <StudioHero
             roster={orderedRoster}
             config={config}
-            apiKeyStatus={apiKeyStatus}
-            apiKeyStatusMessage={apiKeyStatusMessage}
-            draftApiKey={draftApiKey}
-            hasApiKey={hasApiKey || apiKeyStatus === "valid"}
             canSubmit={!isReplayOnly && hasValidatedApiKey && hasPrompt && hasValidLineupSize}
             canAddMember={!isReplayOnly}
             isRunning={isRunning}
-            onDraftApiKeyChange={handleDraftApiKeyChange}
             onPromptChange={(prompt) => setConfig((current) => ({ ...current, prompt }))}
             onRerollDebaters={rerollDebaters}
             onRerollTopic={rerollTopic}
