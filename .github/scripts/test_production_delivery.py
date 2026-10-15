@@ -186,6 +186,21 @@ class DeliveryTests(unittest.TestCase):
             self.assertEqual(d.infisical_secrets({"secretNames": []}), {})
             req.assert_not_called()
 
+    def test_vercel_rejection_reports_only_key_and_error_code(self):
+        with (
+            patch.object(d, "verify_vercel"),
+            patch.object(d, "vercel_request", side_effect=[
+                {"envs": []},
+                {"failed": [{"error": {"code": "bad_request", "message": "sensitive-provider-details"}}]},
+            ]),
+        ):
+            with self.assertRaises(d.DeliveryError) as raised:
+                d.sync_vercel(self.config, {"SENTRY_AUTH_TOKEN": "fake-secret"})
+        self.assertIn("SENTRY_AUTH_TOKEN", str(raised.exception))
+        self.assertIn("bad_request", str(raised.exception))
+        self.assertNotIn("sensitive-provider-details", str(raised.exception))
+        self.assertNotIn("fake-secret", str(raised.exception))
+
     def test_all_targets_are_checked_before_first_write(self):
         envs = [{"key": "SECOND", "target": ["production", "preview"]}]
         with (

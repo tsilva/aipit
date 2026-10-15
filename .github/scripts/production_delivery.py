@@ -217,13 +217,18 @@ def sync_vercel(config, values):
             },
         )
         created = result.get("created", {})
-        if (
-            result.get("failed")
-            or not isinstance(created, dict)
-            or created.get("key") != key
-        ):
+        if result.get("failed"):
+            codes = []
+            for failure in result["failed"] if isinstance(result["failed"], list) else []:
+                code = failure.get("error", {}).get("code") if isinstance(failure, dict) else None
+                if isinstance(code, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,80}", code):
+                    codes.append(code)
+            reason = ", ".join(codes) or "unspecified"
+            raise DeliveryError(f"Vercel rejected production key {key} (code: {reason}); response suppressed.")
+        if not isinstance(created, dict) or created.get("key") != key:
+            shape = "list" if isinstance(created, list) else "object" if isinstance(created, dict) else "other"
             raise DeliveryError(
-                "Vercel did not confirm the production write; response suppressed."
+                f"Vercel did not confirm production key {key} (created shape: {shape}); response suppressed."
             )
         matches = production_matches(vercel_request(config, "GET", path)["envs"], key)
         if (
