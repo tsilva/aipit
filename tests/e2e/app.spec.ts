@@ -19,13 +19,6 @@ function getRandomTopicButton(page: Page) {
   return page.getByRole("button", { name: "Random topic" });
 }
 
-async function openApiKeyEditor(page: Page) {
-  const input = page.getByLabel("OpenRouter API key");
-
-  await expect(input).toBeEditable();
-  return input;
-}
-
 async function expectStarterPromptFromAudience(page: Page, prompts: string[]) {
   const prompt = await page.locator("#hero-pit-prompt").inputValue();
   expect(prompts).toContain(prompt);
@@ -82,23 +75,7 @@ async function dismissConsentBannerIfVisible(page: Page) {
 }
 
 async function ensureRunCanStart(page: Page) {
-  const startButton = getStartButton(page);
-
-  if (await startButton.isEnabled()) {
-    return;
-  }
-
-  await page.route("**/api/openrouter/key", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ data: { label: "ok" } }),
-    });
-  });
-
-  await (await openApiKeyEditor(page)).fill("sk-or-v1-abcdefghijklmnopqrstuvwxyz123456");
-  await expect(page.getByText("OpenRouter API key verified. Selected models are enabled.")).toBeVisible();
-  await expect(startButton).toBeEnabled();
+  await expect(getStartButton(page)).toBeEnabled();
 }
 
 async function advanceToLastBubble(page: Page) {
@@ -325,52 +302,34 @@ test("creates a share link after a mocked debate finishes", async ({ page }) => 
   await expect(page.getByRole("button", { name: /Link copied|Copy link/ })).toBeVisible();
 });
 
-test("keeps an invalid API key editable after failed validation", async ({ page }) => {
-  await page.route("**/api/openrouter/key", async (route) => {
-    await route.fulfill({
-      status: 401,
-      contentType: "application/json",
-      body: JSON.stringify({
-        error: { message: "Invalid key" },
-      }),
-    });
-  });
-
+test("uses server-managed access without asking for a personal provider key", async ({ page }) => {
   await page.goto("/");
   await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
-
-  await (await openApiKeyEditor(page)).fill("sk-or-v1-abcdefghijklmnopqrstuvwxyz123456");
-
-  await expect(page.getByText("This API key is invalid. Add a valid OpenRouter key to run debates.")).toBeVisible();
-  await expect(page.getByLabel("OpenRouter API key")).toHaveValue("sk-or-v1-abcdefghijklmnopqrstuvwxyz123456");
-  await expect(page.getByLabel("OpenRouter API key")).toBeEditable();
+  await expect(page.getByLabel("OpenRouter API key")).toHaveCount(0);
+  await ensureRunCanStart(page);
 });
 
-test("allows clearing a saved personal API key", async ({ page }) => {
-  await page.route("**/api/openrouter/key", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ data: { label: "ok" } }),
-    });
+test("sends debate requests without a browser provider credential", async ({ page }) => {
+  let chatCalls = 0;
+  await page.route("**/api/openrouter/chat/completions", async (route) => {
+    const request = route.request();
+    const payload = request.postDataJSON();
+    expect(payload.apiKey).toBeUndefined();
+    expect(request.headers().authorization).toBeUndefined();
+    expect(payload.body.model).toBe("deepseek/deepseek-v4.1-flash");
+    chatCalls += 1;
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+      model: "deepseek/deepseek-v4.1-flash", choices: [{ message: { content: "Server-managed debate response" } }],
+    }) });
   });
-
   await page.goto("/");
   await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
-
-  await (await openApiKeyEditor(page)).fill("sk-or-v1-abcdefghijklmnopqrstuvwxyz123456");
-  await expect(page.getByText("OpenRouter API key verified. Selected models are enabled.")).toBeVisible();
-
-  await page.getByLabel("OpenRouter API key").fill("");
-
-  await expect(
-    page.getByText(
-      "Using The AI Pit's built-in OpenRouter key. Prompts will be processed through The AI Pit's OpenRouter account; usage may be limited.",
-    ),
-  ).toBeVisible();
-  await expect(page.getByLabel("OpenRouter API key")).toHaveValue("");
+  await ensureRunCanStart(page);
+  await getStartButton(page).click();
+  await expect.poll(() => chatCalls, { timeout: 45_000 }).toBeGreaterThan(0);
+  await expect(page.getByText("Server-managed debate response")).toBeVisible({ timeout: 45_000 });
 });
 
 test("locks background scrolling while the character selector is open", async ({ page }) => {
@@ -451,8 +410,7 @@ test("resets the scroll position when entering simulation on short screens", asy
   await acknowledgeSimulationNoticeIfVisible(page);
   await dismissConsentBannerIfVisible(page);
 
-  await (await openApiKeyEditor(page)).fill("sk-or-v1-abcdefghijklmnopqrstuvwxyz123456");
-  await expect(page.getByText("OpenRouter API key verified. Selected models are enabled.")).toBeVisible();
+  await ensureRunCanStart(page);
 
   await getStartButton(page).click();
   await expect(page.locator(".chamber-shell")).toBeVisible();
