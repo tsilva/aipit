@@ -19,5 +19,13 @@
   "destination": "vercel",
   "vercelProjectId": "prj_IQMwNukbxGXroHZESU9IbDFJbkQN",
   "vercelProjectName": "aipit",
-  "vercelTeamId": "team_eE2Iv7IMqPOx8ZVN2xNfR2f0"
+  "vercelTeamId": "team_eE2Iv7IMqPOx8ZVN2xNfR2f0",
+  "configNames": [
+    "NEXT_PUBLIC_SENTRY_DSN",
+    "NEXT_PUBLIC_SITE_URL",
+    "R2_ACCOUNT_ID",
+    "R2_BUCKET_NAME",
+    "R2_OBJECT_PREFIX",
+    "SENTRY_DSN"
+  ]
 }
