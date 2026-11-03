@@ -46,6 +46,8 @@ npm run test:e2e      # run Playwright tests
 npm run sentry:issues # query Sentry issues with a read-only token
 ```
 
+Local builds skip Sentry source-map uploads. Hosted Vercel builds handle uploads.
+
 ## Configuration
 
 ```bash
@@ -61,7 +63,6 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID= # Google Analytics 4
 NEXT_PUBLIC_SENTRY_DSN=        # browser Sentry DSN
 NEXT_PUBLIC_SENTRY_ENABLED=    # force Sentry outside production
 SENTRY_DSN=                    # server Sentry DSN
-SENTRY_AUTH_TOKEN=             # source map upload; org:ci build token
 SENTRY_SMOKE_TEST_TOKEN=       # optional protected deployment diagnostic
 SENTRY_ORG=                    # defaults to tsilva
 SENTRY_PROJECT=                # defaults to aipit
