@@ -101,7 +101,7 @@ export default withSentryConfig(nextConfig, {
   useRunAfterProductionCompileHook: isHostedBuild ? undefined : false,
   ...sentryBuildConfig,
   authToken: isHostedBuild ? sentryBuildConfig.authToken : undefined,
-  silent: true,
+  silent: !isHostedBuild,
   sourcemaps: {
     disable: !hasSentryBuildUpload,
   },
