@@ -26,7 +26,7 @@ function usage(message) {
   }
 
   console.error(`Usage:
-node .codex/skills/avatar-assets/scripts/generate-speaking-avatar.mjs \\
+node .codex/skills/aipit_avatar-assets/scripts/generate-speaking-avatar.mjs \\
   --preset-id <preset-id> \\
   --avatar <avatar-path-or-url> [options]
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./public/brand/logo/logo-1024.png" alt="The AI Pit logo" width="512" />
+  <img src="./logo.png" alt="The AI Pit logo" width="320" />
   <br />
   <!-- repo-tagline:start -->
   <strong>🔥 Where AI personas clash in moderator-led debates 🔥</strong>
@@ -46,6 +46,8 @@ npm run test:e2e      # run Playwright tests
 npm run sentry:issues # query Sentry issues with a read-only token
 ```
 
+Local builds skip Sentry source-map uploads. Hosted Vercel builds handle uploads.
+
 ## Configuration
 
 ```bash
@@ -61,7 +63,6 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID= # Google Analytics 4
 NEXT_PUBLIC_SENTRY_DSN=        # browser Sentry DSN
 NEXT_PUBLIC_SENTRY_ENABLED=    # force Sentry outside production
 SENTRY_DSN=                    # server Sentry DSN
-SENTRY_AUTH_TOKEN=             # source map upload; org:ci build token
 SENTRY_SMOKE_TEST_TOKEN=       # optional protected deployment diagnostic
 SENTRY_ORG=                    # defaults to tsilva
 SENTRY_PROJECT=                # defaults to aipit
@@ -103,10 +104,6 @@ explicitly overrides it. Obtain approval before synthetic events or deployment.
 
 ![The AI Pit architecture diagram](./architecture.png)
 
-## License
-
-[MIT](LICENSE)
-
 ## Model routing
 
 Development uses AgentBridge (`AGENTBRIDGE_BASE_URL`, default
@@ -114,6 +111,12 @@ Development uses AgentBridge (`AGENTBRIDGE_BASE_URL`, default
 Production and Preview call OpenRouter directly using their own server-only
 `OPENROUTER_API_KEY`; a missing production key disables model requests.
 Production credentials come from this app’s isolated Infisical project.
-Production text requests use `deepseek/deepseek-v4.1-flash` with reasoning disabled.
+Production text requests use `deepseek/deepseek-v4.1-flash-1017` with reasoning disabled.
+
+Production secrets are delivered through the pinned shared GitHub Actions workflow. The standalone signed Infisical relay triggers synchronization and deployment; see [production delivery](docs/production-delivery.md) for scope and recovery.
 
 Production delivery keeps Vercel secret isolation enabled and distinguishes public configuration from private credentials; see [production delivery](docs/production-delivery.md).
+
+## License
+
+[MIT](LICENSE)

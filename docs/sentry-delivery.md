@@ -91,4 +91,4 @@ a separately generated browser exception. Browser capture still requires user co
 
 The prior audit above describes the old deployment and has been superseded by this
 received-event check. Local capture remains opt-in with `NEXT_PUBLIC_SENTRY_ENABLED=true`;
-development keys are independently stored and usable for local builds.
+source-map uploads run in hosted Vercel builds.

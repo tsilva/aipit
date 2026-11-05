@@ -33,7 +33,7 @@
 ## Avatar references
 
 - Presets can reference `avatarUrl` for still portraits and `speakingAvatarUrl` for generated speaking clips.
-- Avatar sourcing, processing, attribution, and validation live in `.codex/skills/avatar-assets/SKILL.md`.
+- Avatar sourcing, processing, attribution, and validation live in `.codex/skills/aipit_avatar-assets/SKILL.md`.
 
 ## Practical checklist
 
@@ -42,6 +42,6 @@
 3. Add relationships if the figure is politically meaningful.
 4. Add the preset entry.
 5. Ensure the preset is covered by at least one starter bundle; add a new bundle if none fits.
-6. Use `.codex/skills/avatar-assets/SKILL.md` for avatar media when requested or clearly valuable.
+6. Use `.codex/skills/aipit_avatar-assets/SKILL.md` for avatar media when requested or clearly valuable.
 7. Add a targeted test assertion.
 8. Run lint and tests.
