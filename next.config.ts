@@ -12,10 +12,11 @@ import {
 const isProduction = process.env.NODE_ENV === "production";
 const appEnv = resolveAppEnv();
 const sentryBuildConfig = resolveSentryBuildConfig();
-const hasSentryBuildUpload = hasSentryBuildUploadConfig();
+const isHostedBuild = process.env.VERCEL === "1" && Boolean(process.env.VERCEL_DEPLOYMENT_ID);
+const hasSentryBuildUpload = isHostedBuild && hasSentryBuildUploadConfig();
 const sentryValidation = validateSentryProductionConfig();
 
-if (sentryValidation.errors.length > 0) {
+if (isHostedBuild && sentryValidation.errors.length > 0) {
   throw new Error(`Invalid production Sentry configuration:\n- ${sentryValidation.errors.join("\n- ")}`);
 }
 
@@ -57,9 +58,6 @@ const contentSecurityPolicy = [
 
 const nextConfig: NextConfig = {
   distDir: process.env.NODE_ENV === "development" ? `.next-dev-${process.pid}` : ".next",
-  experimental: {
-    inlineCss: true,
-  },
   env: resolveSentryClientBuildEnv({
     NEXT_PUBLIC_SENTRY_DSN: appEnv.publicSentryDsn,
     SENTRY_DSN: appEnv.sentryDsn,
@@ -96,8 +94,11 @@ const nextConfig: NextConfig = {
 };
 
 export default withSentryConfig(nextConfig, {
+  webpack: { disableSentryConfig: !isHostedBuild },
+  useRunAfterProductionCompileHook: isHostedBuild ? undefined : false,
   ...sentryBuildConfig,
-  silent: true,
+  authToken: isHostedBuild ? sentryBuildConfig.authToken : undefined,
+  silent: !isHostedBuild,
   sourcemaps: {
     disable: !hasSentryBuildUpload,
   },

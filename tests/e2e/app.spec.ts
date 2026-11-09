@@ -317,10 +317,10 @@ test("sends debate requests without a browser provider credential", async ({ pag
     const payload = request.postDataJSON();
     expect(payload.apiKey).toBeUndefined();
     expect(request.headers().authorization).toBeUndefined();
-    expect(payload.body.model).toBe("deepseek/deepseek-v4.1-flash");
+    expect(payload.body.model).toBe("deepseek/deepseek-v4.1-flash-1017");
     chatCalls += 1;
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
-      model: "deepseek/deepseek-v4.1-flash", choices: [{ message: { content: "Server-managed debate response" } }],
+      model: "deepseek/deepseek-v4.1-flash-1017", choices: [{ message: { content: "Server-managed debate response" } }],
     }) });
   });
   await page.goto("/");

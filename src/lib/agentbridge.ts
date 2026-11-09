@@ -16,7 +16,7 @@ export function usesProductionProvider(env: Record<string, string | undefined> =
   return env.NODE_ENV === "production" || env.VERCEL_ENV === "production" || env.VERCEL_ENV === "preview";
 }
 
-export const productionChatModel = "deepseek/deepseek-v4.1-flash";
+export const productionChatModel = "deepseek/deepseek-v4.1-flash-1017";
 
 export function providerBaseUrl(env: Record<string, string | undefined> = process.env): string {
   return usesProductionProvider(env) ? "https://openrouter.ai/api/v1" : agentBridgeBaseUrl(env);

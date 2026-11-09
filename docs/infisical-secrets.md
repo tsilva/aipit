@@ -42,14 +42,13 @@ Adding prompts for the value with hidden input, rejects an existing key, and
 verifies readback. Intentional updates can be made in the Infisical dashboard.
 `npm run dev` fetches Infisical secrets by default; `dev:secrets` is equivalent.
 Both select an available port. A fetch/login failure stops before launching Next.js.
-The app helpers inject the four private server keys allowlisted in
-`scripts/infisical/common.py`:
-`AGENTBRIDGE_API_KEY`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and
-`SENTRY_AUTH_TOKEN`, plus the optional `SENTRY_SMOKE_TEST_TOKEN` diagnostic credential. Arbitrary stored variables cannot override `PATH` or launch
+The app helpers supply `AGENTBRIDGE_API_KEY`, `R2_ACCESS_KEY_ID`,
+`R2_SECRET_ACCESS_KEY`, and the optional `SENTRY_SMOKE_TEST_TOKEN` diagnostic credential.
+Hosted Vercel builds handle Sentry source-map uploads. Arbitrary stored variables cannot override `PATH` or launch
 settings. The check prints presence only and makes no API/model requests.
 Dev/start select an available port; open the URL printed by the server.
 
-All four keys are optional. Models use the configured AgentBridge endpoint; the
+These keys are optional. Models use the configured AgentBridge endpoint; the
 browser does not accept personal provider keys. Keep non-secret and public configuration in `.env` or
 `.env.local`; Next.js loads it normally. Remove populated plaintext assignments
 for migrated private keys. The helpers clear inherited copies and inject empty

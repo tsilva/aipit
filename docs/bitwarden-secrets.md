@@ -136,7 +136,7 @@ Add these secrets to `aipit` only if those features are needed:
 | --- | --- |
 | `R2_ACCESS_KEY_ID` | R2 replay-storage access |
 | `R2_SECRET_ACCESS_KEY` | R2 replay-storage authentication |
-| `SENTRY_AUTH_TOKEN` | Sentry source-map upload or issue queries; use the token permissions appropriate to the operation |
+| `SENTRY_AUTH_TOKEN` | Read-only Sentry issue queries |
 
 R2 also needs `R2_ACCOUNT_ID` and `R2_BUCKET_NAME`; these can remain in non-secret
 local configuration. Public values such as `NEXT_PUBLIC_SITE_URL` and browser

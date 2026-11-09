@@ -25,6 +25,8 @@ def selected_command(arguments):
 def main():
     command = selected_command(sys.argv[1:])
     environment = application_environment(Infisical().read())
+    if sys.argv[1] in ("dev", "build", "start"):
+        environment["SENTRY_AUTH_TOKEN"] = ""
     os.chdir(ROOT)
     os.execvpe(command[0], command, environment)
 
