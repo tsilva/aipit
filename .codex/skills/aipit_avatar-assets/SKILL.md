@@ -1,11 +1,11 @@
 ---
-name: avatar-assets
+name: aipit_avatar-assets
 description: Generate, fix, audit, and wire avatar assets for the aipit project. Use when Codex needs to source or process still preset avatars, crop or convert portrait images, generate speaking avatar videos, repair broken avatarUrl or speakingAvatarUrl paths, update avatar attribution, validate avatar media, or audit built-in avatar coverage.
 ---
 
 # Avatar Assets
 
-Own AIPIT avatar media end to end: sourced still portraits, generated speaking clips, attribution, preset wiring, and asset audits. For full character creation, use `add-character-preset` for persona data and this skill for the avatar work.
+Own AIPIT avatar media end to end: sourced still portraits, generated speaking clips, attribution, preset wiring, and asset audits. For full character creation, use `aipit_add-character-preset` for persona data and this skill for the avatar work.
 
 ## Files
 
@@ -40,7 +40,7 @@ The preferred repair path for non-square, low-resolution, or weakly framed still
 Run the bundled fixer:
 
 ```bash
-node .codex/skills/avatar-assets/scripts/square-avatar-image.mjs \
+node .codex/skills/aipit_avatar-assets/scripts/square-avatar-image.mjs \
   --preset-id <preset-id> \
   --avatar <avatar-path>
 ```
@@ -72,7 +72,7 @@ node scripts/generate-avatar-asset-versions.mjs
 Run the bundled generator:
 
 ```bash
-node .codex/skills/avatar-assets/scripts/generate-speaking-avatar.mjs \
+node .codex/skills/aipit_avatar-assets/scripts/generate-speaking-avatar.mjs \
   --preset-id <preset-id> \
   --avatar <avatar-path>
 ```

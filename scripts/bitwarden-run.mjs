@@ -7,9 +7,9 @@ import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
 const commands = {
-  dev: "node scripts/dev-server.mjs next dev --port auto",
-  build: "npm run build",
-  start: "npm run start -- --port auto",
+  dev: "env -u SENTRY_AUTH_TOKEN node scripts/dev-server.mjs next dev --port auto",
+  build: "env -u SENTRY_AUTH_TOKEN npm run build",
+  start: "env -u SENTRY_AUTH_TOKEN npm run start -- --port auto",
   check: "node scripts/check-bitwarden-secrets.mjs",
 };
 const operation = process.argv[2];

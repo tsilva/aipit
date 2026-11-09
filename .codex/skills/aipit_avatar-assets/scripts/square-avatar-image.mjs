@@ -21,7 +21,7 @@ function usage(message) {
   }
 
   console.error(`Usage:
-node .codex/skills/avatar-assets/scripts/square-avatar-image.mjs \\
+node .codex/skills/aipit_avatar-assets/scripts/square-avatar-image.mjs \\
   --preset-id <preset-id> \\
   --avatar <avatar-path-or-url> [options]
 

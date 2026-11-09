@@ -3,7 +3,7 @@ import { isSameRuntimeTurn, shouldDisplayRuntimeWarning, type RuntimeWarningNoti
 
 describe("runtime warning helpers", () => {
   const warning: RuntimeWarningNotice = {
-    message: "Anderson Cooper could not use deepseek/deepseek-v3.2.",
+    message: "Anderson Cooper could not use deepseek/deepseek-v4.1-flash-1017.",
     speakerId: "speaker-1",
     kind: "opening",
   };

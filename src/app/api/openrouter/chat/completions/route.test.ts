@@ -125,7 +125,7 @@ describe("/api/openrouter/chat/completions", () => {
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe("https://openrouter.ai/api/v1/chat/completions");
     expect(options?.headers).toMatchObject({ Authorization: "Bearer upstream-only" });
-    expect(JSON.parse(String(options?.body))).toMatchObject({ model: "deepseek/deepseek-v4.1-flash", reasoning: { enabled: false } });
+    expect(JSON.parse(String(options?.body))).toMatchObject({ model: "deepseek/deepseek-v4.1-flash-1017", reasoning: { enabled: false } });
     expect(JSON.stringify(options)).not.toContain("gateway-token");
   });
 
