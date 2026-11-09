@@ -504,7 +504,6 @@ function SetupParticipantCard({
             className="hero-roster-avatar"
             fallbackClassName="hero-roster-avatar-fallback"
             imageClassName="avatar-image"
-            priority
             sizes="54px"
           />
 
