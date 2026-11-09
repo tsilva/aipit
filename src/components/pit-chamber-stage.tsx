@@ -34,6 +34,7 @@ import {
   type StagePanelMode,
   type TimelineChapter,
 } from "@/lib/pit-playback";
+import "./pit-chamber-stage.css";
 
 const TranscriptMarkdownContent = dynamic(() => import("@/components/transcript-markdown"), {
   loading: () => <p className="transcript-markdown-p">Loading transcript...</p>,
