@@ -3,8 +3,6 @@ name: Production delivery
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - .github/workflows/production-delivery.yml
   workflow_dispatch:
     inputs:
       stage_prebuilt:
@@ -33,13 +31,13 @@ jobs:
       id-token: write
     uses: tsilva/.github/.github/workflows/production-delivery.yml@48a4449de4ac5f4d5e14343f70fe5fc57bc2cd74
     with:
-      sync_only: ${{ inputs.stage_prebuilt }}
+      sync_only: true
     secrets:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-  stage_prebuilt:
+  publish:
     needs: deliver
-    if: github.ref == 'refs/heads/main' && inputs.stage_prebuilt
+    if: github.ref == 'refs/heads/main'
     uses: tsilva/.github/.github/workflows/vercel-prebuilt.yml@22bb600ee7e3b22d238b284c132a3ad64a968719
     with:
       project_id: prj_IQMwNukbxGXroHZESU9IbDFJbkQN
@@ -47,6 +45,7 @@ jobs:
       production_domains: '["aipit.tsilva.eu","aipit.vercel.app"]'
       public_environment: '["NEXT_PUBLIC_GA_MEASUREMENT_ID","NEXT_PUBLIC_SENTRY_DSN","NEXT_PUBLIC_SITE_URL"]'
       source_maps: true
+      promote: ${{ !inputs.stage_prebuilt }}
     secrets:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
