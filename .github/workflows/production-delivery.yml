@@ -3,7 +3,14 @@ name: Production delivery
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - .github/workflows/production-delivery.yml
   workflow_dispatch:
+    inputs:
+      stage_prebuilt:
+        description: Stage and verify a GitHub-built artifact without changing production domains
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,6 +31,22 @@ jobs:
       contents: read
       actions: read
       id-token: write
-    uses: tsilva/.github/.github/workflows/production-delivery.yml@e0c6d64d4fc917ea0e108d27ce8d1a5304aeb3c6
+    uses: tsilva/.github/.github/workflows/production-delivery.yml@48a4449de4ac5f4d5e14343f70fe5fc57bc2cd74
+    with:
+      sync_only: ${{ inputs.stage_prebuilt }}
     secrets:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+  stage_prebuilt:
+    needs: deliver
+    if: github.ref == 'refs/heads/main' && inputs.stage_prebuilt
+    uses: tsilva/.github/.github/workflows/vercel-prebuilt.yml@22bb600ee7e3b22d238b284c132a3ad64a968719
+    with:
+      project_id: prj_IQMwNukbxGXroHZESU9IbDFJbkQN
+      project_name: aipit
+      production_domains: '["aipit.tsilva.eu","aipit.vercel.app"]'
+      public_environment: '["NEXT_PUBLIC_GA_MEASUREMENT_ID","NEXT_PUBLIC_SENTRY_DSN","NEXT_PUBLIC_SITE_URL"]'
+      source_maps: true
+    secrets:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
