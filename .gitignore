@@ -72,3 +72,5 @@ logs/
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+
+/.internal/

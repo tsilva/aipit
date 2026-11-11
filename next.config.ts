@@ -57,6 +57,7 @@ const contentSecurityPolicy = [
   .join("; ");
 
 const nextConfig: NextConfig = {
+  compiler: isProduction ? { define: { __SENTRY_DEBUG__: false } } : undefined,
   distDir: process.env.NODE_ENV === "development" ? `.next-dev-${process.pid}` : ".next",
   env: resolveSentryClientBuildEnv({
     NEXT_PUBLIC_SENTRY_DSN: appEnv.publicSentryDsn,
@@ -94,7 +95,10 @@ const nextConfig: NextConfig = {
 };
 
 export default withSentryConfig(nextConfig, {
-  webpack: { disableSentryConfig: !isHostedBuild },
+  webpack: {
+    disableSentryConfig: !isHostedBuild,
+    treeshake: { removeDebugLogging: true },
+  },
   useRunAfterProductionCompileHook: isHostedBuild ? undefined : false,
   ...sentryBuildConfig,
   authToken: isHostedBuild ? sentryBuildConfig.authToken : undefined,
