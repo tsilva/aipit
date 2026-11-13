@@ -21,7 +21,7 @@ git clone https://github.com/tsilva/aipit.git
 cd aipit
 npm install --global "$(node -p "require('./package.json').packageManager")" --ignore-scripts
 npm ci
-npm run dev:secrets
+npm run dev -- --port auto
 ```
 
 Use `npm ci` to install the committed `package-lock.json`; use `npm install` when intentionally updating dependencies. `.npmrc` enforces a seven-day minimum release age for dependency resolution and disables installation lifecycle scripts. CI uses the same pinned npm version and explicitly installs the Playwright browser separately.
@@ -31,19 +31,13 @@ Debates use the server’s configured model provider. Personal OpenRouter keys a
 ## Commands
 
 ```bash
-npm run dev
-npm run dev:secrets
-npm run secrets:check
-npm run secrets:add -- AGENTBRIDGE_API_KEY # add a development key with hidden value input
-npm run build:secrets
-npm run start:secrets
+npm run dev -- --port auto
 npm run build         # generate avatar asset versions and build production output
 npm run start         # serve the production build
 npm run lint          # run ESLint
 npm run typecheck     # run TypeScript checks
 npm run test          # run Vitest tests
 npm run test:e2e      # run Playwright tests
-npm run sentry:issues # query Sentry issues with a read-only token
 ```
 
 Local builds skip Sentry source-map uploads. Hosted Vercel builds handle uploads.
@@ -80,8 +74,7 @@ R2_OBJECT_PREFIX=shares/       # optional share snapshot prefix
 Local development and Vercel Preview use the private `aipit-development` R2
 bucket with a dedicated non-production token. Production keeps `aipit` and a
 different token restricted to that bucket. Set local `R2_BUCKET_NAME` to
-`aipit-development` in the ignored `.env`; credentials come from the pinned
-Development Infisical project. Keep Preview's `NEXT_PUBLIC_SITE_URL` unset so
+`aipit-development` in the ignored `.env`; credentials come from the configured server environment. Keep Preview's `NEXT_PUBLIC_SITE_URL` unset so
 share links use that deployment's URL. See [R2 environment isolation](docs/production-delivery.md#r2-environments).
 
 Sentry delivery must be confirmed with an event received in the expected project.
@@ -110,10 +103,10 @@ Development uses AgentBridge (`AGENTBRIDGE_BASE_URL`, default
 `http://127.0.0.1:8082/api/v1`, and optional `AGENTBRIDGE_API_KEY`).
 Production and Preview call OpenRouter directly using their own server-only
 `OPENROUTER_API_KEY`; a missing production key disables model requests.
-Production credentials come from this app’s isolated Infisical project.
+Production credentials remain isolated from Development and Preview.
 Production text requests use `deepseek/deepseek-v4.1-flash-1017` with reasoning disabled.
 
-Production secrets are delivered through the pinned shared GitHub Actions workflow. The standalone signed Infisical relay triggers synchronization and deployment; see [production delivery](docs/production-delivery.md) for scope and recovery.
+Production delivery uses the pinned shared GitHub Actions workflow; see [production delivery](docs/production-delivery.md) for scope and recovery.
 
 Production delivery keeps Vercel secret isolation enabled and distinguishes public configuration from private credentials; see [production delivery](docs/production-delivery.md).
 

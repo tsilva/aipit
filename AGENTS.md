@@ -2,10 +2,7 @@
 
 ## Development Commands
 
-- `npm run dev` — Fetch Infisical development secrets and start Next.js on an available port
-- `npm run dev:secrets` — Start with Infisical development secrets and an available port
-- `npm run secrets:check` — Check Infisical access and secret presence without displaying values
-- `npm run secrets:add -- AGENTBRIDGE_API_KEY` — Add a development secret through the Infisical CLI with a hidden value prompt; existing keys are rejected
+- `npm run dev -- --port auto` — Start Next.js on an available port
 - `npm run build` — Production build
 - `npm run lint` — Run ESLint
 
@@ -36,7 +33,7 @@ Model requests use internal Next.js routes and OpenRouter in production and Agen
 
 ## Guidelines
 
-- Local secrets use Infisical via the saved human CLI login. `.infisical.json` contains the project UUID, cloud domain and `dev` environment only. The Python 3.11+ helpers capture provider output in memory, transport imported credentials through stdin/private pipes, check readback, and remove secrets-manager credentials before launching the app. Never persist or display credential values or include them in command arguments. Keep native Keychain originals during migration. Use separate projects for production when local readers must not access it; Free built-in Viewer permissions cover the entire project. Vercel builds use provider-injected variables and the normal build command; local helpers do not sync or deploy. Explicit `*:bitwarden` / `bitwarden:*` scripts retain the earlier workflow.
+- Keep service credentials server-only, out of logs, browser bundles and committed files. Local development uses its configured environment; hosted Production keeps separate credentials. Trusted provisioning and rotation are separate from app startup.
 - README.md must be kept up to date with any significant project changes
 - Do not suggest skill improvements for official OpenAI plugin skills. Skill retrospective suggestions should only be made for project-local or user-maintained skills.
 

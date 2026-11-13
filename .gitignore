@@ -74,3 +74,4 @@ logs/
 next-env.d.ts
 
 /.internal/
+/.runbox.yaml

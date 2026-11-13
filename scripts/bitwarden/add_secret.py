@@ -170,7 +170,7 @@ def main():
     args = parser.parse_args()
     if not sys.stdin.isatty() or not sys.stderr.isatty():
         raise SetupError(
-            "Run npm run secrets:add in an interactive terminal for hidden input."
+            "Run this trusted helper in an interactive terminal for hidden input."
         )
     warnings.simplefilter("error", getpass.GetPassWarning)
     logging.disable(logging.CRITICAL)

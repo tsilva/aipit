@@ -1,11 +1,8 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
 const DEFAULT_BASE_URL = "https://sentry.io";
 const DEFAULT_LIMIT = 10;
-const PLACEHOLDER_AUTH_TOKEN = "sntrys_your_token_here";
 const HELP_TEXT = `Usage: node scripts/sentry-issues.mjs [options]
 
 List Sentry issues for one configured project.
@@ -18,70 +15,12 @@ Options:
   --json            Print the raw JSON response
 
 Environment:
-  Set these variables in .env or the shell environment:
-    SENTRY_AUTH_TOKEN   Read-only token with org:read, project:read, and event:read
+  Use a reviewed read-only service session.
+    SENTRY_AUTH_TOKEN   Server-side authentication token
     SENTRY_ORG          Optional, defaults to tsilva
     SENTRY_PROJECT      Optional, defaults to aipit
     SENTRY_BASE_URL     Optional, defaults to https://sentry.io
 `;
-
-function stripWrappingQuotes(value) {
-  if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) {
-    return value
-      .slice(1, -1)
-      .replace(/\\n/g, "\n")
-      .replace(/\\r/g, "\r")
-      .replace(/\\t/g, "\t")
-      .replace(/\\"/g, '"')
-      .replace(/\\\\/g, "\\");
-  }
-
-  if (value.length >= 2 && value.startsWith("'") && value.endsWith("'")) {
-    return value.slice(1, -1).replace(/\\'/g, "'");
-  }
-
-  return value;
-}
-
-function parseEnvFile(content) {
-  const entries = {};
-
-  for (const rawLine of content.split(/\r?\n/u)) {
-    const line = rawLine.trim();
-
-    if (!line || line.startsWith("#")) {
-      continue;
-    }
-
-    const withoutExport = line.startsWith("export ") ? line.slice("export ".length) : line;
-    const separatorIndex = withoutExport.indexOf("=");
-
-    if (separatorIndex <= 0) {
-      continue;
-    }
-
-    const key = withoutExport.slice(0, separatorIndex).trim();
-    const value = withoutExport.slice(separatorIndex + 1).trim();
-
-    if (!key) {
-      continue;
-    }
-
-    entries[key] = stripWrappingQuotes(value);
-  }
-
-  return entries;
-}
-
-function loadOptionalEnvFile(relativePath) {
-  const absolutePath = resolve(process.cwd(), relativePath);
-
-  if (!existsSync(absolutePath)) {
-    return {};
-  }
-
-  return parseEnvFile(readFileSync(absolutePath, "utf8"));
-}
 
 function parseArgs(argv) {
   const args = {
@@ -174,19 +113,15 @@ async function main() {
     return;
   }
 
-  const fileEnv = loadOptionalEnvFile(".env");
-  const mergedEnv = {
-    ...fileEnv,
-    ...process.env,
-  };
+  const authToken = process.env.SENTRY_AUTH_TOKEN;
+  const org = process.env.SENTRY_ORG?.trim() || "tsilva";
+  const project = process.env.SENTRY_PROJECT?.trim() || "aipit";
+  const baseUrl = normalizeBaseUrl(process.env.SENTRY_BASE_URL);
 
-  const authToken = mergedEnv.SENTRY_AUTH_TOKEN?.trim();
-  const org = mergedEnv.SENTRY_ORG?.trim() || "tsilva";
-  const project = mergedEnv.SENTRY_PROJECT?.trim() || "aipit";
-  const baseUrl = normalizeBaseUrl(mergedEnv.SENTRY_BASE_URL?.trim() || mergedEnv.SENTRY_URL?.trim());
-
-  if (!authToken || authToken === PLACEHOLDER_AUTH_TOKEN) {
-    console.error("Missing Sentry credentials. Configure SENTRY_AUTH_TOKEN in .env or the shell environment.");
+  if (process.env.SENTRY_VAULT_TRANSPORT !== undefined
+      ? process.env.SENTRY_VAULT_TRANSPORT !== "agent-vault" || authToken !== "sentry_read_public_placeholder"
+      : !authToken || authToken === "sentry_read_public_placeholder") {
+    console.error("Use the reviewed Sentry Vault launcher; raw credentials are not accepted.");
     process.exitCode = 1;
     return;
   }
@@ -206,8 +141,8 @@ async function main() {
   });
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Sentry API request failed (${response.status}): ${body}`);
+    await response.body?.cancel();
+    throw new Error(`Sentry API request failed (${response.status}); provider details withheld.`);
   }
 
   const issues = await response.json();

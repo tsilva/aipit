@@ -8,8 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import run as launcher
-from common import Infisical, SecretError, application_environment
+from common import Infisical, SecretError
 
 PROJECT = "533e0bdd-5b7d-493e-abbc-d3935a9bce7b"
 VALUE = "dummy-only '$HOME' \"quoted\"\\backslash\nsecond line\n"
@@ -26,12 +25,11 @@ def row(value=VALUE, **overrides):
     }
 
 
-class SecretTests(unittest.TestCase):
+class AdministrationTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
-        (self.root / ".infisical.json").write_text(json.dumps({"workspaceId": PROJECT}))
         self.client = Infisical(self.root)
 
     def test_transport_is_stdin_only_and_exact(self):
@@ -54,6 +52,7 @@ class SecretTests(unittest.TestCase):
         self.assertIn("--expand=false", calls[0][0])
         self.assertIn("--secret-overriding=false", calls[0][0])
 
+
     def test_identical_existing_value_causes_no_write(self):
         with (
             patch.object(
@@ -67,6 +66,7 @@ class SecretTests(unittest.TestCase):
             )
             command.assert_not_called()
 
+
     def test_changed_readback_fails(self):
         with (
             patch.object(
@@ -79,6 +79,7 @@ class SecretTests(unittest.TestCase):
             with self.assertRaisesRegex(SecretError, "Readback"):
                 self.client.create_and_verify("SENTRY_AUTH_TOKEN", VALUE)
 
+
     def test_destination_identity_and_duplicates_are_rejected(self):
         for rows in (
             [row(workspace="other-project")],
@@ -90,6 +91,7 @@ class SecretTests(unittest.TestCase):
                 with self.assertRaises(SecretError):
                     self.client.read()
 
+
     def test_provider_error_details_never_escape(self):
         response = subprocess.CompletedProcess([], 1, VALUE, VALUE)
         with patch("common.subprocess.run", return_value=response):
@@ -97,70 +99,5 @@ class SecretTests(unittest.TestCase):
                 self.client.read()
         self.assertNotIn(VALUE, str(error.exception))
 
-    def test_app_environment_strips_tokens_stale_keys_and_untrusted_overrides(self):
-        original = {
-            "PATH": "/safe/bin",
-            "BWS_ACCESS_TOKEN": "dummy-token",
-            "INFISICAL_TOKEN": "dummy-token",
-            "INFISICAL_CLIENT_SECRET": "dummy-token",
-            "OPENROUTER_API_KEY": "stale",
-            "SENTRY_ORG": "tsilva",
-        }
-        with patch.dict(os.environ, original, clear=True):
-            actual = application_environment(
-                {"SENTRY_AUTH_TOKEN": VALUE, "PATH": "/evil", "NODE_OPTIONS": "evil"}
-            )
-        self.assertEqual(actual["SENTRY_AUTH_TOKEN"], VALUE)
-        self.assertEqual(actual["PATH"], "/safe/bin")
-        self.assertEqual(actual["SENTRY_ORG"], "tsilva")
-        self.assertEqual(actual["OPENROUTER_API_KEY"], "")
-        for key in (
-            "BWS_ACCESS_TOKEN",
-            "INFISICAL_TOKEN",
-            "INFISICAL_CLIENT_SECRET",
-            "NODE_OPTIONS",
-        ):
-            self.assertNotIn(key, actual)
 
-    def test_missing_infisical_key_cannot_fall_back_to_next_dotenv(self):
-        (self.root / ".env").write_text("OPENROUTER_API_KEY=dummy-stale-dotenv-key\n")
-        code = (
-            "const {default: nextEnv} = await import('@next/env'); "
-            "nextEnv.loadEnvConfig(process.argv[1], true, {info(){},error(){}}); "
-            "process.stdout.write(JSON.stringify({hasKey:Boolean(process.env.OPENROUTER_API_KEY)}));"
-        )
-        environment = application_environment({})
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", code, str(self.root)],
-            env=environment,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        self.assertFalse(json.loads(result.stdout)["hasKey"])
-
-    def test_launcher_rejects_environment_overrides_before_fetching(self):
-        with (
-            patch("run.sys.argv", ["run.py", "dev", "--env", "prod"]),
-            patch("run.Infisical") as client,
-            patch("run.os.execvpe") as execute,
-        ):
-            with self.assertRaises(SecretError):
-                launcher.main()
-            client.assert_not_called()
-            execute.assert_not_called()
-
-    def test_failed_infisical_fetch_never_launches_the_application(self):
-        with (
-            patch("run.sys.argv", ["run.py", "dev", "--port", "auto"]),
-            patch("run.Infisical") as client,
-            patch("run.os.execvpe") as execute,
-        ):
-            client.return_value.read.side_effect = SecretError("Fetch failed.")
-            with self.assertRaises(SecretError):
-                launcher.main()
-            execute.assert_not_called()
-
-
-if __name__ == "__main__":
-    unittest.main()
+if __name__ == "__main__": unittest.main()
