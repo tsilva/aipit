@@ -13,10 +13,6 @@ testing server-only deployments; no browser instrumentation is needed for that c
 
 1. Resolve the deployment currently serving `aipit.tsilva.eu` in Vercel and record its
    exact commit. Confirm its runtime DSN matches an active key in `tsilva/aipit`.
-   Supply the matching runtime DSN and a Sentry token with `project:read` through
-   injected environment variables or an ignored `.env.local`. Never paste credentials
-   into commands, reports, or chat. Do not assume a source-map upload token grants
-   read access.
 2. Prefer an existing event from that deployment. If a synthetic event is needed,
    obtain approval before sending it. In a fresh browser on the production domain,
    enable only **Error reporting** through the app's privacy preferences, leaving
@@ -24,22 +20,25 @@ testing server-only deployments; no browser instrumentation is needed for that c
    DevTools. A privacy/disabled message is not an event ID; do not bypass it. Keep
    the tab open until the SDK's envelope request completes. Record its HTTP status
    without copying its URL, DSN, authentication parameters, or payload.
-3. After ingestion, query the exact event using this read-only command:
-
-   ```bash
-   node scripts/verify-sentry-delivery.mjs --event-id <event-id> --release <deployed-sha>
-   ```
-
-   The verifier checks an active DSN binding in the expected project and requires
-   the exact event ID, production origin, `production` environment, and requested
-   release. It makes only GET requests and prints no credentials or event payloads.
-   A 404 can mean ingestion is pending; retry after a short wait. Confirm the same
-   event in the project's Sentry dashboard. Collection HTTP success alone is not
-   sufficient to mark the issue resolved.
+3. After ingestion, look up the exact event. For agent-operated verification,
+   use the configured, approved read-only delivery route. If it is unavailable,
+   report the delivery check as unavailable. The Sentry issues reader verifies
+   project access only. The delivery verifier requires an active DSN binding,
+   the exact event ID, the production origin, `production` environment, and the
+   requested release. It makes only GET requests and prints no credentials or
+   event payloads. A 404 can mean ingestion is pending. Confirm the same event in
+   the project's Sentry dashboard before marking delivery verified.
 4. Return the test browser's error-reporting preference to disabled or discard its
    temporary context. Record the event ID, project, deployment/commit, collection
    status, and dashboard receipt time. Deployment and external configuration
    changes require separate approval.
+
+For a standalone operator check, supply the matching runtime DSN and a Sentry
+credential with `project:read` through the operator's existing environment, then run:
+
+```bash
+node scripts/verify-sentry-delivery.mjs --event-id <event-id> --release <deployed-sha>
+```
 
 Sentry documents [project key lookup](https://docs.sentry.io/api/projects/list-a-projects-client-keys/)
 and [retrieving an exact event](https://docs.sentry.io/api/events/retrieve-an-event-for-a-project/).
