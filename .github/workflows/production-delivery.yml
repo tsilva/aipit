@@ -75,7 +75,7 @@ jobs:
     with:
       project_id: prj_IQMwNukbxGXroHZESU9IbDFJbkQN
       project_name: aipit
-      production_domains: '["aipit.tsilva.eu","aipit.vercel.app"]'
+      production_domains: '["aipit.tsilva.eu"]'
       public_environment: '["NEXT_PUBLIC_GA_MEASUREMENT_ID","NEXT_PUBLIC_SENTRY_DSN","NEXT_PUBLIC_SITE_URL"]'
       source_maps: true
       promote: ${{ !inputs.stage_prebuilt }}
