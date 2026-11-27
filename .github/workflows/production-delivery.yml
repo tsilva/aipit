@@ -71,7 +71,7 @@ jobs:
         github.event.workflow_run.path == '.github/workflows/ci.yml' &&
         github.event.workflow_run.repository.id == github.repository_id &&
         github.event.workflow_run.head_repository.id == github.repository_id))
-    uses: tsilva/.github/.github/workflows/vercel-prebuilt.yml@22bb600ee7e3b22d238b284c132a3ad64a968719
+    uses: tsilva/.github/.github/workflows/vercel-prebuilt.yml@f2b6527567c3ce54b2ef171735ad1ddfd126461c
     with:
       project_id: prj_IQMwNukbxGXroHZESU9IbDFJbkQN
       project_name: aipit
